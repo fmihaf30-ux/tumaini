@@ -1160,48 +1160,50 @@ button:disabled, .btn:disabled {
 /* ==========================================================================
    RESPONSIVENESS (MOBILE & SMALL SCREEN ENHANCEMENTS)
    ========================================================================== */
-.helpline-text-mobile, .exit-text-mobile {
+.helpline-text-mobile, .exit-text-mobile, .about-text-mobile {
   display: none;
 }
 
 @media (max-width: 768px) {
   .site-header {
-    padding: 0 12px !important;
-    height: 60px !important;
+    padding: 0 10px !important;
+    height: 58px !important;
   }
   .brand-wrap {
-    gap: 8px !important;
+    gap: 6px !important;
   }
   .brand-logo-img {
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 8px !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
   }
   .brand-title {
-    font-size: 18px !important;
+    font-size: 17px !important;
   }
   .brand-subtitle {
     display: none !important;
   }
   .header-nav {
-    gap: 6px !important;
+    gap: 4px !important;
   }
-  .header-nav .nav-btn:not(.btn-danger):not(.btn-helplines) {
-    display: none !important;
+  #btnOpenAbout {
+    display: inline-flex !important;
+    padding: 5px 8px !important;
+    font-size: 11.5px !important;
   }
   .btn-helplines {
-    padding: 6px 10px !important;
-    font-size: 11.5px !important;
-    gap: 5px !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
   }
   .btn-danger {
-    padding: 6px 10px !important;
-    font-size: 11.5px !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
   }
-  .helpline-text-desktop, .exit-text-desktop {
+  .helpline-text-desktop, .exit-text-desktop, .about-text-desktop {
     display: none !important;
   }
-  .helpline-text-mobile, .exit-text-mobile {
+  .helpline-text-mobile, .exit-text-mobile, .about-text-mobile {
     display: inline !important;
   }
 

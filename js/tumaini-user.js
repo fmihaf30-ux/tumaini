@@ -184,6 +184,10 @@ class TumainiUser {
     if (this.btnOpenAbout && this.aboutModal) {
       this.btnOpenAbout.addEventListener('click', () => openModal(this.aboutModal));
     }
+    const heroBtnStory = document.getElementById('heroBtnStory');
+    if (heroBtnStory && this.aboutModal) {
+      heroBtnStory.addEventListener('click', () => openModal(this.aboutModal));
+    }
     if (this.btnCloseAbout && this.aboutModal) {
       this.btnCloseAbout.addEventListener('click', () => closeModal(this.aboutModal));
     }
