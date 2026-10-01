@@ -219,6 +219,11 @@ class TumainiUser {
           this.quickExit();
         }
       }
+      // Discreet Counselor Terminal Shortcut (Ctrl+Shift+S or Cmd+Shift+S)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        window.location.href = 'staff.html';
+      }
     });
   }
 
