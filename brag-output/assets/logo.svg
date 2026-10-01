@@ -1,0 +1,11 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="badgeFrame"><rect x="0" y="0" width="240" height="240" rx="46"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="240" height="240" rx="46" fill="#EFF2ED"/>
+  <g clip-path="url(#badgeFrame)">
+    <circle cx="152" cy="92" r="40" fill="#C98A3B"/>
+    <path d="M -10 158 Q 55 102 128 148 Q 172 176 250 150 L 250 250 L -10 250 Z" fill="#5C9784"/>
+    <path d="M -10 202 Q 68 142 140 190 Q 192 220 250 192 L 250 250 L -10 250 Z" fill="#2C4E43"/>
+  </g>
+</svg>

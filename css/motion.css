@@ -1,0 +1,176 @@
+/* ==========================================================================
+   MOTION DESIGN SYSTEM (Emil Kowalski Principles)
+   - Restraint, purposeful motion, speed (< 220ms for micro-interactions)
+   - Tactile feedback (scale 0.97/0.98 on :active)
+   - Custom cubic-bezier spring curves (never generic linear or weak ease-in-out)
+   - Accessible: full prefers-reduced-motion compliance
+   ========================================================================== */
+
+:root {
+  /* Emil Kowalski Signature Easing Curves */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+  --ease-gentle: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* Pacing & Durations */
+  --dur-instant: 100ms;
+  --dur-fast: 160ms;
+  --dur-normal: 220ms;
+  --dur-smooth: 320ms;
+  --dur-breathing: 4000ms;
+}
+
+/* Tactile button feedback - Emil's Tip #1: Scale your buttons */
+button,
+.btn,
+.pill,
+.clickable-card {
+  transition: transform var(--dur-fast) var(--ease-spring),
+              background-color var(--dur-fast) ease,
+              border-color var(--dur-fast) ease,
+              box-shadow var(--dur-fast) ease;
+  will-change: transform;
+}
+
+button:active,
+.btn:active,
+.pill:active {
+  transform: scale(0.97);
+}
+
+.clickable-card:active {
+  transform: scale(0.985);
+}
+
+/* Micro-interaction hover */
+button:hover,
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled,
+.btn:disabled {
+  transform: none !important;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Subtle fade + slide up for new messages */
+@keyframes messageSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.msg-animate {
+  animation: messageSlideUp var(--dur-normal) var(--ease-spring) forwards;
+}
+
+/* High-clarity static emergency status indicators (No infinite AI-slop throbbing/pulsing) */
+.indicator-critical {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
+}
+
+.indicator-panic {
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
+}
+
+/* Typing indicator dots */
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.typing-dot:nth-child(1) { animation: typingBounce 1.2s infinite 0ms; }
+.typing-dot:nth-child(2) { animation: typingBounce 1.2s infinite 180ms; }
+.typing-dot:nth-child(3) { animation: typingBounce 1.2s infinite 360ms; }
+
+/* Box breathing guide pacing ring */
+@keyframes breatheScale {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  25% {
+    /* Inhale */
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  50% {
+    /* Hold In */
+    transform: scale(1.2);
+    opacity: 0.95;
+  }
+  75% {
+    /* Exhale */
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+}
+
+.breathing-circle-active {
+  animation: breatheScale 16s infinite ease-in-out;
+  transform-origin: center;
+}
+
+/* Origin-aware card expansions */
+.expandable-panel {
+  transition: max-height var(--dur-smooth) var(--ease-spring),
+              opacity var(--dur-normal) var(--ease-spring),
+              transform var(--dur-normal) var(--ease-spring);
+  overflow: hidden;
+}
+
+/* Thought shredder dissolve animation */
+@keyframes dissolveThought {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95) translateY(-10px);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85) translateY(-25px);
+    filter: blur(8px);
+  }
+}
+
+.dissolving {
+  animation: dissolveThought 800ms var(--ease-snappy) forwards;
+  pointer-events: none;
+}
+
+/* Accessibility: Full Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .pulse-critical,
+  .pulse-panic,
+  .breathing-circle-active {
+    animation: none !important;
+  }
+}

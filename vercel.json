@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/staff", "destination": "/staff.html" },
+    { "source": "/brag", "destination": "/brag-output/preview.html" }
+  ]
+}
