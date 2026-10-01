@@ -111,45 +111,82 @@ class TumainiStore {
       this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
     }
 
-    if (this.confessions.length === 0) {
+    if (this.confessions.length === 0 || this.confessions.some(c => c.id === 'conf-101') || localStorage.getItem('tumaini_campus_confessions_v2') !== 'true') {
       this.confessions = [
         {
-          id: 'conf-101',
-          username: 'Anonymous Student',
-          category: 'Academic & Tuition Pressure',
-          text: 'I failed two papers this semester and my father took a loan for my campus tuition. I feel so guilty I can barely eat, but writing this down here makes me feel like I can finally take a breath.',
-          createdAt: Date.now() - 7200000,
+          id: 'campus-conf-101',
+          username: 'Anonymous Fresher · Makerere',
+          category: 'Tuition & Exam Permits',
+          text: 'Exams start on Monday and my portal is blocked because my father could not raise the remaining 480k functional fees. Everyone in my discussion group in CEDAT is talking about exam permits and sitting arrangements. I sat on the grass near Lumumba pretending to read, but my chest feels like it is in a vice. I have not slept in three days. I do not know how to look my mother in the eyes when she calls.',
+          createdAt: Date.now() - 3600000 * 2,
           status: 'approved',
-          empathyCount: 14
+          empathyCount: 47
         },
         {
-          id: 'conf-102',
-          username: 'Quiet Crane',
-          category: 'Relationships & Family',
-          text: 'My partner left after three years and told me I was too quiet and gloomy. Some days the silence in my room in Kyambogo is deafening. Praying for everyone carrying a heavy heart tonight.',
-          createdAt: Date.now() - 14400000,
+          id: 'campus-conf-102',
+          username: 'Quiet Soul · MUBS Nakawa',
+          category: 'Imposter Syndrome & Money',
+          text: 'Everyone around my hostel dresses like their parents run ministries and spend 50k on drinks like it is water. Back home in Bushenyi, my mother sold her two dairy cows and took a SACCO loan just to register me for this degree. I feel sick with guilt anytime I buy a 2,000/= Rolex, but I am terrified to let anyone here know how poor we really are. Carrying this double life every day is crushing me.',
+          createdAt: Date.now() - 3600000 * 5,
           status: 'approved',
-          empathyCount: 28
+          empathyCount: 82
         },
         {
-          id: 'conf-103',
-          username: 'Steady Kob',
-          category: 'Grief & Loss',
-          text: 'Lost my mother last December. Everyone around me expects me to be okay by now, but I still cry every Sunday afternoon. Grateful for a place where I do not have to pretend to be strong.',
-          createdAt: Date.now() - 28800000,
+          id: 'campus-conf-103',
+          username: 'Finalist in Limbo · Kyambogo',
+          category: 'Missing Marks & Graduation',
+          text: 'I have two missing marks from Year 2 that the department still has not resolved despite submitting my coursework 8 times. My grandmother back in the village already bought her gomesi for my graduation in January. Every time a relative congratulates me for finishing school, I swallow bile. The thought of telling them I might not be on the graduation list makes me want to disappear.',
+          createdAt: Date.now() - 3600000 * 9,
           status: 'approved',
-          empathyCount: 42
+          empathyCount: 114
         },
         {
-          id: 'conf-104',
-          username: 'Silent Shoebill',
-          category: 'Late Night & Insomnia',
-          text: 'Laying awake at 3 AM listening to the rain on the roof in Ntinda. The future feels so uncertain and scary right now. I just wanted someone to know I am trying my best.',
-          createdAt: Date.now() - 1800000,
+          id: 'campus-conf-104',
+          username: 'Hungry Crane · Kikoni',
+          category: 'Hostel Living & Solitude',
+          text: 'My roommate thinks I do intermittent fasting because I am into fitness. The honest truth is I survive on one 1,500/= kikomando at 4:30 PM so my monthly allowance does not run out before the 20th. When my stomach burns at 2 AM, I just drink warm tap water and try to sleep. Campus can be the loneliest place on earth when you are surrounded by 30,000 students and nobody actually sees you.',
+          createdAt: Date.now() - 3600000 * 14,
+          status: 'approved',
+          empathyCount: 68
+        },
+        {
+          id: 'campus-conf-105',
+          username: 'Desperate Kob · Banda',
+          category: 'Betting & Panic',
+          text: 'I took 350k meant for my hostel balance and put it on Aviator hoping to double it and clear our pending departmental handouts. I watched the entire money vanish in under 12 minutes. I cannot breathe. My custodian gave me until Friday to vacate the room. I have not picked up my dad\'s calls since Saturday. I am shaking as I type this. I hate myself so much.',
+          createdAt: Date.now() - 3600000 * 18,
+          status: 'approved',
+          empathyCount: 53
+        },
+        {
+          id: 'campus-conf-106',
+          username: 'Tired Heart · UCU Mukono',
+          category: 'Relationships & Dignity',
+          text: 'My roommates kept pushing me to accept an older man in town so he could pay my retake fees and buy me decent clothes like everyone else. I went for dinner once and the way he touched my hand and talked down to me made me want to throw up. I locked myself in the hostel bathroom and cried for two hours. I would rather walk to campus in worn-out sandals than trade my dignity, but God it hurts when you feel so helpless.',
+          createdAt: Date.now() - 3600000 * 24,
+          status: 'approved',
+          empathyCount: 129
+        },
+        {
+          id: 'campus-conf-107',
+          username: 'Silent Weaver · Mbarara (MUST)',
+          category: 'Family & Silent Grief',
+          text: 'Lost my brother to a boda boda accident on Masaka road three weeks ago. My lecturers said I have to sit the tests anyway or take a dead year. Sitting in a silent examination hall with an exam booklet in front of me while my brother is six feet under was the darkest test of my life. Please pray for peace for my mind.',
+          createdAt: Date.now() - 3600000 * 3,
+          status: 'pending',
+          empathyCount: 0
+        },
+        {
+          id: 'campus-conf-108',
+          username: 'Lost Fresher · Makerere',
+          category: 'First-Year Isolation',
+          text: 'First time living away from home in Gulu. The city is too loud, the lecture halls have 400 people, nobody greets you, and everyone seems to already know each other. I stay locked in my hostel room whenever lectures end. I just needed to tell someone that I feel completely invisible.',
+          createdAt: Date.now() - 3600000 * 1,
           status: 'pending',
           empathyCount: 0
         }
       ];
+      try { localStorage.setItem('tumaini_campus_confessions_v2', 'true'); } catch (e) {}
       this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
     }
 
