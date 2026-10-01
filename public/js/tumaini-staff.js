@@ -154,7 +154,9 @@ class TumainiStaff {
     if (this.btnReleaseCase) {
       this.btnReleaseCase.addEventListener('click', () => {
         if (this.activeIntake) {
-          store.updateIntakeStatus(this.activeIntake.id, 'resolved');
+          const intakeId = this.activeIntake.id;
+          store.updateIntakeStatus(intakeId, 'resolved');
+          bus.broadcast('INTAKE_STATUS', { intakeId, status: 'resolved' });
           store.setActiveStaffIntake(null);
           this.activeIntake = null;
           this.renderWorkspace();
@@ -181,11 +183,14 @@ class TumainiStaff {
         const approveBtn = e.target.closest('.btn-approve');
         const rejectBtn = e.target.closest('.btn-reject');
         if (approveBtn) {
-          store.approveConfession(approveBtn.dataset.confessionId);
-          bus.broadcast('CONFESSION_APPROVED');
+          const confessionId = approveBtn.dataset.confessionId;
+          store.approveConfession(confessionId);
+          bus.broadcast('CONFESSION_STATUS', { confessionId, status: 'approved' });
           this.renderConfessionsDesk();
         } else if (rejectBtn) {
-          store.rejectConfession(rejectBtn.dataset.confessionId);
+          const confessionId = rejectBtn.dataset.confessionId;
+          store.rejectConfession(confessionId);
+          bus.broadcast('CONFESSION_STATUS', { confessionId, status: 'rejected' });
           this.renderConfessionsDesk();
         }
       });
@@ -497,7 +502,7 @@ class TumainiStaff {
     }
 
     store.claimIntake(item.id, session);
-    bus.broadcast('INTAKE_CLAIMED', { intakeId: item.id });
+    bus.broadcast('INTAKE_CLAIMED', { intakeId: item.id, staffSession: session });
     this.selectCase(item);
   }
 
@@ -587,14 +592,14 @@ class TumainiStaff {
     const text = this.counselorInput.value.trim();
     if (!text) return;
 
-    store.addIntakeMessage({
+    const msg = store.addIntakeMessage({
       intakeId: this.activeIntake.id,
       sender: 'counselor',
       senderName: session.name,
       text
     });
 
-    bus.broadcast('MESSAGE_SENT', { intakeId: this.activeIntake.id });
+    bus.broadcast('MESSAGE_SENT', { intakeId: this.activeIntake.id, message: msg });
     this.counselorInput.value = '';
     this.renderMessages();
   }
@@ -646,7 +651,12 @@ class TumainiStaff {
       staffName: session.name
     });
 
-    bus.broadcast('GROUP_INVITE_SENT', { intakeId: this.activeIntake.id });
+    bus.broadcast('GROUP_INVITE_SENT', {
+      intakeId: this.activeIntake.id,
+      roomId: room.id,
+      roomTitle: room.title,
+      staffName: session.name
+    });
     alert(`Invitation to "${room.title}" sent to ${this.activeIntake.username}.`);
   }
 
@@ -682,7 +692,12 @@ class TumainiStaff {
       staffName: session.name
     });
 
-    bus.broadcast('GROUP_INVITE_SENT', { intakeId: this.activeIntake.id });
+    bus.broadcast('GROUP_INVITE_SENT', {
+      intakeId: this.activeIntake.id,
+      roomId: newRoom.id,
+      roomTitle: newRoom.title,
+      staffName: session.name
+    });
     alert(`Circle "${newRoom.title}" created and invitation sent to ${this.activeIntake.username}.`);
   }
 

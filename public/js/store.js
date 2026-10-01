@@ -557,6 +557,136 @@ class TumainiStore {
     this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
     this.notify();
   }
+
+  // --- 6. Remote Multi-Device Cloud Synchronization Handlers ---
+  applyRemoteIntake(intake, initialMessages = []) {
+    if (!intake || !intake.id) return;
+    const existingIndex = this.intakes.findIndex(i => i.id === intake.id);
+    if (existingIndex >= 0) {
+      this.intakes[existingIndex] = { ...this.intakes[existingIndex], ...intake };
+    } else {
+      this.intakes = [intake, ...this.intakes];
+    }
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+
+    if (Array.isArray(initialMessages) && initialMessages.length > 0) {
+      const current = this.intakeMessages[intake.id] || [];
+      const currentIds = new Set(current.map(m => m.id));
+      const additions = initialMessages.filter(m => !currentIds.has(m.id));
+      if (additions.length > 0) {
+        this.intakeMessages = {
+          ...this.intakeMessages,
+          [intake.id]: [...current, ...additions]
+        };
+        this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+      }
+    }
+    this.notify();
+  }
+
+  applyRemoteMessage(intakeId, message) {
+    if (!intakeId || !message || !message.id) return;
+    const current = this.intakeMessages[intakeId] || [];
+    if (current.some(m => m.id === message.id)) return;
+    this.intakeMessages = {
+      ...this.intakeMessages,
+      [intakeId]: [...current, message]
+    };
+    this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+    this.notify();
+  }
+
+  applyRemoteClaim(intakeId, staffSession) {
+    if (!intakeId) return;
+    this.intakes = this.intakes.map(i => {
+      if (i.id === intakeId) {
+        return {
+          ...i,
+          status: 'in_session',
+          counselorId: staffSession?.id || 'STF-ON-DUTY',
+          counselorName: staffSession?.name || 'On-Duty Counselor'
+        };
+      }
+      return i;
+    });
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+    this.notify();
+  }
+
+  applyRemoteIntakeStatus(intakeId, status) {
+    if (!intakeId) return;
+    this.intakes = this.intakes.map(i => i.id === intakeId ? { ...i, status } : i);
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+    this.notify();
+  }
+
+  applyRemoteGroupInvite(intakeId, inviteData) {
+    if (!intakeId || !inviteData) return;
+    this.intakes = this.intakes.map(i => {
+      if (i.id === intakeId) {
+        return {
+          ...i,
+          pendingGroupInvite: {
+            roomId: inviteData.roomId,
+            roomTitle: inviteData.roomTitle,
+            staffName: inviteData.staffName
+          }
+        };
+      }
+      return i;
+    });
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+    this.notify();
+  }
+
+  applyRemoteGroupInviteAccepted(intakeId, roomId, username) {
+    if (roomId && username) {
+      this.groupRooms = this.groupRooms.map(r => {
+        if (r.id === roomId && !r.members.includes(username)) {
+          return { ...r, members: [...r.members, username] };
+        }
+        return r;
+      });
+      this.save(STORAGE_KEYS.GROUP_ROOMS, this.groupRooms);
+    }
+    if (intakeId) {
+      this.intakes = this.intakes.map(i => {
+        if (i.id === intakeId) {
+          return { ...i, joinedRoomId: roomId, pendingGroupInvite: null };
+        }
+        return i;
+      });
+      this.save(STORAGE_KEYS.INTAKES, this.intakes);
+    }
+    this.notify();
+  }
+
+  applyRemoteGroupMessage(roomId, message) {
+    if (!roomId || !message || !message.id) return;
+    const current = this.groupMessages[roomId] || [];
+    if (current.some(m => m.id === message.id)) return;
+    this.groupMessages = {
+      ...this.groupMessages,
+      [roomId]: [...current, message]
+    };
+    this.save(STORAGE_KEYS.GROUP_MESSAGES, this.groupMessages);
+    this.notify();
+  }
+
+  applyRemoteConfession(confession) {
+    if (!confession || !confession.id) return;
+    if (this.confessions.some(c => c.id === confession.id)) return;
+    this.confessions = [confession, ...this.confessions];
+    this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+    this.notify();
+  }
+
+  applyRemoteConfessionStatus(confessionId, status) {
+    if (!confessionId) return;
+    this.confessions = this.confessions.map(c => c.id === confessionId ? { ...c, status } : c);
+    this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+    this.notify();
+  }
 }
 
 export const store = new TumainiStore();

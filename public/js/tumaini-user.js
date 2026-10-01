@@ -324,7 +324,8 @@ class TumainiUser {
     });
 
     this.currentIntake = newIntake;
-    bus.broadcast('NEW_INTAKE', newIntake);
+    const initialMessages = store.getIntakeMessages(newIntake.id);
+    bus.broadcast('NEW_INTAKE', { intake: newIntake, initialMessages });
     this.showConsultationView();
   }
 
@@ -408,21 +409,22 @@ class TumainiUser {
     if (!text) return;
 
     if (this.currentIntake.joinedRoomId) {
-      store.addGroupMessage({
+      const msg = store.addGroupMessage({
         roomId: this.currentIntake.joinedRoomId,
         senderName: this.currentIntake.username,
         text
       });
+      bus.broadcast('GROUP_MESSAGE', { roomId: this.currentIntake.joinedRoomId, message: msg });
     } else {
-      store.addIntakeMessage({
+      const msg = store.addIntakeMessage({
         intakeId: this.currentIntake.id,
         sender: 'user',
         senderName: this.currentIntake.username,
         text
       });
+      bus.broadcast('MESSAGE_SENT', { intakeId: this.currentIntake.id, message: msg });
     }
 
-    bus.broadcast('MESSAGE_SENT', { intakeId: this.currentIntake.id });
     this.chatInput.value = '';
     this.renderMessages();
   }
@@ -430,6 +432,7 @@ class TumainiUser {
   endConsultation() {
     if (this.currentIntake) {
       store.updateIntakeStatus(this.currentIntake.id, 'resolved');
+      bus.broadcast('INTAKE_STATUS', { intakeId: this.currentIntake.id, status: 'resolved' });
     }
     store.setActiveUserIntake(null);
     this.currentIntake = null;
@@ -444,13 +447,13 @@ class TumainiUser {
 
     if (!text) return;
 
-    store.submitConfession({
+    const newConfession = store.submitConfession({
       username,
       category,
       text
     });
 
-    bus.broadcast('NEW_CONFESSION');
+    bus.broadcast('NEW_CONFESSION', { confession: newConfession });
 
     if (this.confessionText) this.confessionText.value = '';
     if (this.confessionNotice) {
