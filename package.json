@@ -2,9 +2,10 @@
   "name": "tumaini",
   "version": "1.0.0",
   "description": "Tumaini - Anonymous Peer Support & Crisis Sanctuary for Young People in Uganda",
-  "main": "server.js",
+  "main": "local-server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node local-server.js",
+    "dev": "node local-server.js"
   },
   "engines": {
     "node": ">=18.0.0"
