@@ -1,0 +1,511 @@
+/* ==========================================================================
+   TUMAINI - USER SANCTUARY CONTROLLER (UGANDA)
+   - 1-on-1 Staff Emergency Intake & Triage
+   - Custom Anonymous Username or Wildlife Handle Shuffle
+   - Custom Category Input + Emergency Severity Tiering
+   - Group Room Invite Acceptance & Moderated Confession Room
+   - Instant Safety Quick Exit (Esc)
+   ========================================================================== */
+
+import { store, EMERGENCY_TIERS, PRESET_CATEGORIES } from './store.js';
+import { bus } from './bus.js';
+
+const CALM_ADJECTIVES = [
+  'Quiet', 'Steady', 'Patient', 'Gentle',
+  'Resilient', 'Calm', 'Swift', 'Brave',
+  'Serene', 'Observant', 'Warm', 'Deep'
+];
+
+const UGANDAN_FAUNA = [
+  'Crane', 'Kob', 'Shoebill', 'Otter',
+  'Silverback', 'Heron', 'Weaver', 'Robin',
+  'Falcon', 'Kingfisher', 'Swift', 'Drifter'
+];
+
+class TumainiUser {
+  constructor() {
+    this.currentIntake = null;
+    this.initElements();
+    this.bindEvents();
+    this.checkExistingSession();
+    this.renderConfessions();
+    this.initSubscriptions();
+  }
+
+  generateWildlifeHandle() {
+    const adj = CALM_ADJECTIVES[Math.floor(Math.random() * CALM_ADJECTIVES.length)];
+    const animal = UGANDAN_FAUNA[Math.floor(Math.random() * UGANDAN_FAUNA.length)];
+    const num = Math.floor(10 + Math.random() * 89);
+    return `${adj} ${animal} ${num}`;
+  }
+
+  initElements() {
+    // Navigation Tabs
+    this.tabIntake = document.getElementById('tabIntake');
+    this.tabConfessions = document.getElementById('tabConfessions');
+    this.intakeSection = document.getElementById('intakeSection');
+    this.confessionsSection = document.getElementById('confessionsSection');
+    this.consultationView = document.getElementById('consultationView');
+
+    // Intake Form Elements
+    this.intakeForm = document.getElementById('intakeForm');
+    this.usernameInput = document.getElementById('userCustomNameInput');
+    this.btnShuffleName = document.getElementById('btnShuffleName');
+    this.categoryChipsContainer = document.getElementById('categoryChipsContainer');
+    this.customCategoryInput = document.getElementById('customCategoryInput');
+    this.tierRadios = document.querySelectorAll('input[name="emergencyTier"]');
+
+    // 1-on-1 Consultation Elements
+    this.consultationTitle = document.getElementById('consultationTitle');
+    this.consultationTierBadge = document.getElementById('consultationTierBadge');
+    this.consultationCategoryText = document.getElementById('consultationCategoryText');
+    this.groupInviteBanner = document.getElementById('groupInviteBanner');
+    this.groupInviteText = document.getElementById('groupInviteText');
+    this.btnAcceptInvite = document.getElementById('btnAcceptInvite');
+    this.btnDeclineInvite = document.getElementById('btnDeclineInvite');
+    this.chatStream = document.getElementById('consultationMessagesStream');
+    this.chatInput = document.getElementById('consultationTextInput');
+    this.btnSendChat = document.getElementById('btnSendConsultation');
+    this.btnEndConsultation = document.getElementById('btnEndConsultation');
+
+    // Confessions Elements
+    this.confessionsFeed = document.getElementById('confessionsFeed');
+    this.confessionForm = document.getElementById('submitConfessionForm');
+    this.confessionText = document.getElementById('confessionText');
+    this.confessionCategory = document.getElementById('confessionCategory');
+    this.confessionNotice = document.getElementById('confessionSubmittedNotice');
+
+    // Modals
+    this.aboutModal = document.getElementById('aboutModal');
+    this.btnOpenAbout = document.getElementById('btnOpenAbout');
+    this.btnCloseAbout = document.getElementById('btnCloseAbout');
+
+    this.helplinesModal = document.getElementById('helplinesModal');
+    this.btnOpenHelplines = document.getElementById('btnOpenHelplines');
+    this.btnCloseHelplines = document.getElementById('btnCloseHelplines');
+    this.btnQuickExit = document.getElementById('btnQuickExit');
+  }
+
+  bindEvents() {
+    // Tab switching between Intake and Confessions
+    if (this.tabIntake) {
+      this.tabIntake.addEventListener('click', () => this.switchSanctuaryTab('intake'));
+    }
+    if (this.tabConfessions) {
+      this.tabConfessions.addEventListener('click', () => this.switchSanctuaryTab('confessions'));
+    }
+
+    // Shuffle wildlife handle
+    if (this.btnShuffleName && this.usernameInput) {
+      this.btnShuffleName.addEventListener('click', () => {
+        this.usernameInput.value = this.generateWildlifeHandle();
+      });
+    }
+
+    // Intake submission
+    if (this.intakeForm) {
+      this.intakeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleIntakeSubmit();
+      });
+    }
+
+    // 1-on-1 Chat sending
+    if (this.btnSendChat && this.chatInput) {
+      this.btnSendChat.addEventListener('click', () => this.handleSendMessage());
+      this.chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.handleSendMessage();
+        }
+      });
+    }
+
+    // Group Room Invite response
+    if (this.btnAcceptInvite) {
+      this.btnAcceptInvite.addEventListener('click', () => {
+        if (this.currentIntake) {
+          const roomId = store.acceptGroupInvite(this.currentIntake.id);
+          if (roomId) {
+            bus.broadcast('GROUP_INVITE_ACCEPTED', { intakeId: this.currentIntake.id, roomId });
+            alert('You have entered the group circle. All messages are peer-shared.');
+          }
+        }
+      });
+    }
+    if (this.btnDeclineInvite) {
+      this.btnDeclineInvite.addEventListener('click', () => {
+        if (this.currentIntake) {
+          store.declineGroupInvite(this.currentIntake.id);
+        }
+      });
+    }
+
+    // End consultation
+    if (this.btnEndConsultation) {
+      this.btnEndConsultation.addEventListener('click', () => {
+        if (confirm('End this consultation session? Your chat will be safely closed.')) {
+          this.endConsultation();
+        }
+      });
+    }
+
+    // Confession submission
+    if (this.confessionForm) {
+      this.confessionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleConfessionSubmit();
+      });
+    }
+
+    // Hold Space (Empathy Reaction)
+    if (this.confessionsFeed) {
+      this.confessionsFeed.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-hold-space');
+        if (btn) {
+          const confessionId = btn.dataset.confessionId;
+          store.addEmpathyToConfession(confessionId);
+        }
+      });
+    }
+
+    // Modals
+    const openModal = (m) => {
+      if (!m) return;
+      m.classList.add('open');
+      m.classList.add('active');
+    };
+    const closeModal = (m) => {
+      if (!m) return;
+      m.classList.remove('open');
+      m.classList.remove('active');
+    };
+
+    if (this.btnOpenAbout && this.aboutModal) {
+      this.btnOpenAbout.addEventListener('click', () => openModal(this.aboutModal));
+    }
+    if (this.btnCloseAbout && this.aboutModal) {
+      this.btnCloseAbout.addEventListener('click', () => closeModal(this.aboutModal));
+    }
+    if (this.aboutModal) {
+      this.aboutModal.addEventListener('click', (e) => {
+        if (e.target === this.aboutModal) closeModal(this.aboutModal);
+      });
+    }
+
+    if (this.btnOpenHelplines && this.helplinesModal) {
+      this.btnOpenHelplines.addEventListener('click', () => openModal(this.helplinesModal));
+    }
+    if (this.btnCloseHelplines && this.helplinesModal) {
+      this.btnCloseHelplines.addEventListener('click', () => closeModal(this.helplinesModal));
+    }
+    if (this.helplinesModal) {
+      this.helplinesModal.addEventListener('click', (e) => {
+        if (e.target === this.helplinesModal) closeModal(this.helplinesModal);
+      });
+    }
+
+    // Quick Safety Exit
+    if (this.btnQuickExit) {
+      this.btnQuickExit.addEventListener('click', () => this.quickExit());
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.aboutModal && (this.aboutModal.classList.contains('open') || this.aboutModal.classList.contains('active'))) {
+          closeModal(this.aboutModal);
+        } else if (this.helplinesModal && (this.helplinesModal.classList.contains('open') || this.helplinesModal.classList.contains('active'))) {
+          closeModal(this.helplinesModal);
+        } else {
+          this.quickExit();
+        }
+      }
+    });
+  }
+
+  initSubscriptions() {
+    store.subscribe(() => {
+      if (this.currentIntake) {
+        const updated = store.intakes.find(i => i.id === this.currentIntake.id);
+        if (updated) {
+          this.currentIntake = updated;
+          this.syncConsultationView();
+          this.renderMessages();
+        }
+      }
+      this.renderConfessions();
+    });
+  }
+
+  checkExistingSession() {
+    const active = store.getActiveUserIntake();
+    if (active && active.status !== 'resolved') {
+      this.currentIntake = active;
+      this.showConsultationView();
+    } else {
+      this.showIntakeView();
+      if (this.usernameInput && !this.usernameInput.value) {
+        this.usernameInput.value = this.generateWildlifeHandle();
+      }
+    }
+  }
+
+  switchSanctuaryTab(tab) {
+    if (tab === 'intake') {
+      if (this.tabIntake) this.tabIntake.classList.add('active');
+      if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+      if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+      if (this.currentIntake && this.currentIntake.status !== 'resolved') {
+        if (this.consultationView) this.consultationView.style.display = 'block';
+        if (this.intakeSection) this.intakeSection.style.display = 'none';
+      } else {
+        if (this.intakeSection) this.intakeSection.style.display = 'block';
+        if (this.consultationView) this.consultationView.style.display = 'none';
+      }
+    } else {
+      if (this.tabConfessions) this.tabConfessions.classList.add('active');
+      if (this.tabIntake) this.tabIntake.classList.remove('active');
+      if (this.intakeSection) this.intakeSection.style.display = 'none';
+      if (this.consultationView) this.consultationView.style.display = 'none';
+      if (this.confessionsSection) this.confessionsSection.style.display = 'block';
+      this.renderConfessions();
+    }
+  }
+
+  showIntakeView() {
+    if (this.intakeSection) this.intakeSection.style.display = 'block';
+    if (this.consultationView) this.consultationView.style.display = 'none';
+    if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+    if (this.tabIntake) this.tabIntake.classList.add('active');
+    if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+  }
+
+  showConsultationView() {
+    if (this.intakeSection) this.intakeSection.style.display = 'none';
+    if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+    if (this.consultationView) this.consultationView.style.display = 'block';
+    if (this.tabIntake) this.tabIntake.classList.add('active');
+    if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+    this.syncConsultationView();
+    this.renderMessages();
+  }
+
+  handleIntakeSubmit() {
+    const rawUsername = this.usernameInput ? this.usernameInput.value.trim() : '';
+    const username = rawUsername || this.generateWildlifeHandle();
+
+    // Category selection: check radio or custom text input
+    let category = 'General Emotional Strain';
+    const checkedRadio = document.querySelector('input[name="categoryRadio"]:checked');
+    const customCat = this.customCategoryInput ? this.customCategoryInput.value.trim() : '';
+
+    if (customCat) {
+      category = customCat;
+    } else if (checkedRadio && checkedRadio.value) {
+      category = checkedRadio.value;
+    }
+
+    // Emergency Tier
+    const checkedTier = document.querySelector('input[name="emergencyTier"]:checked');
+    const emergencyTier = checkedTier ? checkedTier.value : 'tier-4';
+
+    const newIntake = store.createIntake({
+      username,
+      category,
+      emergencyTier
+    });
+
+    this.currentIntake = newIntake;
+    bus.broadcast('NEW_INTAKE', newIntake);
+    this.showConsultationView();
+  }
+
+  syncConsultationView() {
+    if (!this.currentIntake) return;
+
+    if (this.consultationTitle) {
+      this.consultationTitle.textContent = this.currentIntake.username;
+    }
+
+    const tierMeta = EMERGENCY_TIERS[this.currentIntake.emergencyTier] || EMERGENCY_TIERS['tier-4'];
+    if (this.consultationTierBadge) {
+      this.consultationTierBadge.textContent = tierMeta.tag;
+      this.consultationTierBadge.className = `badge ${tierMeta.badgeClass}`;
+    }
+
+    if (this.consultationCategoryText) {
+      const counselorLabel = this.currentIntake.counselorName
+        ? `• Assigned Counselor: ${this.currentIntake.counselorName}`
+        : '• Assigning on-duty counselor...';
+      this.consultationCategoryText.textContent = `${this.currentIntake.category} ${counselorLabel}`;
+    }
+
+    // Group Room Invite Banner Check
+    if (this.groupInviteBanner) {
+      if (this.currentIntake.pendingGroupInvite) {
+        this.groupInviteBanner.style.display = 'flex';
+        if (this.groupInviteText) {
+          const { roomTitle, staffName } = this.currentIntake.pendingGroupInvite;
+          this.groupInviteText.innerHTML = `Counselor <strong>${staffName}</strong> has invited you to join the <strong>"${roomTitle}"</strong> group support circle.`;
+        }
+      } else {
+        this.groupInviteBanner.style.display = 'none';
+      }
+    }
+  }
+
+  renderMessages() {
+    if (!this.currentIntake || !this.chatStream) return;
+
+    let messages = [];
+    if (this.currentIntake.joinedRoomId) {
+      messages = store.getGroupMessages(this.currentIntake.joinedRoomId);
+    } else {
+      messages = store.getIntakeMessages(this.currentIntake.id);
+    }
+
+    this.chatStream.innerHTML = '';
+
+    messages.forEach(msg => {
+      const isSystem = msg.sender === 'system' || msg.senderName === 'Circle Welcome';
+      const isUser = msg.sender === 'user' || msg.senderName === this.currentIntake.username;
+      const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (isSystem) {
+        const div = document.createElement('div');
+        div.className = 'chat-system-row';
+        div.textContent = msg.text;
+        this.chatStream.appendChild(div);
+      } else {
+        const row = document.createElement('div');
+        row.className = `chat-bubble-row ${isUser ? 'is-user' : 'is-counselor'}`;
+
+        const senderLabel = isUser ? 'You' : (msg.senderName || 'Tumaini Counselor');
+
+        row.innerHTML = `
+          <span class="chat-sender-label">${senderLabel}</span>
+          <div class="chat-bubble-box">${this.escapeHtml(msg.text)}</div>
+          <span class="chat-timestamp">${timeStr}</span>
+        `;
+        this.chatStream.appendChild(row);
+      }
+    });
+
+    this.chatStream.scrollTop = this.chatStream.scrollHeight;
+  }
+
+  handleSendMessage() {
+    if (!this.currentIntake || !this.chatInput) return;
+    const text = this.chatInput.value.trim();
+    if (!text) return;
+
+    if (this.currentIntake.joinedRoomId) {
+      store.addGroupMessage({
+        roomId: this.currentIntake.joinedRoomId,
+        senderName: this.currentIntake.username,
+        text
+      });
+    } else {
+      store.addIntakeMessage({
+        intakeId: this.currentIntake.id,
+        sender: 'user',
+        senderName: this.currentIntake.username,
+        text
+      });
+    }
+
+    bus.broadcast('MESSAGE_SENT', { intakeId: this.currentIntake.id });
+    this.chatInput.value = '';
+    this.renderMessages();
+  }
+
+  endConsultation() {
+    if (this.currentIntake) {
+      store.updateIntakeStatus(this.currentIntake.id, 'resolved');
+    }
+    store.setActiveUserIntake(null);
+    this.currentIntake = null;
+    this.showIntakeView();
+  }
+
+  // --- Confessions Logic ---
+  handleConfessionSubmit() {
+    const text = this.confessionText ? this.confessionText.value.trim() : '';
+    const category = this.confessionCategory ? this.confessionCategory.value.trim() : 'Personal';
+    const username = this.usernameInput ? this.usernameInput.value.trim() : this.generateWildlifeHandle();
+
+    if (!text) return;
+
+    store.submitConfession({
+      username,
+      category,
+      text
+    });
+
+    bus.broadcast('NEW_CONFESSION');
+
+    if (this.confessionText) this.confessionText.value = '';
+    if (this.confessionNotice) {
+      this.confessionNotice.style.display = 'block';
+      setTimeout(() => {
+        this.confessionNotice.style.display = 'none';
+      }, 6000);
+    }
+  }
+
+  renderConfessions() {
+    if (!this.confessionsFeed) return;
+
+    const approved = store.getApprovedConfessions();
+    this.confessionsFeed.innerHTML = '';
+
+    if (approved.length === 0) {
+      this.confessionsFeed.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13.5px;">
+          The confession hearth is quiet right now. If you need to put down what you are carrying, submit your confession above.
+        </div>
+      `;
+      return;
+    }
+
+    approved.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'confession-hearth-card';
+
+      const dateStr = new Date(item.createdAt).toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric'
+      });
+
+      card.innerHTML = `
+        <div class="confession-card-top">
+          <span class="confession-author-handle">${this.escapeHtml(item.username)}</span>
+          <span class="confession-topic-tag">${this.escapeHtml(item.category)}</span>
+        </div>
+        <p class="confession-body-text">${this.escapeHtml(item.text)}</p>
+        <div class="confession-card-footer">
+          <span class="confession-time">${dateStr}</span>
+          <button class="btn-hold-space" type="button" data-confession-id="${item.id}">
+            <span>Hold Space</span>
+            <strong>${item.empathyCount || 0}</strong>
+          </button>
+        </div>
+      `;
+
+      this.confessionsFeed.appendChild(card);
+    });
+  }
+
+  quickExit() {
+    window.location.replace('https://www.google.com/search?q=uganda+weather');
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  new TumainiUser();
+});

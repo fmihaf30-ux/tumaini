@@ -2,21 +2,8 @@
   "name": "tumaini",
   "version": "1.0.0",
   "description": "Tumaini - Anonymous Peer Support & Crisis Sanctuary for Young People in Uganda",
-  "main": "local-server.js",
   "scripts": {
     "start": "node local-server.js",
     "dev": "node local-server.js"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "keywords": [
-    "mental-health",
-    "peer-support",
-    "uganda",
-    "crisis-sanctuary",
-    "anonymous"
-  ],
-  "author": "Tumaini Uganda",
-  "license": "MIT"
+  }
 }

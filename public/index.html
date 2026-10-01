@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tumaini: Anonymous Peer Support & Crisis Sanctuary · Uganda</title>
+  <link rel="stylesheet" href="css/tumaini.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body>
+
+  <!-- Top Global Header -->
+  <header class="site-header">
+    <a href="/" class="brand-wrap" aria-label="Tumaini Uganda Home">
+      <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+      <div class="brand-titles">
+        <span class="brand-title">Tumaini</span>
+        <span class="brand-subtitle">Anonymous Peer Support · Uganda</span>
+      </div>
+    </a>
+
+    <nav class="header-nav">
+      <button class="nav-btn" id="btnOpenAbout" type="button">
+        Our Story
+      </button>
+
+      <button class="nav-btn btn-helplines" id="btnOpenHelplines" type="button">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+        Crisis Helplines (0800)
+      </button>
+
+      <button class="nav-btn btn-danger" id="btnQuickExit" type="button" title="Quick Safety Exit (Esc)">
+        Quick Exit (Esc)
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Sanctuary View -->
+  <main class="app-container">
+
+    <!-- Reassuring Sanctuary Hero -->
+    <section class="hero-sanctuary">
+      <div class="trust-badge-pill">
+        <span class="trust-dot"></span>
+        Free · 100% Anonymous · Built for Uganda
+      </div>
+      <h1 class="hero-headline">
+        Put your weight down, <em>even for a few minutes.</em>
+      </h1>
+      <p class="hero-subtext">
+        Tumaini means hope in Swahili. It is a quiet, free, and anonymous peer-support sanctuary built for young people in Uganda who need somewhere to rest and speak without being seen, judged, or asked to explain themselves.
+      </p>
+
+      <!-- What Tumaini Is About & How It Helps -->
+      <div class="platform-guide-grid">
+        <div class="platform-guide-card">
+          <span class="guide-tag">What Tumaini Is About</span>
+          <h3>A Safe Space to Speak Freely</h3>
+          <p>
+            A dedicated, zero-barrier emotional sanctuary for young Ugandans carrying tuition deadlines, family friction, grief, heartbreak, or late-night anxiety. No accounts, no phone numbers, and no real names required.
+          </p>
+        </div>
+
+        <div class="platform-guide-card">
+          <span class="guide-tag">How It Helps You</span>
+          <h3>Real Human Support in 3 Ways</h3>
+          <ul class="guide-steps-list">
+            <li><strong>1. Confidential 1-on-1 Chat:</strong> Connect with an on-duty volunteer counselor who listens with care and zero judgment.</li>
+            <li><strong>2. Curated Group Circles:</strong> Join counselor-guided peer circles with others walking through the same burdens.</li>
+            <li><strong>3. The Confession Hearth:</strong> Release what you cannot say out loud and read anonymous words from peers across Uganda.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sanctuary Dual Navigation Tabs -->
+    <nav class="sanctuary-nav-strip">
+      <button class="sanctuary-tab-btn active" id="tabIntake" type="button">
+        1-on-1 Counselor Chat
+      </button>
+      <button class="sanctuary-tab-btn" id="tabConfessions" type="button">
+        The Confession Room (Community Hearth)
+      </button>
+    </nav>
+
+    <!-- 1. Conversational Intake Screen -->
+    <section class="intake-view" id="intakeSection">
+      <div class="intake-card-container">
+        <div class="intake-header-block">
+          <h2 class="intake-card-title">Connect with an On-Duty Counselor</h2>
+          <p class="intake-card-desc">
+            Your request is queued confidentially to our volunteer care team. Tell us how you want to be known and what you are carrying today.
+          </p>
+        </div>
+
+        <form id="intakeForm">
+          
+          <!-- Anonymous Handle Selection -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label" for="userCustomNameInput">Your Anonymous Handle</label>
+              <span class="form-hint">Type your chosen pseudonym or shuffle a peaceful nature name</span>
+            </div>
+            <div class="input-with-button">
+              <input 
+                type="text" 
+                id="userCustomNameInput" 
+                class="form-input" 
+                placeholder="e.g. Quiet Crane or Kigozi_99" 
+                maxlength="30"
+                required
+              >
+              <button class="btn-secondary" id="btnShuffleName" type="button">
+                Shuffle Nature Handle
+              </button>
+            </div>
+          </div>
+
+          <!-- Category Selection -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label">What is on your mind?</label>
+              <span class="form-hint">Choose a topic or type your own below</span>
+            </div>
+
+            <div class="category-chips-wrap" id="categoryChipsContainer">
+              <div class="cat-radio-item">
+                <input type="radio" name="categoryRadio" id="cat-anxiety" value="Anxiety & Stress" checked>
+                <label class="cat-chip-label" for="cat-anxiety">
+                  <span class="cat-chip-title">Anxiety & Panic</span>
+                  <span class="cat-chip-desc">Racing heartbeat, breathlessness, feeling trapped</span>
+                </label>
+              </div>
+
+              <div class="cat-radio-item">
+                <input type="radio" name="categoryRadio" id="cat-tuition" value="Academic & Tuition Pressure">
+                <label class="cat-chip-label" for="cat-tuition">
+                  <span class="cat-chip-title">Campus & Tuition Stress</span>
+                  <span class="cat-chip-desc">Fees deadlines, retakes, family expectations</span>
+                </label>
+              </div>
+
+              <div class="cat-radio-item">
+                <input type="radio" name="categoryRadio" id="cat-grief" value="Grief & Loss">
+                <label class="cat-chip-label" for="cat-grief">
+                  <span class="cat-chip-title">Grief & Empty Spaces</span>
+                  <span class="cat-chip-desc">Loss of someone dear, silent sorrow, aching absence</span>
+                </label>
+              </div>
+
+              <div class="cat-radio-item">
+                <input type="radio" name="categoryRadio" id="cat-relationships" value="Relationships & Family">
+                <label class="cat-chip-label" for="cat-relationships">
+                  <span class="cat-chip-title">Family & Heartbreak</span>
+                  <span class="cat-chip-desc">Friction at home, relationship betrayal, secret weight</span>
+                </label>
+              </div>
+
+              <div class="cat-radio-item">
+                <input type="radio" name="categoryRadio" id="cat-night" value="Late Night & Insomnia">
+                <label class="cat-chip-label" for="cat-night">
+                  <span class="cat-chip-title">Late Night / Can't Sleep</span>
+                  <span class="cat-chip-desc">3 AM thoughts, exhaustion, feeling completely alone</span>
+                </label>
+              </div>
+
+              <div class="cat-radio-item">
+                <input type="radio" name="categoryRadio" id="cat-general" value="General Emotional Strain">
+                <label class="cat-chip-label" for="cat-general">
+                  <span class="cat-chip-title">Just Need To Speak</span>
+                  <span class="cat-chip-desc">No judgment, no advice, someone to hold space</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Custom Category Text Input -->
+            <div style="margin-top: 8px;">
+              <input 
+                type="text" 
+                id="customCategoryInput" 
+                class="form-input" 
+                placeholder="Or type your specific topic if not listed above..." 
+                maxlength="50"
+              >
+            </div>
+          </div>
+
+          <!-- Urgency Selection -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label">How urgent does this feel?</label>
+              <span class="form-hint">Enables counselors to prioritize acute distress immediately</span>
+            </div>
+
+            <div class="tiers-vertical-column">
+              <!-- Tier 1 -->
+              <div class="tier-item">
+                <input type="radio" name="emergencyTier" id="tier-1-radio" value="tier-1">
+                <label class="tier-card-btn t1" for="tier-1-radio">
+                  <div class="tier-dot" style="background: var(--tier-1-color);"></div>
+                  <div class="tier-content-wrap">
+                    <div class="tier-header-row">
+                      <span class="tier-title-text">Critical Crisis / Immediate Danger</span>
+                      <span class="badge badge-t1">CRITICAL</span>
+                    </div>
+                    <p class="tier-desc-text">Acute self-harm thoughts, severe distress, or life-threatening situation.</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Tier 2 -->
+              <div class="tier-item">
+                <input type="radio" name="emergencyTier" id="tier-2-radio" value="tier-2">
+                <label class="tier-card-btn t2" for="tier-2-radio">
+                  <div class="tier-dot" style="background: var(--tier-2-color);"></div>
+                  <div class="tier-content-wrap">
+                    <div class="tier-header-row">
+                      <span class="tier-title-text">Acute Panic / Overwhelmed</span>
+                      <span class="badge badge-t2">URGENT</span>
+                    </div>
+                    <p class="tier-desc-text">Hyperventilating, racing heartbeat, or intense emotional distress right now.</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Tier 3 -->
+              <div class="tier-item">
+                <input type="radio" name="emergencyTier" id="tier-3-radio" value="tier-3">
+                <label class="tier-card-btn t3" for="tier-3-radio">
+                  <div class="tier-dot" style="background: var(--tier-3-color);"></div>
+                  <div class="tier-content-wrap">
+                    <div class="tier-header-row">
+                      <span class="tier-title-text">Elevated / Heavy Pressure</span>
+                      <span class="badge badge-t3">ELEVATED</span>
+                    </div>
+                    <p class="tier-desc-text">Drowning in heavy burdens and exhausted, but currently physically safe.</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Tier 4 -->
+              <div class="tier-item">
+                <input type="radio" name="emergencyTier" id="tier-4-radio" value="tier-4" checked>
+                <label class="tier-card-btn t4" for="tier-4-radio">
+                  <div class="tier-dot" style="background: var(--tier-4-color);"></div>
+                  <div class="tier-content-wrap">
+                    <div class="tier-header-row">
+                      <span class="tier-title-text">Safe Space to Talk</span>
+                      <span class="badge badge-t4">NORMAL</span>
+                    </div>
+                    <p class="tier-desc-text">Looking for a warm, caring listener to process feelings and decompress.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-submit-intake" type="submit" style="width: 100%; margin-top: 10px;">
+            Start Confidential 1-on-1 Chat
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. Active 1-on-1 Messenger Experience -->
+    <section class="consultation-view" id="consultationView">
+      <div class="consultation-top-bar">
+        <div class="consultation-meta">
+          <span class="consultation-title" id="consultationTitle">Seeker</span>
+          <span class="badge" id="consultationTierBadge">NORMAL</span>
+          <span class="consultation-category-text" id="consultationCategoryText">Consultation Session</span>
+        </div>
+        <button class="nav-btn btn-danger" id="btnEndConsultation" type="button">
+          End Session
+        </button>
+      </div>
+
+      <!-- Group Circle Invitation Banner -->
+      <div class="group-invite-alert-banner" id="groupInviteBanner">
+        <span class="group-invite-text" id="groupInviteText">
+          Counselor has invited you to join a peer support circle.
+        </span>
+        <div class="group-invite-actions">
+          <button class="btn-accept-invite" id="btnAcceptInvite" type="button">
+            Accept & Join Circle
+          </button>
+          <button class="btn-decline-invite" id="btnDeclineInvite" type="button">
+            Stay in 1-on-1
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="consultation-messages-stream" id="consultationMessagesStream">
+        <!-- Messages rendered dynamically -->
+      </div>
+
+      <!-- Chat Input Dock -->
+      <div class="consultation-dock">
+        <input 
+          type="text" 
+          id="consultationTextInput" 
+          class="consultation-input" 
+          placeholder="Type your message confidentially... (Press Enter to send)" 
+          autocomplete="off"
+        >
+        <button class="btn-send-consultation" id="btnSendConsultation" type="button">
+          Send
+        </button>
+      </div>
+    </section>
+
+    <!-- 3. Confession Room Screen (Community Hearth) -->
+    <section class="confessions-view" id="confessionsSection">
+      <div class="confessions-hero">
+        <h2>The Confession Room (Community Hearth)</h2>
+        <p>
+          A quiet communal hearth. Read honest, anonymous words from peers across Uganda, or leave what you are carrying. Submissions are reviewed by on-duty counselors before publishing to protect community safety.
+        </p>
+      </div>
+
+      <!-- Submit Confession Card -->
+      <div class="submit-confession-card">
+        <h3>Put Down Your Burden Anonymously</h3>
+        <span class="confession-notice-pill">Submissions are reviewed by counselors before appearing around this hearth</span>
+        
+        <form id="submitConfessionForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <input 
+            type="text" 
+            id="confessionCategory" 
+            class="form-input" 
+            placeholder="Topic (e.g. Tuition guilt, Family silence, Secret grief)" 
+            maxlength="40" 
+            required
+          >
+          <textarea 
+            id="confessionText" 
+            class="confession-textarea" 
+            placeholder="Write what you have been unable to say out loud to anyone..." 
+            required
+          ></textarea>
+
+          <button class="btn-submit-intake" type="submit" style="align-self: flex-start; padding: 12px 24px; font-size: 13.5px;">
+            Submit Confession for Review
+          </button>
+        </form>
+
+        <div id="confessionSubmittedNotice" style="display: none; background: #eef7f4; border: 1px solid #c3e2d7; padding: 14px 18px; border-radius: 8px; font-size: 13px; color: var(--brand-eucalyptus-dark); margin-top: 14px;">
+          Your confession has been received and queued for counselor review. To protect community safety, it will be published once approved.
+        </div>
+      </div>
+
+      <!-- Confessions Feed -->
+      <div class="confessions-feed-list" id="confessionsFeed">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- About Tumaini / Our Story Modal -->
+  <div class="modal-overlay" id="aboutModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>About Tumaini · Our Story</h3>
+        <button class="modal-close-btn" id="btnCloseAbout" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Tumaini means <strong>hope</strong> in Swahili. It is a free, anonymous peer-support platform built for young people in Uganda who need somewhere to put their weight down, even for a few minutes, without being seen, judged, or asked to explain themselves.
+        </p>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">The Problem</strong>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+            Mental health stigma in Uganda keeps many young people silent. Conversations about depression, anxiety, and suicidal thoughts are still often avoided or misunderstood. Existing helplines are lifelines, but they run on limited hours, require a phone call, and ask people to speak in a way that can feel exposing. For many, especially at night or mid-crisis, that gap is exactly when they go quiet.
+          </p>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">What We Do Differently</strong>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+            Tumaini is not a replacement for professional care; it is the first, low-friction step toward it. Anyone can enter under an anonymous handle and talk to others carrying something similar, any hour of the day. Messages are automatically watched for crisis language, and anyone showing signs of real danger is immediately and gently pointed to Mental Health Uganda's real, staffed helpline. We complement the professional system; we do not compete with it.
+          </p>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Our Core Values</strong>
+          <ul style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; padding-left: 18px; line-height: 1.6;">
+            <li><strong>Anonymity as safety:</strong> No accounts, no real names, no data trail, so stigma cannot follow you home.</li>
+            <li><strong>Peer support, honestly labeled:</strong> We never pretend to be professional counseling, and we route serious cases out to people qualified to help.</li>
+            <li><strong>Built here, for here:</strong> Designed around the realities of stigma, access, and cost in Uganda, not imported wholesale from a Western wellness app.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certified Uganda Crisis Helplines Modal -->
+  <div class="modal-overlay" id="helplinesModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Certified Uganda Crisis Helplines</h3>
+        <button class="modal-close-btn" id="btnCloseHelplines" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <p>If you or someone you know is in acute danger or distress, certified professional help in Uganda is free and confidential:</p>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Butabika National Referral Mental Hospital</strong>
+          <span class="helpline-phone">0800 211 306</span>
+          <span style="font-size: 11px; color: var(--text-muted);">National Toll-Free line for clinical mental health intervention</span>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Mental Health Uganda (MHU)</strong>
+          <span class="helpline-phone">0800 21 21 21</span>
+          <span style="font-size: 11px; color: var(--text-muted);">24/7 National Toll-Free counseling line, specialized for youth</span>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">StrongMinds Uganda</strong>
+          <span class="helpline-phone">0800 200 600</span>
+          <span style="font-size: 11px; color: var(--text-muted);">Toll-Free psychosocial support line (Mon - Fri, 9 AM - 5 PM)</span>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Sauti 116 (Child & GBV Helpline)</strong>
+          <span class="helpline-phone">116</span>
+          <span style="font-size: 11px; color: var(--text-muted);">24/7 Toll-Free protection line for youth and domestic safety</span>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Police & Medical Emergency Dispatch</strong>
+          <span class="helpline-phone">999 / 112</span>
+          <span style="font-size: 11px; color: var(--text-muted);">Immediate emergency intervention</span>
+        </div>
+
+        <p style="font-size: 11px; color: var(--text-muted);">
+          All lines listed above are verified Uganda numbers and free of charge from any local mobile network.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/tumaini-user.js"></script>
+</body>
+</html>

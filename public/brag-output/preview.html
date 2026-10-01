@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tumaini - Launch Video Studio (5 Exact Showcases)</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Exact Project Production Stylesheets -->
+  <link rel="stylesheet" href="../css/tumaini.css">
+  <link rel="stylesheet" href="../css/staff.css">
+
+  <style>
+    /* Studio Wrapper & Player Shell */
+    body.studio-root {
+      background-color: #0c1210;
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 16px 40px;
+      overflow-x: hidden;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .studio-top-bar {
+      width: 100%;
+      max-width: 1160px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      color: #e2e8e5;
+    }
+
+    .studio-brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .studio-brand-group img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .studio-brand-group h1 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+    }
+
+    .studio-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      background: rgba(92, 151, 132, 0.2);
+      color: #8ed0bb;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(92, 151, 132, 0.35);
+    }
+
+    .studio-actions-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .studio-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .studio-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .studio-btn.primary {
+      background: var(--brand-eucalyptus);
+      border-color: var(--brand-eucalyptus);
+    }
+
+    .studio-btn.primary:hover {
+      background: var(--brand-eucalyptus-dark);
+    }
+
+    /* Video Selector Bar */
+    .video-selector-bar {
+      width: 100%;
+      max-width: 1160px;
+      display: flex;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 14px;
+      overflow-x: auto;
+    }
+
+    .video-tab-btn {
+      flex: 1;
+      min-width: 180px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .video-tab-btn span.tab-title {
+      font-size: 12px;
+      color: inherit;
+    }
+
+    .video-tab-btn span.tab-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: #64748b;
+    }
+
+    .video-tab-btn.active {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .video-tab-btn.active span.tab-meta {
+      color: var(--brand-ochre);
+    }
+
+    /* 16:9 Cinema Viewport Box */
+    .viewport-box {
+      width: 100%;
+      max-width: 1160px;
+      aspect-ratio: 16 / 9;
+      background: var(--bg-canvas);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .viewport-stage {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-canvas);
+    }
+
+    /* Track Layers */
+    .track-layer {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      overflow-y: scroll;
+      background: var(--bg-canvas);
+      scroll-behavior: auto;
+    }
+
+    .track-layer::-webkit-scrollbar {
+      width: 6px;
+    }
+    .track-layer::-webkit-scrollbar-thumb {
+      background: rgba(25, 40, 35, 0.2);
+      border-radius: 4px;
+    }
+
+    .track-layer.active {
+      display: flex;
+    }
+
+    /* Animated Virtual Mouse Cursor */
+    .simulated-cursor {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 9999;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
+      will-change: left, top, transform;
+      transform: translate(-4px, -2px);
+      transition: transform 0.08s ease;
+    }
+
+    .simulated-cursor.clicking {
+      transform: translate(-4px, -2px) scale(0.9);
+    }
+
+    .simulated-cursor svg {
+      width: 100%;
+      height: 100%;
+      fill: #192823;
+      stroke: #ffffff;
+      stroke-width: 1.5;
+    }
+
+    .cursor-click-ripple {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      width: 32px;
+      height: 32px;
+      margin-top: -16px;
+      margin-left: -16px;
+      border-radius: 50%;
+      border: 2px solid var(--brand-ochre);
+      background: rgba(201, 138, 59, 0.35);
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .cursor-click-ripple.animate {
+      animation: clickRippleAnim 0.45s ease-out forwards;
+    }
+
+    @keyframes clickRippleAnim {
+      0% { transform: scale(0.2); opacity: 1; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* Element physical click press reaction */
+    .cursor-active-press {
+      transform: scale(0.97) !important;
+      filter: brightness(0.92) !important;
+      box-shadow: 0 0 0 3px var(--brand-ochre) !important;
+      transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease !important;
+    }
+
+    /* Overlay Narrative Callout Pill */
+    .narrative-pill {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(25, 40, 35, 0.94);
+      backdrop-filter: blur(8px);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 9px 24px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      z-index: 500;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .narrative-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--brand-ochre);
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(201, 138, 59, 0.35);
+    }
+
+    /* Player Controls Bar */
+    .player-dock {
+      width: 100%;
+      max-width: 1160px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #ffffff;
+    }
+
+    .dock-btn-play {
+      background: var(--brand-eucalyptus);
+      border: none;
+      color: #ffffff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+
+    .dock-btn-play:hover {
+      background: var(--brand-eucalyptus-dark);
+    }
+
+    .dock-timeline-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .dock-timeline-fill {
+      height: 100%;
+      background: var(--brand-ochre);
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.05s linear;
+    }
+
+    .dock-time-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      color: #cbd5e1;
+      min-width: 90px;
+      text-align: right;
+    }
+
+    .dock-sound-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+
+    /* Outro Final Brand Overlay */
+    .brand-outro-screen {
+      position: absolute;
+      inset: 0;
+      background: #eff2ed;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 400;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .brand-outro-screen.visible {
+      display: flex;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="studio-root">
+
+  <!-- Top Studio Bar -->
+  <header class="studio-top-bar">
+    <div class="studio-brand-group">
+      <img src="assets/logo.svg" alt="Tumaini Logo">
+      <h1>Tumaini Video Studio</h1>
+      <span class="studio-badge">Live Interactive Cursor & Scroll</span>
+    </div>
+
+    <div class="studio-actions-group">
+      <button class="studio-btn" id="btnCaptureCurrentPoster" type="button">
+        📸 Capture Poster Frame (brag.jpg)
+      </button>
+      <button class="studio-btn primary" id="btnExportActiveVideo" type="button">
+        🎬 Export Video (brag.webm)
+      </button>
+    </div>
+  </header>
+
+  <!-- 5 Video Selector Tabs (Master + 4 Section Showcases) -->
+  <nav class="video-selector-bar" role="tablist">
+    <button class="video-tab-btn active" data-video="master" type="button">
+      <span class="tab-title">Full Platform Tour</span>
+      <span class="tab-meta">Master Showcase · 50s</span>
+    </button>
+    <button class="video-tab-btn" data-video="intake" type="button">
+      <span class="tab-title">1. Sanctuary & Intake Triage</span>
+      <span class="tab-meta">Public Portal · 25s</span>
+    </button>
+    <button class="video-tab-btn" data-video="hearth" type="button">
+      <span class="tab-title">2. The Confession Hearth</span>
+      <span class="tab-meta">Community Space · 25s</span>
+    </button>
+    <button class="video-tab-btn" data-video="counselor" type="button">
+      <span class="tab-title">3. 1-on-1 Counselor Chat</span>
+      <span class="tab-meta">Clinical Support · 25s</span>
+    </button>
+    <button class="video-tab-btn" data-video="staff" type="button">
+      <span class="tab-title">4. Staff Triage & Moderation</span>
+      <span class="tab-meta">Operator Desk · 25s</span>
+    </button>
+  </nav>
+
+  <!-- Cinema Viewport Box -->
+  <main class="viewport-box">
+    <div class="viewport-stage" id="stageContainer">
+
+      <!-- Animated Virtual Mouse Cursor with Click Ripple -->
+      <div class="simulated-cursor" id="virtualCursor">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 2 L20 12 L12 14 L8 22 Z"/>
+        </svg>
+        <div class="cursor-click-ripple" id="clickRipple"></div>
+      </div>
+
+      <!-- Narrative Overlay Pill -->
+      <div class="narrative-pill" id="narrativePill">
+        <span class="narrative-dot"></span>
+        <span id="narrativeText">Welcome to Tumaini: Anonymous Peer Support & Crisis Sanctuary</span>
+      </div>
+
+      <!-- Outro Brand Reveal Screen -->
+      <div class="brand-outro-screen" id="outroScreen">
+        <img src="assets/logo.svg" alt="Tumaini Logo" id="outroScreenLogo" style="width: 100px; height: 100px; border-radius: 20px; box-shadow: 0 10px 30px rgba(44, 78, 67, 0.15); margin-bottom: 18px;">
+        <h2 id="outroScreenTitle" style="font-family: 'Newsreader', serif; font-size: 64px; color: #2c4e43; font-weight: 600; margin-bottom: 6px;">Tumaini</h2>
+        <p id="outroScreenSubtitle" style="font-size: 18px; color: #5c6f66; font-style: italic; margin-bottom: 24px;">"Hope" in Swahili · Built for Uganda</p>
+        <div id="outroScreenBadge" style="background: #ffffff; border: 1px solid rgba(25, 40, 35, 0.15); padding: 10px 28px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #2c4e43; box-shadow: 0 4px 16px rgba(25, 40, 35, 0.06);">
+          Put your weight down, even for a few minutes.
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TRACK 0: FULL PLATFORM TOUR (MASTER SHOWCASE · 50s)
+           =================================================================== -->
+      <div class="track-layer active" id="trackMaster">
+        
+        <!-- Header from index.html -->
+        <header class="site-header">
+          <div class="brand-wrap">
+            <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+            <div class="brand-titles">
+              <span class="brand-title">Tumaini</span>
+              <span class="brand-subtitle">Anonymous Peer Support & Crisis Sanctuary · Uganda</span>
+            </div>
+          </div>
+          <nav class="header-nav">
+            <button class="nav-btn" type="button">Our Story</button>
+            <button class="nav-btn btn-helplines" type="button">Crisis Helplines (0800)</button>
+            <button class="nav-btn btn-danger" type="button">Quick Exit (Esc)</button>
+          </nav>
+        </header>
+
+        <!-- Main Content Area with Dynamic Section Switcher -->
+        <div class="app-container" style="padding-top: 24px; padding-bottom: 80px;">
+
+          <!-- Section A: Hero & Platform Guides -->
+          <section id="masterHeroPart">
+            <div class="hero-sanctuary">
+              <div class="trust-badge-pill" id="masterTrustBadge">
+                <span class="trust-dot"></span>
+                Free · 100% Anonymous · Built for Uganda
+              </div>
+              <h1 class="hero-headline" id="masterHeroHeadline">
+                Put your weight down, <em>even for a few minutes.</em>
+              </h1>
+              <p class="hero-subtext">
+                Tumaini means hope in Swahili. It is a quiet, free, and anonymous peer-support sanctuary built for young people in Uganda who need somewhere to rest and speak without being seen, judged, or asked to explain themselves.
+              </p>
+
+              <!-- Exact Guide Grid from index.html -->
+              <div class="platform-guide-grid">
+                <div class="platform-guide-card" id="masterGuideCard1">
+                  <span class="guide-tag">What Tumaini Is About</span>
+                  <h3>A Safe Space to Speak Freely</h3>
+                  <p>
+                    A dedicated, zero-barrier emotional sanctuary for young Ugandans carrying tuition deadlines, family friction, grief, heartbreak, or late-night anxiety. No accounts, no phone numbers, and no real names required.
+                  </p>
+                </div>
+                <div class="platform-guide-card" id="masterGuideCard2">
+                  <span class="guide-tag">How It Helps You</span>
+                  <h3>Real Human Support in 3 Ways</h3>
+                  <ul class="guide-steps-list">
+                    <li><strong>1. Confidential 1-on-1 Chat:</strong> Connect with an on-duty volunteer counselor who listens with care and zero judgment.</li>
+                    <li><strong>2. Curated Group Circles:</strong> Join counselor-guided peer circles with others walking through the same burdens.</li>
+                    <li><strong>3. The Confession Hearth:</strong> Release what you cannot say out loud and read anonymous words from peers across Uganda.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section B: Dual Tabs -->
+          <nav class="sanctuary-nav-strip" id="masterNavStrip" style="margin-top: 32px;">
+            <button class="sanctuary-tab-btn active" id="masterTabIntake" type="button">
+              1-on-1 Counselor Chat
+            </button>
+            <button class="sanctuary-tab-btn" id="masterTabConfessions" type="button">
+              The Confession Room (Community Hearth)
+            </button>
+          </nav>
+
+          <!-- Section C: Intake View Container -->
+          <section class="intake-view" id="masterIntakePane" style="display: block; margin-top: 20px;">
+            <div class="intake-card-container">
+              <div class="intake-header-block">
+                <h2 class="intake-card-title">Connect with an On-Duty Counselor</h2>
+                <p class="intake-card-desc">
+                  Your request is queued confidentially to our volunteer care team. Tell us how you want to be known and what you are carrying today.
+                </p>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label-row">
+                  <label class="form-label">Your Anonymous Handle</label>
+                  <span class="form-hint">Type your chosen pseudonym or shuffle a peaceful nature name</span>
+                </div>
+                <div class="input-with-button">
+                  <input type="text" id="masterHandleInput" class="form-input" value="Quiet Crane" readonly>
+                  <button class="btn-secondary" id="masterShuffleBtn" type="button">Shuffle Nature Handle</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label-row">
+                  <label class="form-label">What is on your mind?</label>
+                  <span class="form-hint">Choose a topic or type your own below</span>
+                </div>
+                <div class="category-chips-wrap">
+                  <div class="cat-chip-label" id="chipAnxiety">
+                    <span class="cat-chip-title">Anxiety & Panic</span>
+                    <span class="cat-chip-desc">Racing heartbeat, breathlessness, feeling trapped</span>
+                  </div>
+                  <div class="cat-chip-label" id="chipTuition">
+                    <span class="cat-chip-title">Campus & Tuition Stress</span>
+                    <span class="cat-chip-desc">Fees deadlines, retakes, family expectations</span>
+                  </div>
+                  <div class="cat-chip-label" id="chipGrief">
+                    <span class="cat-chip-title">Grief & Empty Spaces</span>
+                    <span class="cat-chip-desc">Loss of someone dear, silent sorrow, aching absence</span>
+                  </div>
+                  <div class="cat-chip-label">
+                    <span class="cat-chip-title">Family & Heartbreak</span>
+                    <span class="cat-chip-desc">Friction at home, relationship betrayal, secret weight</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Urgency Tiers -->
+              <div class="form-group">
+                <label class="form-label">How urgent does this feel right now?</label>
+                <div class="tiers-vertical-column">
+                  <div class="tier-card-btn t2" id="masterTier2Card">
+                    <div class="tier-dot" style="background: var(--tier-2-color);"></div>
+                    <div class="tier-content-wrap">
+                      <div class="tier-header-row">
+                        <span class="tier-title-text">Tier 2: Urgent / Acute Panic Attack</span>
+                        <span class="badge badge-t2">URGENT</span>
+                      </div>
+                      <span class="tier-desc-text">Hyperventilating, racing heartbeat, or intense panic distress.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn-submit-intake" id="masterSubmitBtn" type="button" style="width: 100%;">
+                Start Confidential 1-on-1 Chat
+              </button>
+            </div>
+          </section>
+
+          <!-- Section D: Live 1-on-1 Consultation Stream -->
+          <section class="consultation-view" id="masterConsultationPane" style="display: none; margin-top: 20px;">
+            <div class="consultation-top-bar" id="masterConsultationHeader">
+              <div class="consultation-meta">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="pulse-dot"></span>
+                  <span class="consultation-title">Dr. Sarah Kigozi</span>
+                  <span style="font-size: 11px; color: var(--text-muted);">(Crisis Counselor)</span>
+                </div>
+                <span class="consultation-category-text">Campus & Tuition Stress</span>
+                <span class="badge badge-t2">URGENT</span>
+              </div>
+              <button class="nav-btn btn-danger" type="button" style="font-size: 11.5px; padding: 4px 10px;">End Consultation</button>
+            </div>
+
+            <div class="consultation-messages-stream" id="masterChatStream" style="min-height: 340px;">
+              <div class="msg-row system">
+                <div class="msg-bubble">
+                  Your confidential session has started with Dr. Sarah Kigozi. You are safe here.
+                </div>
+              </div>
+              <div class="msg-row seeker" id="seekerMsg1" style="display: none;">
+                <div class="msg-meta-line">
+                  <span class="msg-sender-name">Steady Kob</span>
+                  <span class="msg-timestamp">2:14 AM</span>
+                </div>
+                <div class="msg-bubble">
+                  I failed two papers this semester and my father took a loan for my campus tuition. I feel so guilty I can barely breathe.
+                </div>
+              </div>
+              <div class="msg-row counselor" id="counselorMsg1" style="display: none;">
+                <div class="msg-meta-line">
+                  <span class="msg-sender-name">Dr. Sarah Kigozi (Counselor)</span>
+                  <span class="msg-timestamp">2:15 AM</span>
+                </div>
+                <div class="msg-bubble">
+                  Take a slow, deep breath with me, Steady Kob. Academic pressure in Uganda is enormous, but your worth is not defined by this semester. You do not have to carry this alone tonight.
+                </div>
+              </div>
+              <div class="msg-row seeker" id="seekerMsg2" style="display: none;">
+                <div class="msg-meta-line">
+                  <span class="msg-sender-name">Steady Kob</span>
+                  <span class="msg-timestamp">2:16 AM</span>
+                </div>
+                <div class="msg-bubble">
+                  Thank you Dr. Sarah. Just hearing this helps me breathe.
+                </div>
+              </div>
+            </div>
+
+            <div class="consultation-dock">
+              <input type="text" class="consultation-input" id="masterChatInput" placeholder="Type your message confidentially..." readonly>
+              <button class="btn-send-consultation" id="masterChatSendBtn" type="button">Send</button>
+            </div>
+          </section>
+
+          <!-- Section E: Confession Hearth -->
+          <section class="confessions-view" id="masterConfessionsPane" style="display: none; margin-top: 20px;">
+            <div class="confessions-hero">
+              <h2>The Confession Room (Community Hearth)</h2>
+              <p>
+                A quiet communal hearth. Read honest, anonymous words from peers across Uganda, or leave what you are carrying. Submissions are reviewed by on-duty counselors before publishing to protect community safety.
+              </p>
+            </div>
+
+            <div class="confessions-feed-list" style="margin-top: 20px;">
+              <div class="confession-hearth-card" id="hearthCardDemo">
+                <div class="confession-card-top">
+                  <span class="confession-author-handle">Quiet Crane</span>
+                  <span class="confession-topic-tag">Grief & Empty Spaces</span>
+                </div>
+                <p class="confession-body-text">
+                  Lost my mother last December. Everyone around me expects me to be okay by now, but I still cry every Sunday afternoon. Grateful for a place where I do not have to pretend to be strong.
+                </p>
+                <div class="confession-card-footer">
+                  <span class="confession-time">Dec 14 · Kyambogo</span>
+                  <button class="btn-hold-space" id="masterHoldSpaceBtn" type="button">
+                    <span>Hold Space</span>
+                    <strong id="masterHoldSpaceCount">42</strong>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TRACK 1: SECTION A1 (SANCTUARY & INTAKE TRIAGE · 25s)
+           =================================================================== -->
+      <div class="track-layer" id="trackIntake">
+        <header class="site-header">
+          <div class="brand-wrap">
+            <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+            <div class="brand-titles">
+              <span class="brand-title">Tumaini</span>
+              <span class="brand-subtitle">Anonymous Peer Support & Crisis Sanctuary · Uganda</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="app-container" style="padding-top: 20px; padding-bottom: 80px;">
+          <div class="hero-sanctuary">
+            <div class="trust-badge-pill" id="t1TrustBadge"><span class="trust-dot"></span> Free · 100% Anonymous · Built for Uganda</div>
+            <h1 class="hero-headline">Put your weight down, <em>even for a few minutes.</em></h1>
+            
+            <div class="platform-guide-grid" style="margin-top: 24px;">
+              <div class="platform-guide-card" id="t1GuideCard1">
+                <span class="guide-tag">What Tumaini Is About</span>
+                <h3>A Safe Space to Speak Freely</h3>
+                <p>Zero-barrier emotional sanctuary for young Ugandans carrying tuition deadlines, grief, or late-night anxiety.</p>
+              </div>
+              <div class="platform-guide-card" id="t1GuideCard2">
+                <span class="guide-tag">How It Helps You</span>
+                <h3>Real Human Support in 3 Ways</h3>
+                <p>Confidential 1-on-1 Chat, Curated Group Circles, and the Community Confession Hearth.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="intake-card-container" style="margin-top: 32px;">
+            <h2 class="intake-card-title">Connect with an On-Duty Counselor</h2>
+            <div class="form-group" style="margin-top: 16px;">
+              <label class="form-label">Your Anonymous Handle</label>
+              <div class="input-with-button">
+                <input type="text" class="form-input" id="t1Handle" value="Quiet Crane 89" readonly>
+                <button class="btn-secondary" id="t1ShuffleBtn" type="button">Shuffle Nature Handle</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">What is on your mind?</label>
+              <div class="category-chips-wrap">
+                <div class="cat-chip-label" id="t1ChipTuition">
+                  <span class="cat-chip-title">Campus & Tuition Stress</span>
+                  <span class="cat-chip-desc">Fees deadlines, retakes, family expectations</span>
+                </div>
+                <div class="cat-chip-label" id="t1ChipAnxiety">
+                  <span class="cat-chip-title">Anxiety & Panic</span>
+                  <span class="cat-chip-desc">Racing heartbeat, breathlessness</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">How urgent does this feel right now?</label>
+              <div class="tiers-vertical-column">
+                <div class="tier-card-btn t2" id="t1TierCard">
+                  <div class="tier-dot" style="background: var(--tier-2-color);"></div>
+                  <div class="tier-content-wrap">
+                    <div class="tier-header-row">
+                      <span class="tier-title-text">Tier 2: Urgent / Acute Panic Attack</span>
+                      <span class="badge badge-t2">URGENT</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <button class="btn-submit-intake" id="t1SubmitBtn" type="button" style="width: 100%;">
+              Start Confidential 1-on-1 Chat
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TRACK 2: SECTION A2 (THE CONFESSION HEARTH · 25s)
+           =================================================================== -->
+      <div class="track-layer" id="trackHearth">
+        <header class="site-header">
+          <div class="brand-wrap">
+            <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+            <div class="brand-titles">
+              <span class="brand-title">Tumaini</span>
+              <span class="brand-subtitle">The Confession Room · Community Hearth</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="app-container" style="padding-top: 24px; padding-bottom: 80px;">
+          <div class="confessions-hero">
+            <h2 id="t2HeroTitle">The Confession Room (Community Hearth)</h2>
+            <p>
+              A quiet communal hearth. Read honest, anonymous words from peers across Uganda, or leave what you are carrying. Submissions are reviewed by counselors before appearing around this hearth.
+            </p>
+          </div>
+
+          <div class="submit-confession-card" style="margin-top: 24px;">
+            <h3>Put Down Your Burden Anonymously</h3>
+            <span class="confession-notice-pill">Submissions are reviewed by counselors before appearing around this hearth</span>
+            <div style="margin-top: 14px;">
+              <input type="text" class="form-input" id="t2CategoryInput" value="Tuition Guilt & Family Silence" readonly style="margin-bottom: 10px;">
+              <textarea class="confession-textarea" id="t2ConfessionText" readonly>I failed two papers this semester and my father took a loan for my campus tuition. Writing this down makes me feel like I can finally breathe.</textarea>
+              <button class="btn-submit-intake" id="t2SubmitBtn" type="button" style="margin-top: 10px; padding: 10px 20px; font-size: 13px;">Submit Confession for Review</button>
+            </div>
+          </div>
+
+          <div class="confessions-feed-list" style="margin-top: 24px;">
+            <div class="confession-hearth-card">
+              <div class="confession-card-top">
+                <span class="confession-author-handle">Steady Kob</span>
+                <span class="confession-topic-tag">Grief & Healing</span>
+              </div>
+              <p class="confession-body-text" id="t2HearthCardBody">
+                Lost my mother last December. Everyone around me expects me to be okay by now, but I still cry every Sunday afternoon. Grateful for a place where I do not have to pretend to be strong.
+              </p>
+              <div class="confession-card-footer">
+                <span class="confession-time">Sunday 3:15 PM</span>
+                <button class="btn-hold-space" id="t2HoldSpaceBtn" type="button">
+                  <span>Hold Space</span>
+                  <strong id="t2HoldCount">42</strong>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TRACK 3: SECTION B1 (1-ON-1 COUNSELOR CHAT · 25s)
+           =================================================================== -->
+      <div class="track-layer" id="trackCounselor">
+        <header class="site-header">
+          <div class="brand-wrap">
+            <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+            <div class="brand-titles">
+              <span class="brand-title">Tumaini</span>
+              <span class="brand-subtitle">Confidential 1-on-1 Counselor Consultation</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="app-container" style="padding-top: 24px; padding-bottom: 80px;">
+          <div class="consultation-view" style="display: block;">
+            <div class="consultation-top-bar">
+              <div class="consultation-meta">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="pulse-dot"></span>
+                  <span class="consultation-title" id="t3HeaderTitle">Dr. Sarah Kigozi</span>
+                  <span style="font-size: 12px; color: var(--text-muted);">(Crisis Counselor)</span>
+                </div>
+                <span class="consultation-category-text">Campus & Tuition Stress</span>
+                <span class="badge badge-t2">URGENT</span>
+              </div>
+              <button class="nav-btn btn-danger" type="button" style="font-size: 11.5px; padding: 4px 10px;">End Consultation</button>
+            </div>
+
+            <div class="consultation-messages-stream" id="t3Stream" style="min-height: 360px;">
+              <div class="msg-row system">
+                <div class="msg-bubble">
+                  Dr. Sarah Kigozi (Crisis Counselor) has joined this confidential consultation.
+                </div>
+              </div>
+              <div class="msg-row seeker" id="t3MsgSeeker1">
+                <div class="msg-meta-line"><span class="msg-sender-name">Steady Kob</span><span class="msg-timestamp">2:14 AM</span></div>
+                <div class="msg-bubble">
+                  I feel an overwhelming panic about my campus tuition deadlines. My heart is racing and I do not have anyone at home I can confide in.
+                </div>
+              </div>
+              <div class="msg-row counselor" id="t3MsgCounselor1">
+                <div class="msg-meta-line"><span class="msg-sender-name">Dr. Sarah Kigozi</span><span class="msg-timestamp">2:15 AM</span></div>
+                <div class="msg-bubble">
+                  Take a slow, deep breath with me, Steady Kob. Feel your feet on the ground. You are safe here, and you do not have to navigate this burden alone.
+                </div>
+              </div>
+              <div class="msg-row seeker" id="t3MsgSeeker2" style="display: none;">
+                <div class="msg-meta-line"><span class="msg-sender-name">Steady Kob</span><span class="msg-timestamp">2:16 AM</span></div>
+                <div class="msg-bubble">
+                  Thank you. Just hearing someone speak without judging me is lifting a huge weight off my chest.
+                </div>
+              </div>
+            </div>
+
+            <div class="consultation-dock">
+              <input type="text" class="consultation-input" id="t3Input" placeholder="Type your message confidentially..." readonly>
+              <button class="btn-send-consultation" id="t3SendBtn" type="button">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TRACK 4: SECTION B2 (STAFF COMMAND & MODERATION · 25s)
+           =================================================================== -->
+      <div class="track-layer" id="trackStaff">
+        <header class="site-header">
+          <div class="brand-wrap">
+            <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+            <div class="brand-titles">
+              <span class="brand-title">Tumaini Staff</span>
+              <span class="brand-subtitle">Clinical Triage & Confession Moderation</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="staff-console-container active" style="display: flex; padding-top: 20px; padding-bottom: 80px;">
+          <!-- Top Duty Strip -->
+          <div class="staff-duty-strip">
+            <div class="staff-profile-info">
+              <span class="staff-operator-tag">STF-1001</span>
+              <div>
+                <strong style="font-size: 14px; color: var(--text-primary);">Dr. Sarah Kigozi</strong>
+                <span style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">Crisis Counselor</span>
+              </div>
+              <span class="badge badge-t4" id="t4DutyBadge" style="background: rgba(82, 183, 136, 0.2); color: #2d6a4f;">ACTIVE ON DUTY</span>
+            </div>
+            <div class="staff-duty-controls">
+              <span class="shift-timer-display" id="t4ShiftTimer">Shift: 02:45:18</span>
+              <button class="btn-clock-out" id="t4ClockBtn" type="button">Clock Out</button>
+            </div>
+          </div>
+
+          <!-- Triage Desk Layout -->
+          <div class="staff-workspace-layout" style="min-height: 480px;">
+            <aside class="staff-queue-column">
+              <div class="queue-column-header">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <h2 style="font-size: 15px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Incoming Emergency Queue</h2>
+                  <span style="font-size: 11px; color: var(--text-muted);">Strict Priority</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="background: var(--bg-canvas); padding: 4px 8px; border-radius: 6px; font-size: 11px; flex: 1; text-align: center;">Waiting: <strong>1</strong></div>
+                  <div style="background: var(--tier-2-bg); padding: 4px 8px; border-radius: 6px; font-size: 11px; flex: 1; text-align: center; color: var(--tier-2-color);">Urgent: <strong>1</strong></div>
+                </div>
+              </div>
+
+              <div class="queue-ticket-card tier-2 active" id="t4QueueCard">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-weight: 700; font-size: 14px;">Steady Kob</span>
+                  <span style="font-size: 11px; font-family: monospace; color: var(--text-muted);">Wait: 4m</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="badge badge-t2">URGENT</span>
+                  <span style="font-size: 11px; color: var(--text-secondary);">Campus & Tuition Stress</span>
+                </div>
+                <div style="padding-top: 6px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 11px; color: #52b788;">• In Session (Dr. Sarah)</span>
+                  <button class="btn-claim-case" id="t4ClaimBtn" type="button" style="padding: 4px 10px; font-size: 11px;">Active Desk</button>
+                </div>
+              </div>
+            </aside>
+
+            <section class="staff-workspace-column">
+              <div class="workspace-case-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <h2 style="font-size: 16px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Steady Kob</h2>
+                  <span class="badge badge-t2">URGENT</span>
+                  <span style="font-size: 12px; color: var(--text-secondary);">Campus & Tuition Stress</span>
+                </div>
+                <button class="nav-btn btn-danger" type="button" style="font-size: 11.5px; padding: 4px 12px;">Close Case</button>
+              </div>
+
+              <div class="workspace-body-split">
+                <div class="workspace-chat-pane">
+                  <div class="counselor-messages-container" style="min-height: 280px;">
+                    <div class="chat-bubble-row is-counselor">
+                      <span class="chat-sender-label">Steady Kob</span>
+                      <div class="chat-bubble-box" id="t4ChatBubbleSeeker">I failed two papers... feeling panic about tuition.</div>
+                    </div>
+                    <div class="chat-bubble-row is-user">
+                      <span class="chat-sender-label">You (Dr. Sarah Kigozi)</span>
+                      <div class="chat-bubble-box" style="background: #2d6a4f; color: #fff;">Take a slow breath. You are safe here tonight.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="workspace-tools-pane">
+                  <h4 style="font-size: 13px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Clinical Tools</h4>
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <button class="snippet-btn" id="t4SnippetSafe" type="button">You are safe here</button>
+                    <button class="snippet-btn" id="t4SnippetAnchor" type="button">Breathing anchor</button>
+                    <button class="snippet-btn" id="t4SnippetCircle" type="button">Invite to Tuition Circle</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Cinema Player Dock -->
+  <footer class="player-dock">
+    <button class="dock-btn-play" id="btnPlayPause" type="button" title="Play / Pause">▶</button>
+    <div class="dock-timeline-track" id="timelineTrack">
+      <div class="dock-timeline-fill" id="timelineFill"></div>
+    </div>
+    <div class="dock-time-text" id="timeDisplay">0:00 / 0:50</div>
+    <button class="dock-sound-btn" id="btnSoundToggle" type="button">🔊 Audio: ON</button>
+  </footer>
+
+  <script>
+    // Master Waypoints (50s continuous path with real DOM element targets)
+    const MASTER_WAYPOINTS = [
+      { t: 0.0,  target: '#masterTrustBadge', scroll: 0, click: false, narrative: 'Tumaini: Free & 100% Anonymous Peer Support for Uganda' },
+      { t: 3.5,  target: '#masterHeroHeadline', scroll: 0, click: false, narrative: 'What Tumaini Is About: A safe space to speak freely' },
+      { t: 6.5,  target: '#masterGuideCard1', scroll: 40, click: false, narrative: 'Zero-barrier emotional sanctuary for Ugandan youth' },
+      { t: 9.0,  target: '#masterGuideCard2', scroll: 80, click: false, narrative: 'Real Human Support: 1-on-1 Chat & Confession Hearth' },
+      { t: 11.5, target: '#masterHandleInput', scroll: 200, click: true, narrative: 'Anonymous Handle Selection: No real names, no phone numbers' },
+      { t: 14.0, target: '#masterShuffleBtn', scroll: 200, click: true, narrative: 'Shuffling nature pseudonym: Quiet Crane -> Steady Kob' },
+      { t: 16.5, target: '#chipTuition', scroll: 280, click: true, narrative: 'Selecting what you are carrying: Campus & Tuition Stress' },
+      { t: 18.5, target: '#masterTier2Card', scroll: 360, click: true, narrative: 'Emergency Tier 2: Acute panic prioritized immediately' },
+      { t: 20.5, target: '#masterSubmitBtn', scroll: 420, click: true, narrative: 'Launching confidential 1-on-1 consultation session' },
+      { t: 22.5, target: '#masterConsultationHeader', scroll: 0, click: false, narrative: 'Connecting with on-duty crisis counselor Dr. Sarah Kigozi' },
+      { t: 25.0, target: '#seekerMsg1', scroll: 0, click: false, narrative: 'Seeker confides about tuition burden and anxiety' },
+      { t: 28.5, target: '#counselorMsg1', scroll: 40, click: false, narrative: 'Dr. Sarah Kigozi provides trauma-informed reassurance' },
+      { t: 31.5, target: '#masterChatInput', scroll: 80, click: true, narrative: 'Drafting reply in private, encrypted chat dock' },
+      { t: 33.5, target: '#masterChatSendBtn', scroll: 80, click: true, narrative: 'Sending message: Relief felt immediately' },
+      { t: 35.5, target: '#masterTabConfessions', scroll: 0, click: true, narrative: 'Switching to The Confession Room (Community Hearth)' },
+      { t: 38.5, target: '#hearthCardDemo .confession-body-text', scroll: 120, click: false, narrative: 'Quiet communal hearth: Real anonymous confessions from Ugandan peers' },
+      { t: 41.5, target: '#masterHoldSpaceBtn', scroll: 140, click: true, narrative: 'Holding space for Quiet Crane (Counter increments 42 -> 43)' },
+      { t: 45.0, target: '#outroScreenTitle', scroll: 0, click: false, narrative: 'Put your weight down, even for a few minutes. Welcome to Tumaini.' },
+      { t: 50.0, target: '#outroScreenBadge', scroll: 0, click: false, narrative: 'Put your weight down, even for a few minutes. Welcome to Tumaini.' }
+    ];
+
+    // Track Configurations
+    const TRACK_CONFIGS = {
+      master: { duration: 50.0, waypoints: MASTER_WAYPOINTS },
+      intake: {
+        duration: 25.0,
+        waypoints: [
+          { t: 0.0,  target: '#t1TrustBadge', scroll: 0, click: false, narrative: 'Sanctuary Front Door: Free & 100% Anonymous' },
+          { t: 3.5,  target: '#t1GuideCard1', scroll: 0, click: false, narrative: 'Examining What Tumaini Is About' },
+          { t: 7.0,  target: '#t1GuideCard2', scroll: 60, click: false, narrative: 'Human Support Without Barriers' },
+          { t: 10.0, target: '#t1Handle', scroll: 180, click: true, narrative: 'Quiet Crane 89 pseudonym selected' },
+          { t: 13.5, target: '#t1ShuffleBtn', scroll: 180, click: true, narrative: 'Shuffling to Steady Kob: Zero tracking, zero stigma' },
+          { t: 17.0, target: '#t1ChipTuition', scroll: 260, click: true, narrative: 'Selecting Campus & Tuition Stress category' },
+          { t: 20.5, target: '#t1TierCard', scroll: 340, click: true, narrative: 'Setting Tier 2 Urgent priority' },
+          { t: 23.5, target: '#t1SubmitBtn', scroll: 400, click: true, narrative: 'Submitting request to counselor triage queue' },
+          { t: 25.0, target: '#t1SubmitBtn', scroll: 400, click: false, narrative: 'Request queued successfully' }
+        ]
+      },
+      hearth: {
+        duration: 25.0,
+        waypoints: [
+          { t: 0.0,  target: '#t2HeroTitle', scroll: 0, click: false, narrative: 'The Confession Room: Put down what you cannot say out loud' },
+          { t: 4.5,  target: '#t2CategoryInput', scroll: 40, click: true, narrative: 'Anonymous submission category: Tuition Guilt' },
+          { t: 9.0,  target: '#t2ConfessionText', scroll: 80, click: true, narrative: 'Composing confession: Lifting the secret weight' },
+          { t: 13.5, target: '#t2SubmitBtn', scroll: 120, click: true, narrative: 'Submitting confession for counselor safety review' },
+          { t: 18.0, target: '#t2HearthCardBody', scroll: 180, click: false, narrative: 'Reading real peer experiences from across Uganda' },
+          { t: 22.0, target: '#t2HoldSpaceBtn', scroll: 220, click: true, narrative: 'Clicking Hold Space to support Steady Kob (42 -> 43)' },
+          { t: 25.0, target: '#t2HoldSpaceBtn', scroll: 220, click: false, narrative: 'A community that holds space without judgment' }
+        ]
+      },
+      counselor: {
+        duration: 25.0,
+        waypoints: [
+          { t: 0.0,  target: '#t3HeaderTitle', scroll: 0, click: false, narrative: 'Confidential 1-on-1 Sanctuary with Dr. Sarah Kigozi' },
+          { t: 4.0,  target: '#t3MsgSeeker1 .msg-bubble', scroll: 0, click: false, narrative: 'Seeker confides about panic and tuition loans' },
+          { t: 8.5,  target: '#t3MsgCounselor1 .msg-bubble', scroll: 30, click: false, narrative: 'Dr. Sarah Kigozi sends trauma-informed breathing anchor' },
+          { t: 13.5, target: '#t3Input', scroll: 60, click: true, narrative: 'Seeker enters response in private dock' },
+          { t: 17.5, target: '#t3SendBtn', scroll: 60, click: true, narrative: 'Sending message: Relief felt immediately' },
+          { t: 21.5, target: '#t3MsgSeeker2 .msg-bubble', scroll: 60, click: false, narrative: 'Safe space to de-escalate without fear' },
+          { t: 25.0, target: '#t3MsgSeeker2 .msg-bubble', scroll: 60, click: false, narrative: 'Safe space to de-escalate without fear' }
+        ]
+      },
+      staff: {
+        duration: 25.0,
+        waypoints: [
+          { t: 0.0,  target: '#t4DutyBadge', scroll: 0, click: false, narrative: 'Tumaini Staff Console: Operator Duty Strip' },
+          { t: 4.0,  target: '#t4ShiftTimer', scroll: 0, click: true, narrative: 'Operator Dr. Sarah Kigozi active on duty' },
+          { t: 8.5,  target: '#t4ClaimBtn', scroll: 0, click: true, narrative: 'Claiming Tier 2 Urgent case: Steady Kob' },
+          { t: 13.0, target: '#t4ChatBubbleSeeker', scroll: 0, click: false, narrative: 'Counselor workspace: Reviewing conversation history' },
+          { t: 17.5, target: '#t4SnippetAnchor', scroll: 0, click: true, narrative: 'Applying clinical de-escalation snippet: Breathing anchor' },
+          { t: 21.5, target: '#t4SnippetCircle', scroll: 0, click: true, narrative: 'Proposing curated Tuition Support Circle' },
+          { t: 25.0, target: '#t4SnippetCircle', scroll: 0, click: false, narrative: 'Case active in session' }
+        ]
+      }
+    };
+
+    let activeTrackKey = 'master';
+    let currentTime = 0.0;
+    let isPlaying = false;
+    let isMuted = false;
+    let lastTime = null;
+    let animId = null;
+    let lastFiredClickWp = -1;
+
+    // Elements
+    const stageContainer = document.getElementById('stageContainer');
+    const virtualCursor = document.getElementById('virtualCursor');
+    const clickRipple = document.getElementById('clickRipple');
+    const narrativePill = document.getElementById('narrativePill');
+    const narrativeText = document.getElementById('narrativeText');
+    const outroScreen = document.getElementById('outroScreen');
+    const timelineTrack = document.getElementById('timelineTrack');
+    const timelineFill = document.getElementById('timelineFill');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const btnSoundToggle = document.getElementById('btnSoundToggle');
+    const btnCapturePoster = document.getElementById('btnCaptureCurrentPoster');
+    const btnExportVideo = document.getElementById('btnExportActiveVideo');
+
+    // Master Track Elements
+    const trackMaster = document.getElementById('trackMaster');
+    const masterHeroPart = document.getElementById('masterHeroPart');
+    const masterIntakePane = document.getElementById('masterIntakePane');
+    const masterConsultationPane = document.getElementById('masterConsultationPane');
+    const masterConfessionsPane = document.getElementById('masterConfessionsPane');
+    const masterTabIntake = document.getElementById('masterTabIntake');
+    const masterTabConfessions = document.getElementById('masterTabConfessions');
+    const masterHandleInput = document.getElementById('masterHandleInput');
+    const masterHoldSpaceCount = document.getElementById('masterHoldSpaceCount');
+    const masterHoldSpaceBtn = document.getElementById('masterHoldSpaceBtn');
+    const masterChatInput = document.getElementById('masterChatInput');
+    const seekerMsg1 = document.getElementById('seekerMsg1');
+    const counselorMsg1 = document.getElementById('counselorMsg1');
+    const seekerMsg2 = document.getElementById('seekerMsg2');
+    const chipTuition = document.getElementById('chipTuition');
+    const masterTier2Card = document.getElementById('masterTier2Card');
+
+    // Audio
+    const audio = new Audio('assets/music/soundtrack.mp3');
+    audio.preload = 'auto';
+
+    // Hermite Ease
+    function easeInOut(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function pressElement(el) {
+      if (!el) return;
+      el.classList.add('cursor-active-press');
+      setTimeout(() => el.classList.remove('cursor-active-press'), 220);
+    }
+
+    function triggerRipple() {
+      clickRipple.classList.remove('animate');
+      void clickRipple.offsetWidth;
+      clickRipple.classList.add('animate');
+    }
+
+    function checkClickTrigger(currentT, waypoints) {
+      for (let i = 0; i < waypoints.length; i++) {
+        const wp = waypoints[i];
+        if (wp.click && Math.abs(currentT - wp.t) < 0.18) {
+          if (lastFiredClickWp !== i) {
+            lastFiredClickWp = i;
+            triggerRipple();
+            virtualCursor.classList.add('clicking');
+            setTimeout(() => virtualCursor.classList.remove('clicking'), 180);
+            if (wp.target) {
+              const el = document.querySelector(wp.target);
+              if (el) {
+                pressElement(el);
+                if (typeof el.focus === 'function' && el.tagName === 'INPUT') el.focus();
+              }
+            }
+          }
+          return;
+        }
+      }
+      const isNearAny = waypoints.some((wp, idx) => wp.click && Math.abs(currentT - wp.t) < 0.35 && lastFiredClickWp === idx);
+      if (!isNearAny) {
+        lastFiredClickWp = -1;
+      }
+    }
+
+    function getPointForWaypoint(wp, stageElem) {
+      if (wp.target) {
+        const el = document.querySelector(wp.target);
+        if (el) {
+          const r = el.getBoundingClientRect();
+          const sr = stageElem.getBoundingClientRect();
+          if (r.width > 0 || r.height > 0) {
+            return {
+              x: (r.left - sr.left) + (r.width / 2),
+              y: (r.top - sr.top) + (r.height / 2),
+              el: el
+            };
+          }
+        }
+      }
+      const sr = stageElem.getBoundingClientRect();
+      return {
+        x: wp.x != null ? (wp.x / 1160) * sr.width : (sr.width / 2),
+        y: wp.y != null ? (wp.y / 652.5) * sr.height : (sr.height / 2),
+        el: null
+      };
+    }
+
+    // Dynamic Waypoint Evaluation Tracking Real DOM Elements
+    function evaluateWaypoint(t, waypoints, stageElem, activeLayer) {
+      let p1 = waypoints[0];
+      let p2 = waypoints[0];
+      let ratio = 0;
+
+      if (t <= waypoints[0].t) {
+        p1 = waypoints[0];
+        p2 = waypoints[0];
+      } else if (t >= waypoints[waypoints.length - 1].t) {
+        p1 = waypoints[waypoints.length - 1];
+        p2 = waypoints[waypoints.length - 1];
+        ratio = 1;
+      } else {
+        for (let i = 0; i < waypoints.length - 1; i++) {
+          if (t >= waypoints[i].t && t <= waypoints[i + 1].t) {
+            p1 = waypoints[i];
+            p2 = waypoints[i + 1];
+            const seg = p2.t - p1.t;
+            const rawRatio = seg > 0 ? (t - p1.t) / seg : 1;
+            ratio = easeInOut(rawRatio);
+            break;
+          }
+        }
+      }
+
+      // Synchronous scroll of active layer
+      const s1 = p1.scroll != null ? p1.scroll : 0;
+      const s2 = p2.scroll != null ? p2.scroll : s1;
+      const currentScroll = s1 + (s2 - s1) * ratio;
+      if (activeLayer) {
+        activeLayer.scrollTop = currentScroll;
+      }
+
+      // Measure actual bounding boxes in current scrolled state
+      const pt1 = getPointForWaypoint(p1, stageElem);
+      const pt2 = getPointForWaypoint(p2, stageElem);
+
+      const curX = pt1.x + (pt2.x - pt1.x) * ratio;
+      const curY = pt1.y + (pt2.y - pt1.y) * ratio;
+
+      // Check click triggers
+      checkClickTrigger(t, waypoints);
+
+      return {
+        x: curX,
+        y: curY,
+        narrative: p1.narrative
+      };
+    }
+
+    // Tab Switching
+    document.querySelectorAll('.video-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.video-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        switchTrack(btn.dataset.video);
+      });
+    });
+
+    function switchTrack(trackKey) {
+      activeTrackKey = trackKey;
+      currentTime = 0.0;
+      lastFiredClickWp = -1;
+      pause();
+
+      document.querySelectorAll('.track-layer').forEach(layer => layer.classList.remove('active'));
+      const activeLayer = document.getElementById('track' + trackKey.charAt(0).toUpperCase() + trackKey.slice(1));
+      if (activeLayer) activeLayer.classList.add('active');
+
+      outroScreen.classList.remove('visible');
+      updateFrame(0.0);
+    }
+
+    function updateFrame(t) {
+      const cfg = TRACK_CONFIGS[activeTrackKey];
+      const activeLayer = document.getElementById('track' + activeTrackKey.charAt(0).toUpperCase() + activeTrackKey.slice(1));
+
+      // 1. FIRST apply DOM elements state so layouts & visibility are current
+      if (activeTrackKey === 'master') {
+        animateMasterElements(t);
+      } else if (activeTrackKey === 'intake') {
+        animateIntakeElements(t);
+      } else if (activeTrackKey === 'hearth') {
+        animateHearthElements(t);
+      } else if (activeTrackKey === 'counselor') {
+        animateCounselorElements(t);
+      } else if (activeTrackKey === 'staff') {
+        animateStaffElements(t);
+      }
+
+      // 2. Evaluate Waypoints and position cursor dynamically
+      const state = evaluateWaypoint(t, cfg.waypoints, stageContainer, activeLayer);
+
+      // Move Virtual Cursor to exact target coordinates
+      virtualCursor.style.left = state.x + 'px';
+      virtualCursor.style.top = state.y + 'px';
+
+      // Narrative Pill
+      narrativeText.textContent = state.narrative;
+
+      // Update Timeline Fill
+      const pct = Math.min(100, (t / cfg.duration) * 100);
+      timelineFill.style.width = pct + '%';
+
+      // Time Text
+      const mins = Math.floor(t / 60);
+      const secs = Math.floor(t % 60);
+      const totalSecs = Math.floor(cfg.duration);
+      timeDisplay.textContent = `${mins}:${secs < 10 ? '0' + secs : secs} / 0:${totalSecs < 10 ? '0' + totalSecs : totalSecs}`;
+    }
+
+    function animateMasterElements(t) {
+      // 0 - 21s: Hero & Intake
+      if (t < 21.0) {
+        outroScreen.classList.remove('visible');
+        masterHeroPart.style.display = 'block';
+        masterIntakePane.style.display = 'block';
+        masterConsultationPane.style.display = 'none';
+        masterConfessionsPane.style.display = 'none';
+        masterTabIntake.classList.add('active');
+        masterTabConfessions.classList.remove('active');
+
+        // Typewriter on handle
+        if (t >= 11.5 && t < 14.0) {
+          const text = 'Quiet Crane';
+          const count = Math.min(text.length, Math.floor((t - 11.5) * 5));
+          masterHandleInput.value = text.substring(0, count);
+        } else if (t >= 14.0) {
+          masterHandleInput.value = 'Steady Kob 48';
+        } else {
+          masterHandleInput.value = '';
+        }
+
+        // Chip selection
+        if (t >= 16.5) {
+          chipTuition.style.background = 'var(--brand-eucalyptus-soft)';
+          chipTuition.style.borderColor = 'var(--brand-eucalyptus)';
+        } else {
+          chipTuition.style.background = 'var(--bg-surface-elevated)';
+          chipTuition.style.borderColor = 'var(--border-subtle)';
+        }
+
+        // Tier selection
+        if (t >= 18.5) {
+          masterTier2Card.style.boxShadow = '0 0 0 2px var(--brand-ochre)';
+        } else {
+          masterTier2Card.style.boxShadow = 'none';
+        }
+      }
+      // 21s - 35.0s: 1-on-1 Consultation
+      else if (t < 35.0) {
+        outroScreen.classList.remove('visible');
+        masterHeroPart.style.display = 'none';
+        masterIntakePane.style.display = 'none';
+        masterConsultationPane.style.display = 'block';
+        masterConfessionsPane.style.display = 'none';
+        masterTabIntake.classList.add('active');
+        masterTabConfessions.classList.remove('active');
+
+        seekerMsg1.style.display = (t >= 23.0) ? 'flex' : 'none';
+        counselorMsg1.style.display = (t >= 26.0) ? 'flex' : 'none';
+
+        // Typewriter in dock
+        if (t >= 29.0 && t < 33.0) {
+          const draft = 'Thank you Dr. Sarah. Just hearing this helps me breathe.';
+          const cnt = Math.min(draft.length, Math.floor((t - 29.0) * 16));
+          masterChatInput.value = draft.substring(0, cnt);
+        } else if (t >= 33.5) {
+          masterChatInput.value = '';
+          seekerMsg2.style.display = 'flex';
+        } else {
+          masterChatInput.value = '';
+          seekerMsg2.style.display = 'none';
+        }
+      }
+      // 35.0s - 44.0s: The Confession Hearth
+      else if (t < 44.0) {
+        outroScreen.classList.remove('visible');
+        masterHeroPart.style.display = 'none';
+        masterIntakePane.style.display = 'none';
+        masterConsultationPane.style.display = 'none';
+        masterConfessionsPane.style.display = 'block';
+        masterTabIntake.classList.remove('active');
+        masterTabConfessions.classList.add('active');
+
+        if (t >= 41.5) {
+          masterHoldSpaceBtn.classList.add('active');
+          masterHoldSpaceCount.textContent = '43';
+        } else {
+          masterHoldSpaceBtn.classList.remove('active');
+          masterHoldSpaceCount.textContent = '42';
+        }
+      }
+      // 44.0s - 50s: Outro Brand Seal
+      else {
+        outroScreen.classList.add('visible');
+      }
+    }
+
+    function animateIntakeElements(t) {
+      if (t >= 10.0 && t < 13.5) {
+        const text = 'Quiet Crane 89';
+        const cnt = Math.min(text.length, Math.floor((t - 10.0) * 4));
+        document.getElementById('t1Handle').value = text.substring(0, cnt);
+      } else if (t >= 13.5) {
+        document.getElementById('t1Handle').value = 'Steady Kob 77';
+      } else {
+        document.getElementById('t1Handle').value = '';
+      }
+      if (t >= 17.0) {
+        document.getElementById('t1ChipTuition').style.background = 'var(--brand-eucalyptus-soft)';
+        document.getElementById('t1ChipTuition').style.borderColor = 'var(--brand-eucalyptus)';
+      } else {
+        document.getElementById('t1ChipTuition').style.background = 'var(--bg-surface-elevated)';
+        document.getElementById('t1ChipTuition').style.borderColor = 'var(--border-subtle)';
+      }
+      if (t >= 20.5) {
+        document.getElementById('t1TierCard').style.boxShadow = '0 0 0 2px var(--brand-ochre)';
+      } else {
+        document.getElementById('t1TierCard').style.boxShadow = 'none';
+      }
+    }
+
+    function animateHearthElements(t) {
+      if (t >= 22.0) {
+        document.getElementById('t2HoldSpaceBtn').classList.add('active');
+        document.getElementById('t2HoldCount').textContent = '43';
+      } else {
+        document.getElementById('t2HoldSpaceBtn').classList.remove('active');
+        document.getElementById('t2HoldCount').textContent = '42';
+      }
+    }
+
+    function animateCounselorElements(t) {
+      if (t >= 13.5 && t < 17.5) {
+        const text = 'Thank you. It is lifting a huge weight.';
+        const count = Math.min(text.length, Math.floor((t - 13.5) * 12));
+        document.getElementById('t3Input').value = text.substring(0, count);
+      } else if (t >= 17.5) {
+        document.getElementById('t3Input').value = '';
+        document.getElementById('t3MsgSeeker2').style.display = 'flex';
+      } else {
+        document.getElementById('t3Input').value = '';
+        document.getElementById('t3MsgSeeker2').style.display = 'none';
+      }
+    }
+
+    function animateStaffElements(t) {
+      if (t >= 8.5) {
+        document.getElementById('t4QueueCard').style.boxShadow = '0 0 0 2px var(--brand-eucalyptus)';
+      } else {
+        document.getElementById('t4QueueCard').style.boxShadow = 'none';
+      }
+      if (t >= 17.5 && t < 21.5) {
+        document.getElementById('t4SnippetAnchor').style.borderColor = 'var(--brand-ochre)';
+      } else {
+        document.getElementById('t4SnippetAnchor').style.borderColor = 'var(--border-subtle)';
+      }
+      if (t >= 21.5) {
+        document.getElementById('t4SnippetCircle').style.borderColor = 'var(--brand-ochre)';
+      } else {
+        document.getElementById('t4SnippetCircle').style.borderColor = 'var(--border-subtle)';
+      }
+    }
+
+    function tick(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const delta = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      if (isPlaying) {
+        currentTime += delta;
+        const maxDur = TRACK_CONFIGS[activeTrackKey].duration;
+        if (currentTime >= maxDur) {
+          currentTime = 0.0;
+          audio.currentTime = 0;
+        }
+        updateFrame(currentTime);
+        animId = requestAnimationFrame(tick);
+      }
+    }
+
+    function play() {
+      isPlaying = true;
+      lastTime = null;
+      btnPlayPause.textContent = '⏸';
+      if (!isMuted) {
+        audio.currentTime = currentTime % 60;
+        audio.play().catch(() => {});
+      }
+      animId = requestAnimationFrame(tick);
+    }
+
+    function pause() {
+      isPlaying = false;
+      btnPlayPause.textContent = '▶';
+      audio.pause();
+      if (animId) cancelAnimationFrame(animId);
+    }
+
+    btnPlayPause.addEventListener('click', () => {
+      if (isPlaying) pause();
+      else play();
+    });
+
+    timelineTrack.addEventListener('click', (e) => {
+      const rect = timelineTrack.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      const maxDur = TRACK_CONFIGS[activeTrackKey].duration;
+      currentTime = ratio * maxDur;
+      audio.currentTime = currentTime % 60;
+      updateFrame(currentTime);
+    });
+
+    btnSoundToggle.addEventListener('click', () => {
+      isMuted = !isMuted;
+      audio.muted = isMuted;
+      btnSoundToggle.textContent = isMuted ? '🔇 Audio: OFF' : '🔊 Audio: ON';
+      if (!isMuted && isPlaying) {
+        audio.currentTime = currentTime % 60;
+        audio.play().catch(() => {});
+      }
+    });
+
+    // 1-Click Poster Frame Capture
+    btnCapturePoster.addEventListener('click', () => {
+      pause();
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#eff2ed';
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      const logo = new Image();
+      logo.onload = () => {
+        ctx.drawImage(logo, 1920 / 2 - 100, 260, 200, 200);
+
+        ctx.font = '600 84px "Newsreader", serif';
+        ctx.fillStyle = '#2c4e43';
+        ctx.textAlign = 'center';
+        ctx.fillText('Tumaini', 1920 / 2, 530);
+
+        ctx.font = 'italic 400 32px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#5c6f66';
+        ctx.fillText('"Hope" in Swahili · Built for Uganda', 1920 / 2, 590);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = 'rgba(25, 40, 35, 0.14)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(1920 / 2 - 380, 640, 760, 68, 34);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = '600 24px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#2c4e43';
+        ctx.fillText('Put your weight down, even for a few minutes.', 1920 / 2, 683);
+
+        ctx.font = '700 18px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#c98a3b';
+        ctx.fillText('FREE · 100% ANONYMOUS · ZERO PHONE NUMBERS', 1920 / 2, 770);
+
+        canvas.toBlob(blob => {
+          const a = document.createElement('a');
+          a.download = `tumaini-${activeTrackKey}-poster.jpg`;
+          a.href = URL.createObjectURL(blob);
+          a.click();
+        }, 'image/jpeg', 0.95);
+      };
+      logo.src = 'assets/logo.svg';
+    });
+
+    // Native Video Recording Engine
+    btnExportVideo.addEventListener('click', async () => {
+      btnExportVideo.disabled = true;
+      const dur = TRACK_CONFIGS[activeTrackKey].duration;
+      btnExportVideo.textContent = `⏳ Recording ${dur}s Video...`;
+
+      currentTime = 0.0;
+      updateFrame(0.0);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+
+      const stream = canvas.captureStream(30);
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const a = document.createElement('a');
+        a.download = `tumaini-${activeTrackKey}-showcase.webm`;
+        a.href = URL.createObjectURL(blob);
+        a.click();
+
+        btnExportVideo.disabled = false;
+        btnExportVideo.textContent = '🎬 Export Video (brag.webm)';
+        alert(`Export complete! Saved as tumaini-${activeTrackKey}-showcase.webm`);
+      };
+
+      mediaRecorder.start();
+      play();
+
+      const startTime = performance.now();
+      const interval = setInterval(() => {
+        ctx.fillStyle = '#eff2ed';
+        ctx.fillRect(0, 0, 1920, 1080);
+
+        // Header strip
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 1920, 110);
+        ctx.fillStyle = '#2c4e43';
+        ctx.font = '700 36px "Plus Jakarta Sans"';
+        ctx.textAlign = 'left';
+        ctx.fillText('Tumaini', 140, 68);
+        ctx.font = '400 18px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#5c6f66';
+        ctx.fillText('Anonymous Peer Support & Crisis Sanctuary · Uganda', 300, 68);
+
+        // Active Track Render
+        if (activeTrackKey === 'master' || activeTrackKey === 'intake') {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(240, 200, 1440, 720, 24);
+          ctx.fill();
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '500 52px "Newsreader", serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Put your weight down, even for a few minutes.', 1920 / 2, 290);
+
+          ctx.font = '400 24px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#5c6f66';
+          ctx.fillText('Connect with an On-Duty Counselor · Campus & Tuition Stress Priority', 1920 / 2, 350);
+
+          // Category Cards
+          ctx.fillStyle = '#e8f2ee';
+          ctx.beginPath();
+          ctx.roundRect(320, 420, 400, 120, 16);
+          ctx.fill();
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '700 24px "Plus Jakarta Sans"';
+          ctx.textAlign = 'left';
+          ctx.fillText('Campus & Tuition Stress', 350, 470);
+          ctx.font = '400 16px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#5c6f66';
+          ctx.fillText('Fees deadlines, retakes, family pressure', 350, 505);
+
+          // Urgency Badge
+          ctx.fillStyle = '#fbf5eb';
+          ctx.beginPath();
+          ctx.roundRect(760, 420, 400, 120, 16);
+          ctx.fill();
+          ctx.fillStyle = '#c98a3b';
+          ctx.font = '700 24px "Plus Jakarta Sans"';
+          ctx.fillText('Tier 2: Urgent Priority', 790, 470);
+          ctx.font = '400 16px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#8c5b1c';
+          ctx.fillText('Queued to counselor triage desk', 790, 505);
+
+          // Chat Dock
+          ctx.fillStyle = '#2c4e43';
+          ctx.beginPath();
+          ctx.roundRect(320, 600, 840, 80, 12);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 24px "Plus Jakarta Sans"';
+          ctx.textAlign = 'center';
+          ctx.fillText('Start Confidential 1-on-1 Chat', 320 + 420, 650);
+        } else if (activeTrackKey === 'counselor') {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(240, 200, 1440, 720, 24);
+          ctx.fill();
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '700 32px "Plus Jakarta Sans"';
+          ctx.textAlign = 'left';
+          ctx.fillText('Dr. Sarah Kigozi · Crisis Counselor (Kampala)', 320, 280);
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.beginPath();
+          ctx.roundRect(500, 360, 900, 120, 16);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '400 24px "Plus Jakarta Sans"';
+          ctx.fillText('I failed two papers this semester... I feel so guilty I can barely breathe.', 540, 430);
+
+          ctx.fillStyle = '#f2f5f1';
+          ctx.beginPath();
+          ctx.roundRect(320, 520, 940, 140, 16);
+          ctx.fill();
+          ctx.fillStyle = '#192823';
+          ctx.fillText('Take a slow, deep breath with me. You are safe here tonight.', 360, 580);
+          ctx.fillText('Your worth is not defined by this semester.', 360, 620);
+        } else if (activeTrackKey === 'hearth') {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(240, 200, 1440, 720, 24);
+          ctx.fill();
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '600 48px "Newsreader", serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('The Confession Hearth', 1920 / 2, 300);
+
+          ctx.fillStyle = '#f7f9f6';
+          ctx.beginPath();
+          ctx.roundRect(360, 380, 1200, 260, 16);
+          ctx.fill();
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '700 26px "Plus Jakarta Sans"';
+          ctx.textAlign = 'left';
+          ctx.fillText('Quiet Crane · Grief & Empty Spaces', 400, 440);
+
+          ctx.font = '400 24px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#192823';
+          ctx.fillText('"Lost my mother last December. Everyone around me expects me to be okay by now..."', 400, 500);
+
+          ctx.fillStyle = '#c98a3b';
+          ctx.beginPath();
+          ctx.roundRect(400, 550, 240, 56, 28);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 20px "Plus Jakarta Sans"';
+          ctx.fillText('Hold Space · 43', 440, 586);
+        } else if (activeTrackKey === 'staff') {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(240, 180, 1440, 760, 24);
+          ctx.fill();
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '700 32px "Plus Jakarta Sans"';
+          ctx.textAlign = 'left';
+          ctx.fillText('Staff Clinical Triage Command · STF-1001', 300, 260);
+
+          ctx.fillStyle = '#f7f9f6';
+          ctx.beginPath();
+          ctx.roundRect(300, 320, 440, 540, 16);
+          ctx.fill();
+
+          ctx.fillStyle = '#2c4e43';
+          ctx.font = '700 22px "Plus Jakarta Sans"';
+          ctx.fillText('Incoming Emergency Queue', 330, 370);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(330, 410, 380, 120, 12);
+          ctx.fill();
+          ctx.fillStyle = '#c98a3b';
+          ctx.font = '700 20px "Plus Jakarta Sans"';
+          ctx.fillText('Steady Kob · URGENT', 350, 455);
+          ctx.font = '400 16px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#5c6f66';
+          ctx.fillText('Campus & Tuition Stress', 350, 490);
+        }
+
+        if (currentTime >= dur) {
+          clearInterval(interval);
+          mediaRecorder.stop();
+          pause();
+        }
+      }, 1000 / 30);
+    });
+
+    // Auto-start video with gentle motion
+    updateFrame(0.0);
+    play();
+  </script>
+</body>
+</html>

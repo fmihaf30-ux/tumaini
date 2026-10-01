@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tumaini Staff: Triage & Moderation Console</title>
+  <link rel="stylesheet" href="css/tumaini.css">
+  <link rel="stylesheet" href="css/staff.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body class="staff-root">
+
+  <!-- Top Global Header -->
+  <header class="site-header">
+    <a href="/staff.html" class="brand-wrap" aria-label="Tumaini Staff Console">
+      <img src="assets/logo.svg" alt="Tumaini Logo" class="brand-logo-img">
+      <div class="brand-titles">
+        <span class="brand-title">Tumaini Staff</span>
+        <span class="brand-subtitle">Clinical Triage & Confession Moderation</span>
+      </div>
+    </a>
+
+  </header>
+
+  <!-- 1. Staff Authentication Screen -->
+  <main class="staff-auth-container" id="staffAuthScreen">
+    <div class="staff-auth-card">
+      <div class="staff-auth-header">
+        <span class="auth-badge">Tumaini Care Team</span>
+        <h1>Operator Authentication</h1>
+        <p>Sign in with your Operator ID or register a new counselor credentials profile.</p>
+      </div>
+
+      <!-- Auth Notice Box -->
+      <div class="auth-notice-box" id="staffAuthNotice" style="display: none;">
+        <span id="authNoticeText"></span>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="auth-tab-switch">
+        <button class="auth-tab active" id="tabLogin" type="button">Sign In</button>
+        <button class="auth-tab" id="tabRegister" type="button">Register New Counselor</button>
+      </div>
+
+      <!-- Demo Credentials Helper Callout -->
+      <div style="background: rgba(92, 151, 132, 0.08); border: 1px dashed var(--brand-sage); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+        <strong style="color: var(--brand-eucalyptus-dark);">Operator Demo Credentials:</strong><br>
+        Operator ID: <code style="font-family: var(--font-mono); font-weight: 600; color: var(--brand-eucalyptus-dark);">STF-1001</code> &bull; Password: <code style="font-family: var(--font-mono); font-weight: 600; color: var(--brand-eucalyptus-dark);">counselor</code><br>
+        <span style="font-size: 11.5px; color: var(--text-muted);">(Or switch to the "Register New Counselor" tab to create your own clinical handle)</span>
+      </div>
+
+      <!-- Login Form -->
+      <form class="auth-form" id="staffLoginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginStaffId">Operator Staff ID</label>
+          <input 
+            type="text" 
+            id="loginStaffId" 
+            class="form-input" 
+            placeholder="e.g. STF-4821" 
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input 
+            type="password" 
+            id="loginPassword" 
+            class="form-input" 
+            placeholder="••••••••" 
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button class="btn-submit-intake" type="submit" style="width: 100%;">
+          Authenticate & Open Console
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form class="auth-form" id="staffRegisterForm" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="regStaffName">Full Name / Clinical Handle</label>
+          <input 
+            type="text" 
+            id="regStaffName" 
+            class="form-input" 
+            placeholder="e.g. Dr. Sarah Kigozi" 
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regStaffRole">Clinical Role</label>
+          <select id="regStaffRole" class="form-input" style="cursor: pointer;">
+            <option value="Crisis Counselor">Crisis Counselor</option>
+            <option value="Peer Support Specialist">Peer Support Specialist</option>
+            <option value="Triage Lead">Triage Lead / Shift Supervisor</option>
+            <option value="Clinical Psychologist">Clinical Psychologist</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regPassword">Set Password</label>
+          <input 
+            type="password" 
+            id="regPassword" 
+            class="form-input" 
+            placeholder="Minimum 4 characters" 
+            minlength="4"
+            required
+          >
+        </div>
+
+        <button class="btn-submit-intake" type="submit" style="width: 100%;">
+          Register & Generate Operator ID
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- 2. Staff Operator Console (Post-Login) -->
+  <div class="staff-console-container" id="staffConsoleScreen">
+
+    <!-- Top Duty Strip -->
+    <div class="staff-duty-strip">
+      <div class="staff-profile-info">
+        <span class="staff-operator-tag" id="staffOperatorTag">STF-0000</span>
+        <div>
+          <strong id="staffNameDisplay" style="font-size: 14px; color: var(--text-primary);">Counselor</strong>
+          <span id="staffRoleDisplay" style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">Crisis Counselor</span>
+        </div>
+        <span class="badge" id="dutyStatusBadge" style="background: rgba(100, 116, 139, 0.15); color: #64748b;">OFF DUTY</span>
+      </div>
+
+      <div class="staff-duty-controls">
+        <span class="shift-timer-display" id="shiftTimerDisplay">Shift: 00:00:00</span>
+        <button class="btn-clock-in" id="btnClockIn" type="button">Clock In for Shift</button>
+        <button class="btn-clock-out" id="btnClockOut" type="button" style="display: none;">Clock Out</button>
+        <button class="nav-btn" id="btnLogout" type="button">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Dual Desk Switcher -->
+    <div class="desk-nav-bar">
+      <button class="desk-tab-btn active" id="btnDeskTriage" type="button">
+        <span>Emergency Triage & 1-on-1 Consultations</span>
+      </button>
+      <button class="desk-tab-btn" id="btnDeskConfessions" type="button">
+        <span>Confession Moderation Desk</span>
+        <span class="desk-badge-count" id="badgePendingConfessions">0</span>
+      </button>
+    </div>
+
+    <!-- Desk 1: Triage & 1-on-1 Consultations -->
+    <div class="desk-pane active" id="deskTriagePane">
+      <div class="staff-workspace-layout">
+
+        <!-- Left Column: Triage Priority Queue -->
+        <aside class="staff-queue-column">
+          <div class="queue-column-header">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h2 style="font-size: 15px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Incoming Emergency Queue</h2>
+              <span style="font-size: 11px; color: var(--text-muted);">Strict Emergency Ranking</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="background: var(--bg-canvas); padding: 6px 10px; border-radius: 6px; font-size: 11.5px; flex: 1; text-align: center; border: 1px solid var(--border-subtle);">
+                Waiting: <strong id="statWaiting">0</strong>
+              </div>
+              <div style="background: var(--tier-1-bg); padding: 6px 10px; border-radius: 6px; font-size: 11.5px; flex: 1; text-align: center; color: var(--tier-1-color); border: 1px solid var(--tier-1-border);">
+                Critical: <strong id="statCritical">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Queue Tickets List (Zero Demo Data) -->
+          <div class="queue-tickets-list" id="queueTicketsList">
+            <!-- Dynamically populated -->
+          </div>
+        </aside>
+
+        <!-- Right Column: Counselor 1-on-1 Workspace -->
+        <section class="staff-workspace-column">
+          <!-- Empty State -->
+          <div class="workspace-empty-state" id="workspaceEmptyState">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.35;">
+              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+              <path d="M3 9h18"></path>
+              <path d="M9 21V9"></path>
+            </svg>
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--brand-eucalyptus-dark);">Counselor Workspace Standby</h3>
+            <p style="max-width: 400px; font-size: 13px; line-height: 1.5;">
+              Accept an incoming case from the emergency queue on the left to begin 1-on-1 consultation and assign peer support circles.
+            </p>
+          </div>
+
+          <!-- Active Workspace Pane -->
+          <div class="workspace-active-pane" id="workspaceActivePane">
+            <div class="workspace-case-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <h2 id="workspaceSeekerName" style="font-size: 16px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Seeker</h2>
+                <span class="badge" id="workspaceTierBadge">NORMAL</span>
+                <span style="font-size: 12px; color: var(--text-secondary); background: var(--bg-canvas); padding: 2px 10px; border-radius: 4px; border: 1px solid var(--border-subtle);" id="workspaceCategoryTag">Category</span>
+              </div>
+              <button class="nav-btn btn-danger" id="btnReleaseCase" type="button">
+                Close & Resolve Case
+              </button>
+            </div>
+
+            <!-- Body Split: Chat + Group Tools -->
+            <div class="workspace-body-split">
+              <!-- Chat Pane -->
+              <div class="workspace-chat-pane">
+                <div class="counselor-messages-container" id="counselorMessagesList">
+                  <!-- Messages populated dynamically -->
+                </div>
+
+                <!-- Clinical De-escalation Snippets Bar -->
+                <div style="padding: 10px 18px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; gap: 8px; overflow-x: auto;">
+                  <button class="snippet-btn" type="button" data-snippet="I am here with you right now and you are safe. Take all the time you need.">
+                    You are safe here
+                  </button>
+                  <button class="snippet-btn" type="button" data-snippet="Let's take a slow breath together. What feels like the heaviest part right now?">
+                    Breathing anchor
+                  </button>
+                  <button class="snippet-btn" type="button" data-snippet="Are you in a physically safe environment right now?">
+                    Safety check
+                  </button>
+                  <button class="snippet-btn" type="button" data-snippet="I can connect you directly with Mental Health Uganda's toll-free line at 0800 21 21 21.">
+                    Helpline offer
+                  </button>
+                </div>
+
+                <!-- Input Row -->
+                <div class="counselor-input-row">
+                  <input 
+                    type="text" 
+                    id="counselorTextInput" 
+                    class="counselor-text-input" 
+                    placeholder="Type your response as a Tumaini counselor..."
+                    autocomplete="off"
+                  >
+                  <button class="btn-counselor-send" id="btnCounselorSend" type="button">
+                    Send Response
+                  </button>
+                </div>
+              </div>
+
+              <!-- Right Tools: Group Room Assignment -->
+              <aside class="workspace-tools-pane">
+                <div class="clinical-tool-card">
+                  <h4>Group Circle Assignment</h4>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45;">
+                    Assign this user to a curated peer support circle. The user will receive an in-app invite prompt to accept.
+                  </p>
+
+                  <label class="form-label" style="font-size: 12px; margin-top: 4px;">Existing Circles</label>
+                  <select id="selectGroupRoom" class="form-input" style="padding: 8px 10px; font-size: 12.5px; cursor: pointer;">
+                    <!-- Populated dynamically -->
+                  </select>
+                  <button class="btn-secondary" id="btnInviteSelectedRoom" type="button" style="padding: 8px 12px; font-size: 12.5px; width: 100%;">
+                    Invite Seeker to Selected Circle
+                  </button>
+
+                  <div style="border-top: 1px solid var(--border-subtle); margin: 6px 0;"></div>
+
+                  <label class="form-label" style="font-size: 12px;">Create & Invite to New Circle</label>
+                  <input 
+                    type="text" 
+                    id="inputNewRoomTitle" 
+                    class="form-input" 
+                    placeholder="Circle Title (e.g. Tuition Anxiety Circle)"
+                    style="padding: 8px 10px; font-size: 12.5px;"
+                  >
+                  <button class="btn-submit-intake" id="btnCreateAndInviteRoom" type="button" style="padding: 8px 12px; font-size: 12.5px; width: 100%;">
+                    Create & Invite Seeker
+                  </button>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- Desk 2: Confession Moderation Desk -->
+    <div class="desk-pane" id="deskConfessionsPane">
+      <div class="moderation-desk-wrap">
+        <div>
+          <h2 style="font-size: 22px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Confession Moderation Desk</h2>
+          <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px;">
+            Review incoming anonymous confessions before they are published to the community hearth. Ensure submissions are free of harassment, doxxing, or self-harm incitement.
+          </p>
+        </div>
+
+        <div id="pendingConfessionsList" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Dynamically populated with pending submissions -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="js/tumaini-staff.js"></script>
+</body>
+</html>
