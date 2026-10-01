@@ -84,6 +84,8 @@ class TumainiStore {
     this.activeUserIntakeId = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER_INTAKE) || null;
     this.activeStaffIntakeId = localStorage.getItem(STORAGE_KEYS.ACTIVE_STAFF_INTAKE) || null;
 
+    this.purgeOldSessions();
+
     if (this.intakes.length === 0) {
       const initialTicketId = 'IN-4821';
       this.intakes = [
@@ -685,6 +687,53 @@ class TumainiStore {
     if (!confessionId) return;
     this.confessions = this.confessions.map(c => c.id === confessionId ? { ...c, status } : c);
     this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+    this.notify();
+  }
+
+  // --- 7. Data Retention & Auto-Purge Lifecycle (Data Minimization) ---
+  purgeOldSessions() {
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const initialCount = this.intakes.length;
+    this.intakes = this.intakes.filter(i => {
+      // Purge resolved cases older than 2 hours or any cases older than 24 hours
+      if (i.status === 'resolved' && (now - i.createdAt > 2 * 3600000)) return false;
+      if (now - i.createdAt > ONE_DAY_MS) return false;
+      return true;
+    });
+
+    if (this.intakes.length !== initialCount) {
+      const remainingIds = new Set(this.intakes.map(i => i.id));
+      this.save(STORAGE_KEYS.INTAKES, this.intakes);
+
+      const cleanedMessages = {};
+      for (const id in this.intakeMessages) {
+        if (remainingIds.has(id)) {
+          cleanedMessages[id] = this.intakeMessages[id];
+        }
+      }
+      this.intakeMessages = cleanedMessages;
+      this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+    }
+  }
+
+  purgeIntake(intakeId) {
+    if (!intakeId) return;
+    this.intakes = this.intakes.filter(i => i.id !== intakeId);
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+
+    if (this.intakeMessages[intakeId]) {
+      delete this.intakeMessages[intakeId];
+      this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+    }
+
+    if (this.activeUserIntakeId === intakeId) {
+      this.setActiveUserIntake(null);
+    }
+    if (this.activeStaffIntakeId === intakeId) {
+      this.setActiveStaffIntake(null);
+    }
     this.notify();
   }
 }

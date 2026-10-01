@@ -84,6 +84,11 @@ class TumainiUser {
     this.btnOpenHelplines = document.getElementById('btnOpenHelplines');
     this.btnCloseHelplines = document.getElementById('btnCloseHelplines');
     this.btnQuickExit = document.getElementById('btnQuickExit');
+
+    this.privacyModal = document.getElementById('privacyModal');
+    this.btnOpenPrivacy = document.getElementById('btnOpenPrivacy');
+    this.btnClosePrivacy = document.getElementById('btnClosePrivacy');
+    this.linkOpenPrivacy = document.getElementById('linkOpenPrivacy');
   }
 
   bindEvents() {
@@ -209,6 +214,24 @@ class TumainiUser {
       });
     }
 
+    if (this.btnOpenPrivacy && this.privacyModal) {
+      this.btnOpenPrivacy.addEventListener('click', () => openModal(this.privacyModal));
+    }
+    if (this.linkOpenPrivacy && this.privacyModal) {
+      this.linkOpenPrivacy.addEventListener('click', (e) => {
+        e.preventDefault();
+        openModal(this.privacyModal);
+      });
+    }
+    if (this.btnClosePrivacy && this.privacyModal) {
+      this.btnClosePrivacy.addEventListener('click', () => closeModal(this.privacyModal));
+    }
+    if (this.privacyModal) {
+      this.privacyModal.addEventListener('click', (e) => {
+        if (e.target === this.privacyModal) closeModal(this.privacyModal);
+      });
+    }
+
     // Quick Safety Exit
     if (this.btnQuickExit) {
       this.btnQuickExit.addEventListener('click', () => this.quickExit());
@@ -217,6 +240,8 @@ class TumainiUser {
       if (e.key === 'Escape') {
         if (this.aboutModal && (this.aboutModal.classList.contains('open') || this.aboutModal.classList.contains('active'))) {
           closeModal(this.aboutModal);
+        } else if (this.privacyModal && (this.privacyModal.classList.contains('open') || this.privacyModal.classList.contains('active'))) {
+          closeModal(this.privacyModal);
         } else if (this.helplinesModal && (this.helplinesModal.classList.contains('open') || this.helplinesModal.classList.contains('active'))) {
           closeModal(this.helplinesModal);
         } else {

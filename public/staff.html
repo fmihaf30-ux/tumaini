@@ -2334,8 +2334,26 @@ button:disabled, .btn:disabled {
           >
         </div>
 
+        <div class="form-group">
+          <label class="form-label" for="regSupervisorKey">
+            Clinical Supervisor Authorization Key
+            <span style="font-size: 11px; color: var(--brand-eucalyptus-dark); font-weight: normal;">(Required)</span>
+          </label>
+          <input 
+            type="password" 
+            id="regSupervisorKey" 
+            class="form-input" 
+            placeholder="Enter institutional authorization key" 
+            required
+            autocomplete="off"
+          >
+          <span style="font-size: 11px; color: var(--text-muted); line-height: 1.4; margin-top: 2px;">
+            Registration is strictly restricted to vetted counseling personnel. Inquire with the Clinical Director for onboarding keys.
+          </span>
+        </div>
+
         <button class="btn-submit-intake" type="submit" style="width: 100%;">
-          Register & Generate Operator ID
+          Verify Key & Generate Operator ID
         </button>
       </form>
     </div>
@@ -2355,7 +2373,7 @@ button:disabled, .btn:disabled {
         <span class="badge" id="dutyStatusBadge" style="background: rgba(100, 116, 139, 0.15); color: #64748b;">OFF DUTY</span>
         <span class="badge" id="cloudSyncStatusBadge" style="display: inline-flex; align-items: center; background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 10.5px; padding: 3px 8px;">
           <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 5px;"></span>
-          LIVE CLOUD SYNC
+          E2EE CLOUD SYNC
         </span>
       </div>
 

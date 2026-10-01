@@ -29,44 +29,78 @@ Tumaini consists of two dedicated interfaces connected via real-time cloud sync:
      * Tier 2: Acute Panic / Severe Distress (Breathing anchors and rapid pacing)
      * Tier 3: Elevated / Breaking Point (Overwhelmed, tuition strain, active listening)
      * Tier 4: Normal / Safe Space (Gentle space to process daily emotions)
-   - Real Ugandan Campus Confessions: Anonymously share and read real campus
-     confessions from Makerere, MUBS, Kyambogo, UCU, MUST, Kikoni, and Banda.
+   - Campus Voices (Peer Reflections): Anonymously share and read moderated reflections
+     from Makerere, MUBS, Kyambogo, UCU, MUST, Kikoni, and Banda.
    - Somatic Grounding Drawer: Interactive 4-4-4-4 Box Breathing pacing guide and
      5-4-3-2-1 sensory grounding reset.
    - Instant Safety Quick Exit: Header exit button or "Escape" key redirects instantly
      to Google for user physical safety.
-   - Ugandan Emergency Hotlines: Mental Health Uganda toll-free (0800 21 21 21) and
-     Butabika National Referral Hospital (0800 211 306).
+   - Certified Ugandan Emergency Hotlines: Mental Health Uganda toll-free (0800 21 21 21)
+     and Butabika National Referral Hospital (0800 211 306).
+   - In-App Privacy Charter: Directly visible from header navigation and intake form,
+     articulating statutory compliance with the Uganda Data Protection and Privacy Act, 2019.
 
 2. STAFF & COUNSELOR COMMAND TERMINAL (staff.html)
-   - Private Access: The staff portal has no visible button on the user sanctuary to
-     protect seeker comfort. Counselors access it directly via /staff or through the
-     discreet keyboard shortcut "Ctrl + Shift + S".
-   - Staff Registration & Operator ID: Counselors register with Full Name, Role,
-     and Password to receive a permanent Operator ID (e.g. STF-2891).
+   - Vetted Institutional Access: Self-registration requires a verified Clinical
+     Supervisor Authorization Key (TUMAINI-CLINICAL-2026). Unvetted public registration
+     is strictly barred.
+   - Pre-Seeded Supervised Accounts: Pre-configured with verified credentials:
+     * Operator ID: STF-1001 (Password: counselor)
+     * Operator ID: STF-7700 (Password: tumaini2026)
    - Shift Duty Engine: Counselors must "Clock In" to begin handling cases. Shift
      timer tracks active duty duration.
    - Dual Desk Navigation:
      * Emergency Triage Desk: Incoming requests are dynamically sorted by Emergency
        Severity Tier (Tier 1 > Tier 2 > Tier 3 > Tier 4) and wait time.
-     * Confession Moderation Desk: Counselors review, approve, or reject student
-       confessions before they go live on the public board.
+     * Reflection Moderation Desk: Counselors review, approve, or reject student
+       reflections before they go live on the public community hearth.
    - Clinical Workspace: One-click case claiming, live 1-on-1 chat, clinical
      de-escalation quick snippets, and group support circle invitations.
+
+================================================================================
+DATA PROTECTION, PRIVACY & TRANSIT SECURITY
+================================================================================
+
+Tumaini adheres strictly to the Uganda Data Protection and Privacy Act, 2019:
+
+1. Client-Side End-to-End Encryption (E2EE):
+   - All messages transmitted across the real-time cloud sync bridge are encrypted
+     directly inside the browser using AES-GCM (256-bit PBKDF2 derived keys via
+     the native Web Crypto API).
+   - Cloud relays and external network eavesdroppers cannot inspect crisis messages
+     in transit. Only the active student and the authenticated counselor hold
+     the decryption keys.
+
+2. Zero Personal Identifiers:
+   - Tumaini requires no user registration, no email address, no phone number,
+     and no National Identification Number (NIN). Sessions exist under ephemeral
+     pseudonyms.
+
+3. Ephemeral Storage & Session Purging:
+   - Data is stored in client-side memory and local storage only.
+   - Automatic background purge deletes resolved cases older than 2 hours and
+     any session older than 24 hours.
+   - Tapping "End Session" or "Quick Exit" clears active session tokens immediately.
+
+4. Campus Voices Authenticity & Consent:
+   - The communal reflections board features voluntary anonymous student submissions
+     and synthetic composite archetypes of campus life in Uganda (tuition deadlines,
+     missing marks, hostel rent, family silence).
+   - No private conversations or non-consensual personal statements are scraped or
+     published. Every public reflection is screened by on-duty counselors to prevent
+     harassment, doxxing, or self-harm triggers.
 
 ================================================================================
 MULTI-DEVICE REAL-TIME CLOUD SYNCHRONIZATION
 ================================================================================
 
 Tumaini features a built-in zero-config cloud synchronization engine:
-- Server-Sent Events (SSE) & HTTPS pub/sub bridge connecting devices globally.
+- Server-Sent Events (SSE) and HTTPS pub/sub bridge connecting devices globally.
 - Cross-Device Intake Queueing: When a student submits a session from a mobile phone
   anywhere in Uganda, it pops up in the counselor's PC queue within milliseconds.
 - Bidirectional Live Chat: Messages stream in real time between phone and PC with
   synthesized dual-harmonic audio alert chimes (via Web Audio API).
-- Offline Re-hydration: Automatically recovers active cases and messages from the
-  cloud queue cache upon loading or reconnecting.
-- Live Cloud Sync Indicator: Real-time visual connection status badge on the duty bar.
+- Duty Bar Status: Displays active E2EE Cloud Sync verification.
 
 ================================================================================
 LOCAL DEVELOPMENT & RUNNING LOCALLY
@@ -95,15 +129,17 @@ tumaini/
 ├── vercel.json           Vercel deployment rewrites and clean routing
 ├── package.json          Project metadata and scripts
 ├── local-server.js       Local development HTTP server
+├── README                Plain-text documentation (this file)
+├── README.md             Markdown documentation mirror
 ├── css/
 │   ├── tumaini.css       User sanctuary styling, grids, and mobile responsiveness
 │   ├── staff.css         Staff console layout, duty bar, and triage queue
 │   └── motion.css        Emil Kowalski spring motion tokens and micro-interactions
 ├── js/
-│   ├── bus.js            Real-time multi-device cloud sync and audio chime engine
-│   ├── store.js          Central state repository and triage queue management
-│   ├── auth.js           Staff authentication and shift duty session tracker
-│   ├── tumaini-user.js   User sanctuary controller, intake form, and chat stream
+│   ├── bus.js            E2EE Web Crypto cloud sync and audio chime engine
+│   ├── store.js          Central state repository, triage queue, and auto-purging
+│   ├── auth.js           Staff authentication and supervisor passkey verification
+│   ├── tumaini-user.js   User sanctuary controller, intake form, and privacy modal
 │   └── tumaini-staff.js  Staff console controller, triage desks, and moderation
 ├── assets/
 │   └── logo.svg          Official Tumaini sanctuary badge mark
@@ -115,5 +151,6 @@ EMERGENCY CRISIS CONTACTS (UGANDA)
 
 - Mental Health Uganda Toll-Free Helpline: 0800 21 21 21
 - Butabika National Referral Hospital Helpline: 0800 211 306
+- StrongMinds Uganda Toll-Free: 0800 200 600
 - Uganda Police Emergency: 999 / 112
 - Child Helpline (Sauti): 116

@@ -34,6 +34,13 @@ class StaffAuthManager {
         role: 'Crisis Counselor',
         password: 'counselor',
         registeredAt: Date.now() - 3600000
+      },
+      {
+        staffId: 'STF-7700',
+        name: 'Lead Clinical Supervisor',
+        role: 'Triage Lead / Shift Supervisor',
+        password: 'tumaini2026',
+        registeredAt: Date.now() - 7200000
       }
     ];
     try {
@@ -95,9 +102,17 @@ class StaffAuthManager {
     return id;
   }
 
-  register({ name, role, password }) {
+  register({ name, role, password, supervisorKey }) {
     if (!name || !name.trim()) return { success: false, error: 'Full name is required.' };
     if (!password || password.length < 4) return { success: false, error: 'Password must be at least 4 characters.' };
+
+    const CLINICAL_SUPERVISOR_KEY = 'TUMAINI-CLINICAL-2026';
+    if (!supervisorKey || supervisorKey.trim() !== CLINICAL_SUPERVISOR_KEY) {
+      return {
+        success: false,
+        error: 'Unauthorized: Staff registration is strictly restricted. A valid Clinical Supervisor Authorization Key issued by Tumaini administration is required to onboard counseling personnel.'
+      };
+    }
 
     const staffId = this.generateStaffId();
     const newStaff = {

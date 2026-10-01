@@ -40,6 +40,7 @@ class TumainiStaff {
     this.regNameInput = document.getElementById('regStaffName');
     this.regRoleSelect = document.getElementById('regStaffRole');
     this.regPassInput = document.getElementById('regPassword');
+    this.regSupervisorKeyInput = document.getElementById('regSupervisorKey');
 
     // Duty Strip
     this.staffOperatorTag = document.getElementById('staffOperatorTag');
@@ -319,13 +320,19 @@ class TumainiStaff {
     const name = this.regNameInput ? this.regNameInput.value.trim() : '';
     const role = this.regRoleSelect ? this.regRoleSelect.value : 'Crisis Counselor';
     const password = this.regPassInput ? this.regPassInput.value : '';
+    const supervisorKey = this.regSupervisorKeyInput ? this.regSupervisorKeyInput.value.trim() : '';
 
     if (!name || !password) {
       this.showAuthNotice('Full name and password are required.', true);
       return;
     }
 
-    const res = auth.register({ name, role, password });
+    if (!supervisorKey) {
+      this.showAuthNotice('Clinical Supervisor Authorization Key is required for staff onboarding.', true);
+      return;
+    }
+
+    const res = auth.register({ name, role, password, supervisorKey });
     if (res.success) {
       if (this.loginIdInput) this.loginIdInput.value = res.staffId;
       if (this.loginPassInput) this.loginPassInput.value = password;

@@ -1360,6 +1360,11 @@ button:disabled, .btn:disabled {
         <span class="about-text-mobile">Story</span>
       </button>
 
+      <button class="nav-btn" id="btnOpenPrivacy" type="button">
+        <span class="privacy-text-desktop">Privacy</span>
+        <span class="privacy-text-mobile">Privacy</span>
+      </button>
+
       <button class="nav-btn btn-helplines" id="btnOpenHelplines" type="button">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -1420,7 +1425,7 @@ button:disabled, .btn:disabled {
         1-on-1 Counselor Chat
       </button>
       <button class="sanctuary-tab-btn" id="tabConfessions" type="button">
-        The Confession Room (Community Hearth)
+        Campus Voices (Peer Reflections)
       </button>
     </nav>
 
@@ -1599,6 +1604,11 @@ button:disabled, .btn:disabled {
           <button class="btn-submit-intake" type="submit" style="width: 100%; margin-top: 10px;">
             Start Confidential 1-on-1 Chat
           </button>
+
+          <div style="margin-top: 14px; text-align: center; font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            <span>Zero personal identity required. Encrypted in transit & auto-purged.</span><br>
+            <a href="#" id="linkOpenPrivacy" style="color: var(--brand-eucalyptus-dark); text-decoration: underline; font-weight: 600;">Read our Privacy Charter & Safe Sanctuary Terms</a>
+          </div>
         </form>
       </div>
     </section>
@@ -1654,15 +1664,15 @@ button:disabled, .btn:disabled {
     <!-- 3. Confession Room Screen (Community Hearth) -->
     <section class="confessions-view" id="confessionsSection">
       <div class="confessions-hero">
-        <h2>The Confession Room (Community Hearth)</h2>
+        <h2>Campus Voices (Peer Reflections)</h2>
         <p>
-          A quiet communal hearth. Read honest, anonymous words from peers across Uganda, or leave what you are carrying. Submissions are reviewed by on-duty counselors before publishing to protect community safety.
+          A moderated communal hearth for anonymous student reflections across Ugandan universities. Honest reflections shared voluntarily by students navigating tuition pressure, family weight, academic challenges, and loneliness. Moderated by peer counselors to preserve community safety.
         </p>
       </div>
 
       <!-- Submit Confession Card -->
       <div class="submit-confession-card">
-        <h3>Put Down Your Burden Anonymously</h3>
+        <h3>Share Your Reflection Anonymously</h3>
         <span class="confession-notice-pill">Submissions are reviewed by counselors before appearing around this hearth</span>
         
         <form id="submitConfessionForm" style="display: flex; flex-direction: column; gap: 14px;">
@@ -1670,24 +1680,24 @@ button:disabled, .btn:disabled {
             type="text" 
             id="confessionCategory" 
             class="form-input" 
-            placeholder="Topic (e.g. Tuition guilt, Family silence, Secret grief)" 
+            placeholder="Topic (e.g. Tuition pressure, Family silence, Retake anxiety)" 
             maxlength="40" 
             required
           >
           <textarea 
             id="confessionText" 
             class="confession-textarea" 
-            placeholder="Write what you have been unable to say out loud to anyone..." 
+            placeholder="Write your honest reflection or what you have been unable to say out loud..." 
             required
           ></textarea>
 
           <button class="btn-submit-intake" type="submit" style="align-self: flex-start; padding: 12px 24px; font-size: 13.5px;">
-            Submit Confession for Review
+            Submit Reflection for Moderation
           </button>
         </form>
 
         <div id="confessionSubmittedNotice" style="display: none; background: #eef7f4; border: 1px solid #c3e2d7; padding: 14px 18px; border-radius: 8px; font-size: 13px; color: var(--brand-eucalyptus-dark); margin-top: 14px;">
-          Your confession has been received and queued for counselor review. To protect community safety, it will be published once approved.
+          Your reflection has been received and queued for counselor review. To protect community safety, it will appear once verified by on-duty counselors.
         </div>
       </div>
 
@@ -1779,6 +1789,60 @@ button:disabled, .btn:disabled {
 
         <p style="font-size: 11px; color: var(--text-muted);">
           All lines listed above are verified Uganda numbers and free of charge from any local mobile network.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Charter & Data Protection Modal -->
+  <div class="modal-overlay" id="privacyModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3>Privacy Charter & Safe Sanctuary Terms</h3>
+        <button class="modal-close-btn" id="btnClosePrivacy" type="button">×</button>
+      </div>
+      <div class="modal-body" style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+        <p>
+          Tumaini is designed from the ground up as a zero-barrier safe sanctuary. We adhere to the core principles of the <strong>Uganda Data Protection and Privacy Act, 2019</strong>, safeguarding your fundamental right to privacy, dignity, and confidential support.
+        </p>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">1. Zero Personal Identifiers (No Accounts)</strong>
+          <p style="margin-top: 4px;">
+            You are never asked for your real name, phone number, national ID (NIN), email address, or social accounts. Sessions exist solely under ephemeral nature pseudonyms or anonymous handles you choose.
+          </p>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">2. Client-Side End-to-End Encryption (E2EE)</strong>
+          <p style="margin-top: 4px;">
+            Every crisis message exchanged between you and on-duty counselors is encrypted directly inside your device's browser using AES-GCM (256-bit encryption keys via Web Crypto). Neither intermediate network carriers, cloud relays, nor unauthorized observers can read your conversation in transit.
+          </p>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">3. Ephemeral Storage and Automatic Purging</strong>
+          <p style="margin-top: 4px;">
+            Tumaini does not maintain permanent databases of user crisis conversations. Active sessions are stored only in volatile browser storage and automatically purged once resolved or after 24 hours. You can clear your session at any second using the "Quick Exit" (Esc) or "End Session" buttons.
+          </p>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">4. Vetted Clinical Access Control</strong>
+          <p style="margin-top: 4px;">
+            The counselor intake console is strictly restricted to vetted peer counselors and supervised clinical volunteers who authenticate with institutional supervisor keys. Unverified public access to crisis queues is barred.
+          </p>
+        </div>
+
+        <div class="helpline-box">
+          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">5. Clinical Safety Boundaries and Duty of Care</strong>
+          <p style="margin-top: 4px;">
+            Tumaini is an anonymous peer-support sanctuary and triage stepping stone, not a substitute for inpatient clinical psychiatry. If immediate life-threatening harm is detected, counselors will provide certified Ugandan toll-free crisis lines (e.g. Butabika Referral Hospital 0800 211 306 or Mental Health Uganda 0800 21 21 21) to connect you with emergency medical response.
+          </p>
+        </div>
+
+        <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;">
+          Questions or clinical partnerships: Tumaini Care Initiative, Kampala, Uganda.
         </p>
       </div>
     </div>
