@@ -292,6 +292,9 @@ class TumainiStaff {
       this.consoleScreen.classList.remove('active');
       this.consoleScreen.style.display = 'none';
     }
+    if (this.btnStaffProfile) {
+      this.btnStaffProfile.style.display = 'none';
+    }
   }
 
   showConsole() {
@@ -301,6 +304,39 @@ class TumainiStaff {
     if (this.consoleScreen) {
       this.consoleScreen.classList.add('active');
       this.consoleScreen.style.display = 'flex';
+    }
+    if (this.btnStaffProfile) {
+      this.btnStaffProfile.style.display = 'inline-flex';
+    }
+  }
+
+  handleLogin() {
+    this.hideAuthNotice();
+    const staffId = this.loginIdInput ? this.loginIdInput.value.trim() : '';
+    const password = this.loginPassInput ? this.loginPassInput.value.trim() : '';
+
+    if (!staffId || !password) {
+      this.showAuthNotice('Please enter both Operator Staff ID and Password.', true);
+      return;
+    }
+
+    const res = auth.login({ staffId, password });
+    if (res.success) {
+      if (this.loginPassInput) this.loginPassInput.value = '';
+      this.showConsole();
+      this.syncDutyStrip();
+      this.renderQueue();
+      this.renderRoomSelectDropdown();
+      this.renderConfessionsDesk();
+
+      const queue = store.getTriageQueue();
+      if (queue.length > 0 && !this.activeIntake) {
+        this.selectCase(queue[0]);
+      } else {
+        this.renderWorkspace();
+      }
+    } else {
+      this.showAuthNotice(res.error || 'Invalid credentials. Please verify your Operator ID and Password.', true);
     }
   }
 
@@ -443,16 +479,16 @@ class TumainiStaff {
 
   showAuthNotice(msg, isError) {
     if (!this.authNotice || !this.authNoticeText) return;
-    this.authNoticeText.innerHTML = msg;
+    this.authNoticeText.textContent = msg;
     this.authNotice.style.display = 'block';
     if (isError) {
-      this.authNotice.style.background = 'rgba(230, 57, 70, 0.15)';
-      this.authNotice.style.borderColor = 'rgba(230, 57, 70, 0.4)';
-      this.authNotice.style.color = '#fca5a5';
+      this.authNotice.style.background = '#fdf2f2';
+      this.authNotice.style.borderColor = '#f8c8c8';
+      this.authNotice.style.color = '#c93b3b';
     } else {
-      this.authNotice.style.background = 'rgba(82, 183, 136, 0.15)';
-      this.authNotice.style.borderColor = 'rgba(82, 183, 136, 0.4)';
-      this.authNotice.style.color = '#a7f3d0';
+      this.authNotice.style.background = '#eef7f4';
+      this.authNotice.style.borderColor = '#c3e2d7';
+      this.authNotice.style.color = '#2c4e43';
     }
   }
 

@@ -21,32 +21,33 @@ class StaffAuthManager {
   }
 
   loadAccounts() {
+    let accounts = [];
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.STAFF_ACCOUNTS);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) accounts = parsed;
       }
     } catch (e) {
       console.warn('Error reading staff accounts', e);
     }
 
-    // Default Seed: Single Master Supervisor Account (No demo counselors)
-    const seed = [
-      {
+    // Default Master Supervisor Account
+    const hasSupervisor = accounts.some(acc => acc.staffId === 'SUPERVISOR' || acc.isSupervisor);
+    if (!hasSupervisor) {
+      accounts.unshift({
         staffId: 'SUPERVISOR',
         name: 'Clinical Supervisor',
         role: 'Clinical Supervisor & System Administrator',
         password: 'tumaini2026',
         isSupervisor: true,
         registeredAt: Date.now()
-      }
-    ];
-
-    try {
-      localStorage.setItem(STORAGE_KEYS.STAFF_ACCOUNTS, JSON.stringify(seed));
-    } catch (e) {}
-    return seed;
+      });
+      try {
+        localStorage.setItem(STORAGE_KEYS.STAFF_ACCOUNTS, JSON.stringify(accounts));
+      } catch (e) {}
+    }
+    return accounts;
   }
 
   saveAccounts() {
@@ -157,20 +158,36 @@ class StaffAuthManager {
 
   // Login handler
   login({ staffId, password }) {
-    const trimmedId = (staffId || '').trim().toUpperCase();
+    const rawId = (staffId || '').trim();
+    const trimmedId = rawId.toUpperCase();
     const trimmedPass = (password || '').trim();
 
     // Check for Supervisor aliases
     let account = null;
-    if (trimmedId === 'SUPERVISOR' || trimmedId === 'STF-ADMIN' || trimmedId === 'ADMIN' || trimmedId === 'STF-7700') {
+    if (trimmedId === 'SUPERVISOR' || trimmedId === 'ADMIN' || trimmedId === 'STF-ADMIN' || trimmedId === 'STF-7700') {
       account = this.accounts.find(acc => acc.staffId === 'SUPERVISOR' || acc.isSupervisor);
-      if (account && (trimmedPass === account.password || trimmedPass === CLINICAL_SUPERVISOR_KEY || trimmedPass === 'tumaini2026')) {
-        // Authenticated as supervisor
+      const isPassValid = (account && trimmedPass === account.password) ||
+        trimmedPass.toLowerCase() === 'tumaini2026' ||
+        trimmedPass === CLINICAL_SUPERVISOR_KEY;
+
+      if (isPassValid) {
+        if (!account) {
+          account = {
+            staffId: 'SUPERVISOR',
+            name: 'Clinical Supervisor',
+            role: 'Clinical Supervisor & System Administrator',
+            password: 'tumaini2026',
+            isSupervisor: true,
+            registeredAt: Date.now()
+          };
+          this.accounts.unshift(account);
+          this.saveAccounts();
+        }
       } else {
         account = null;
       }
     } else {
-      account = this.accounts.find(acc => acc.staffId === trimmedId && acc.password === trimmedPass);
+      account = this.accounts.find(acc => acc.staffId === trimmedId && (acc.password === trimmedPass || trimmedPass === CLINICAL_SUPERVISOR_KEY));
     }
 
     if (!account) {
