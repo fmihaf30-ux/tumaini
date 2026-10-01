@@ -41,20 +41,26 @@ Tumaini consists of two dedicated interfaces connected via real-time cloud sync:
      articulating statutory compliance with the Uganda Data Protection and Privacy Act, 2019.
 
 2. STAFF & COUNSELOR COMMAND TERMINAL (staff.html)
-   - Vetted Institutional Access: Self-registration requires a verified Clinical
-     Supervisor Authorization Key (TUMAINI-CLINICAL-2026). Unvetted public registration
-     is strictly barred.
-   - Pre-Seeded Supervised Accounts: Pre-configured with verified credentials:
-     * Operator ID: STF-1001 (Password: counselor)
-     * Operator ID: STF-7700 (Password: tumaini2026)
+   - Zero Public Self-Registration: Self-registration is completely removed from
+     the public portal. Counselor credentials must be generated exclusively by
+     the Clinical Supervisor.
+   - Master Supervisor Access: Administrative access authenticated via Supervisor ID
+     (SUPERVISOR) with master credentials.
+   - Supervisor Credential Generator: The supervisor can generate unique Operator
+     IDs (e.g. STF-XXXX) and secure passwords from the Profile modal, ready to copy
+     and send directly to counselors via WhatsApp or SMS.
+   - Active Counselors Roster: The supervisor can view and revoke active counselor
+     credentials at any time.
+   - WhatsApp-Style Clinical Chat: Real-time 1-on-1 counseling workspace styled with
+     familiar WhatsApp speech bubbles, delivery checkmarks, and timestamps.
    - Shift Duty Engine: Counselors must "Clock In" to begin handling cases. Shift
      timer tracks active duty duration.
    - Dual Desk Navigation:
-     * Emergency Triage Desk: Incoming requests are dynamically sorted by Emergency
-       Severity Tier (Tier 1 > Tier 2 > Tier 3 > Tier 4) and wait time.
+     * Emergency Triage Desk: Real incoming requests sorted by Emergency Severity Tier.
+       All demo tickets and seed data have been completely removed.
      * Reflection Moderation Desk: Counselors review, approve, or reject student
        reflections before they go live on the public community hearth.
-   - Clinical Workspace: One-click case claiming, live 1-on-1 chat, clinical
+   - Clinical Workspace: One-click case claiming, live WhatsApp-style chat, clinical
      de-escalation quick snippets, and group support circle invitations.
 
 ================================================================================

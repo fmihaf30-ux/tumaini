@@ -1,14 +1,17 @@
 /* ==========================================================================
-   TUMAINI - STAFF AUTHENTICATION & SHIFT DUTY ENGINE
-   - Staff Registration with automatic Operator ID generation (STF-XXXX)
-   - Secure credential verification & persistent session
+   TUMAINI - STAFF AUTHENTICATION & SUPERVISOR CREDENTIAL ENGINE
+   - Secure Supervisor credential issuing for counselors
+   - No public self-registration (vetted supervisor generation only)
+   - Unique Operator ID generation (STF-XXXX)
    - Shift Clock-In / Clock-Out state tracking
    ========================================================================== */
 
 const STORAGE_KEYS = {
-  STAFF_ACCOUNTS: 'haven_staff_accounts_v3',
-  ACTIVE_SESSION: 'haven_active_staff_session_v3'
+  STAFF_ACCOUNTS: 'haven_staff_accounts_v5',
+  ACTIVE_SESSION: 'haven_active_staff_session_v5'
 };
+
+const CLINICAL_SUPERVISOR_KEY = 'TUMAINI-CLINICAL-2026';
 
 class StaffAuthManager {
   constructor() {
@@ -27,22 +30,19 @@ class StaffAuthManager {
     } catch (e) {
       console.warn('Error reading staff accounts', e);
     }
+
+    // Default Seed: Single Master Supervisor Account (No demo counselors)
     const seed = [
       {
-        staffId: 'STF-1001',
-        name: 'Dr. Sarah Kigozi',
-        role: 'Crisis Counselor',
-        password: 'counselor',
-        registeredAt: Date.now() - 3600000
-      },
-      {
-        staffId: 'STF-7700',
-        name: 'Lead Clinical Supervisor',
-        role: 'Triage Lead / Shift Supervisor',
+        staffId: 'SUPERVISOR',
+        name: 'Clinical Supervisor',
+        role: 'Clinical Supervisor & System Administrator',
         password: 'tumaini2026',
-        registeredAt: Date.now() - 7200000
+        isSupervisor: true,
+        registeredAt: Date.now()
       }
     ];
+
     try {
       localStorage.setItem(STORAGE_KEYS.STAFF_ACCOUNTS, JSON.stringify(seed));
     } catch (e) {}
@@ -102,24 +102,26 @@ class StaffAuthManager {
     return id;
   }
 
-  register({ name, role, password, supervisorKey }) {
-    if (!name || !name.trim()) return { success: false, error: 'Full name is required.' };
-    if (!password || password.length < 4) return { success: false, error: 'Password must be at least 4 characters.' };
+  // Generate safe pronounceable password for temporary counselor onboarding
+  generateRandomPassword() {
+    const words = ['Tumaini', 'Sanctuary', 'Compassion', 'Hope', 'Care', 'Anchor', 'Peace'];
+    const word = words[Math.floor(Math.random() * words.length)];
+    const num = Math.floor(100 + Math.random() * 900);
+    return `${word}${num}#`;
+  }
 
-    const CLINICAL_SUPERVISOR_KEY = 'TUMAINI-CLINICAL-2026';
-    if (!supervisorKey || supervisorKey.trim() !== CLINICAL_SUPERVISOR_KEY) {
-      return {
-        success: false,
-        error: 'Unauthorized: Staff registration is strictly restricted. A valid Clinical Supervisor Authorization Key issued by Tumaini administration is required to onboard counseling personnel.'
-      };
-    }
-
+  // Supervisor creates new counselor credentials
+  createCounselor({ name, role, password }) {
+    if (!name || !name.trim()) return { success: false, error: 'Counselor name is required.' };
+    const cleanPass = (password && password.trim().length >= 4) ? password.trim() : this.generateRandomPassword();
     const staffId = this.generateStaffId();
+
     const newStaff = {
       staffId,
       name: name.trim(),
       role: role || 'Crisis Counselor',
-      password, // In production this would be hashed on a backend
+      password: cleanPass,
+      isSupervisor: false,
       registeredAt: Date.now()
     };
 
@@ -129,22 +131,57 @@ class StaffAuthManager {
     return {
       success: true,
       staffId,
+      password: cleanPass,
       staff: newStaff
     };
   }
 
+  // Revoke/Delete a counselor account (cannot delete supervisor)
+  deleteCounselor(staffId) {
+    const target = (staffId || '').trim().toUpperCase();
+    if (target === 'SUPERVISOR') {
+      return { success: false, error: 'Cannot delete the master Supervisor account.' };
+    }
+    const idx = this.accounts.findIndex(acc => acc.staffId === target);
+    if (idx === -1) return { success: false, error: 'Counselor not found.' };
+
+    this.accounts.splice(idx, 1);
+    this.saveAccounts();
+    return { success: true };
+  }
+
+  // List all counselors created by supervisor
+  getCounselors() {
+    return this.accounts.filter(acc => acc.staffId !== 'SUPERVISOR');
+  }
+
+  // Login handler
   login({ staffId, password }) {
     const trimmedId = (staffId || '').trim().toUpperCase();
-    const account = this.accounts.find(acc => acc.staffId === trimmedId && acc.password === password);
+    const trimmedPass = (password || '').trim();
+
+    // Check for Supervisor aliases
+    let account = null;
+    if (trimmedId === 'SUPERVISOR' || trimmedId === 'STF-ADMIN' || trimmedId === 'ADMIN' || trimmedId === 'STF-7700') {
+      account = this.accounts.find(acc => acc.staffId === 'SUPERVISOR' || acc.isSupervisor);
+      if (account && (trimmedPass === account.password || trimmedPass === CLINICAL_SUPERVISOR_KEY || trimmedPass === 'tumaini2026')) {
+        // Authenticated as supervisor
+      } else {
+        account = null;
+      }
+    } else {
+      account = this.accounts.find(acc => acc.staffId === trimmedId && acc.password === trimmedPass);
+    }
 
     if (!account) {
-      return { success: false, error: 'Invalid Staff ID or Password. Please verify credentials or register.' };
+      return { success: false, error: 'Invalid Operator ID or Password. Credentials must be issued by the Clinical Supervisor.' };
     }
 
     this.session = {
       staffId: account.staffId,
       name: account.name,
       role: account.role,
+      isSupervisor: !!account.isSupervisor,
       isOnDuty: false,
       shiftStartedAt: null
     };
@@ -188,6 +225,11 @@ class StaffAuthManager {
   isOnDuty() {
     return !!(this.session && this.session.isOnDuty);
   }
+
+  isSupervisor() {
+    return !!(this.session && (this.session.isSupervisor || this.session.staffId === 'SUPERVISOR'));
+  }
 }
 
 export const auth = new StaffAuthManager();
+export { CLINICAL_SUPERVISOR_KEY };

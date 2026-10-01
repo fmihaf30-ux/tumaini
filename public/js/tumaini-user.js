@@ -400,6 +400,13 @@ class TumainiUser {
 
     this.chatStream.innerHTML = '';
 
+    if (messages.length > 0) {
+      const datePill = document.createElement('div');
+      datePill.className = 'whatsapp-date-pill';
+      datePill.textContent = 'TODAY';
+      this.chatStream.appendChild(datePill);
+    }
+
     messages.forEach(msg => {
       const isSystem = msg.sender === 'system' || msg.senderName === 'Circle Welcome';
       const isUser = msg.sender === 'user' || msg.senderName === this.currentIntake.username;
@@ -412,14 +419,19 @@ class TumainiUser {
         this.chatStream.appendChild(div);
       } else {
         const row = document.createElement('div');
-        row.className = `chat-bubble-row ${isUser ? 'is-user' : 'is-counselor'}`;
+        row.className = `wa-bubble-row ${isUser ? 'is-outgoing' : 'is-incoming'}`;
 
         const senderLabel = isUser ? 'You' : (msg.senderName || 'Tumaini Counselor');
 
         row.innerHTML = `
-          <span class="chat-sender-label">${senderLabel}</span>
-          <div class="chat-bubble-box">${this.escapeHtml(msg.text)}</div>
-          <span class="chat-timestamp">${timeStr}</span>
+          <div class="wa-bubble-card">
+            ${!isUser ? `<span class="wa-bubble-author">${this.escapeHtml(senderLabel)}</span>` : ''}
+            <span class="wa-bubble-text">${this.escapeHtml(msg.text)}</span>
+            <span class="wa-bubble-meta">
+              ${timeStr}
+              ${isUser ? '<span class="wa-check-ticks">✓✓</span>' : ''}
+            </span>
+          </div>
         `;
         this.chatStream.appendChild(row);
       }

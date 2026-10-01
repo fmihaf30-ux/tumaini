@@ -29,18 +29,33 @@ class TumainiStaff {
     this.consoleScreen = document.getElementById('staffConsoleScreen');
 
     // Auth Elements
-    this.tabLogin = document.getElementById('tabLogin');
-    this.tabRegister = document.getElementById('tabRegister');
     this.loginForm = document.getElementById('staffLoginForm');
-    this.registerForm = document.getElementById('staffRegisterForm');
     this.authNotice = document.getElementById('staffAuthNotice');
     this.authNoticeText = document.getElementById('authNoticeText');
     this.loginIdInput = document.getElementById('loginStaffId');
     this.loginPassInput = document.getElementById('loginPassword');
-    this.regNameInput = document.getElementById('regStaffName');
-    this.regRoleSelect = document.getElementById('regStaffRole');
-    this.regPassInput = document.getElementById('regPassword');
-    this.regSupervisorKeyInput = document.getElementById('regSupervisorKey');
+
+    // Profile & Supervisor Desk Elements
+    this.btnStaffProfile = document.getElementById('btnStaffProfile');
+    this.staffProfileModal = document.getElementById('staffProfileModal');
+    this.btnCloseStaffProfile = document.getElementById('btnCloseStaffProfile');
+    this.btnProfileLogout = document.getElementById('btnProfileLogout');
+    this.profileAvatarCircle = document.getElementById('profileAvatarCircle');
+    this.profileNameDisplay = document.getElementById('profileNameDisplay');
+    this.profileIdBadge = document.getElementById('profileIdBadge');
+    this.profileRoleBadge = document.getElementById('profileRoleBadge');
+    this.profileDutyBadge = document.getElementById('profileDutyBadge');
+    this.supervisorDeskSection = document.getElementById('supervisorDeskSection');
+    this.formGenerateCounselor = document.getElementById('formGenerateCounselor');
+    this.genCounselorName = document.getElementById('genCounselorName');
+    this.genCounselorRole = document.getElementById('genCounselorRole');
+    this.genCounselorPassword = document.getElementById('genCounselorPassword');
+    this.btnShufflePassword = document.getElementById('btnShufflePassword');
+    this.genResultCard = document.getElementById('genResultCard');
+    this.genResultPre = document.getElementById('genResultPre');
+    this.btnCopyCredentials = document.getElementById('btnCopyCredentials');
+    this.copyToastMessage = document.getElementById('copyToastMessage');
+    this.counselorsRosterList = document.getElementById('counselorsRosterList');
 
     // Duty Strip
     this.staffOperatorTag = document.getElementById('staffOperatorTag');
@@ -86,22 +101,45 @@ class TumainiStaff {
   }
 
   bindEvents() {
-    // Auth Tab Switching
-    if (this.tabLogin) this.tabLogin.addEventListener('click', () => this.switchAuthTab('login'));
-    if (this.tabRegister) this.tabRegister.addEventListener('click', () => this.switchAuthTab('register'));
-
-    // Forms
+    // Login Form
     if (this.loginForm) {
       this.loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleLogin();
       });
     }
-    if (this.registerForm) {
-      this.registerForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleRegister();
+
+    // Profile & Supervisor Desk Modal Events
+    if (this.btnStaffProfile) {
+      this.btnStaffProfile.addEventListener('click', () => this.openProfileModal());
+    }
+    if (this.btnCloseStaffProfile) {
+      this.btnCloseStaffProfile.addEventListener('click', () => this.closeProfileModal());
+    }
+    if (this.staffProfileModal) {
+      this.staffProfileModal.addEventListener('click', (e) => {
+        if (e.target === this.staffProfileModal) this.closeProfileModal();
       });
+    }
+    if (this.btnProfileLogout) {
+      this.btnProfileLogout.addEventListener('click', () => {
+        this.closeProfileModal();
+        this.handleLogout();
+      });
+    }
+    if (this.btnShufflePassword && this.genCounselorPassword) {
+      this.btnShufflePassword.addEventListener('click', () => {
+        this.genCounselorPassword.value = auth.generateRandomPassword();
+      });
+    }
+    if (this.formGenerateCounselor) {
+      this.formGenerateCounselor.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleGenerateCounselor();
+      });
+    }
+    if (this.btnCopyCredentials) {
+      this.btnCopyCredentials.addEventListener('click', () => this.handleCopyCredentials());
     }
 
     // Duty Strip
@@ -266,85 +304,141 @@ class TumainiStaff {
     }
   }
 
-  switchAuthTab(tab) {
-    if (tab === 'login') {
-      this.tabLogin.classList.add('active');
-      this.tabRegister.classList.remove('active');
-      this.loginForm.style.display = 'flex';
-      this.registerForm.style.display = 'none';
-    } else {
-      this.tabRegister.classList.add('active');
-      this.tabLogin.classList.remove('active');
-      this.registerForm.style.display = 'flex';
-      this.loginForm.style.display = 'none';
-    }
-  }
-
-  switchDesk(desk) {
-    this.activeDesk = desk;
-    if (desk === 'triage') {
-      this.btnDeskTriage.classList.add('active');
-      this.btnDeskConfessions.classList.remove('active');
-      this.deskTriagePane.classList.add('active');
-      this.deskConfessionsPane.classList.remove('active');
-    } else {
-      this.btnDeskConfessions.classList.add('active');
-      this.btnDeskTriage.classList.remove('active');
-      this.deskConfessionsPane.classList.add('active');
-      this.deskTriagePane.classList.remove('active');
-      this.renderConfessionsDesk();
-    }
-  }
-
-  handleLogin() {
-    const staffId = this.loginIdInput ? this.loginIdInput.value.trim() : '';
-    const password = this.loginPassInput ? this.loginPassInput.value : '';
-
-    if (!staffId || !password) {
-      this.showAuthNotice('Please enter Staff ID and Password.', true);
+  openProfileModal() {
+    if (!this.staffProfileModal) return;
+    const session = auth.getSession();
+    if (!session) {
+      alert('Please sign in first.');
       return;
     }
 
-    const res = auth.login({ staffId, password });
+    if (this.profileAvatarCircle) {
+      const initials = session.name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+      this.profileAvatarCircle.textContent = initials || 'OP';
+    }
+    if (this.profileNameDisplay) this.profileNameDisplay.textContent = session.name;
+    if (this.profileIdBadge) this.profileIdBadge.textContent = session.staffId;
+    if (this.profileRoleBadge) this.profileRoleBadge.textContent = session.role;
+    if (this.profileDutyBadge) {
+      this.profileDutyBadge.textContent = session.isOnDuty ? 'ON DUTY' : 'OFF DUTY';
+      this.profileDutyBadge.style.background = session.isOnDuty ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.15)';
+      this.profileDutyBadge.style.color = session.isOnDuty ? '#10b981' : '#64748b';
+    }
+
+    // Supervisor Desk Visibility
+    if (auth.isSupervisor()) {
+      if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'block';
+      if (this.genCounselorPassword && !this.genCounselorPassword.value) {
+        this.genCounselorPassword.value = auth.generateRandomPassword();
+      }
+      this.renderCounselorsRoster();
+    } else {
+      if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'none';
+    }
+
+    this.staffProfileModal.classList.add('open');
+    this.staffProfileModal.classList.add('active');
+  }
+
+  closeProfileModal() {
+    if (!this.staffProfileModal) return;
+    this.staffProfileModal.classList.remove('open');
+    this.staffProfileModal.classList.remove('active');
+  }
+
+  handleGenerateCounselor() {
+    const name = this.genCounselorName ? this.genCounselorName.value.trim() : '';
+    const role = this.genCounselorRole ? this.genCounselorRole.value : 'Crisis Counselor';
+    const password = this.genCounselorPassword ? this.genCounselorPassword.value.trim() : '';
+
+    if (!name) {
+      alert('Counselor full name is required.');
+      return;
+    }
+
+    const res = auth.createCounselor({ name, role, password });
     if (res.success) {
-      this.hideAuthNotice();
-      this.showConsole();
-      this.syncDutyStrip();
-      this.renderQueue();
+      if (this.genResultPre && this.genResultCard) {
+        const text = [
+          '==============================',
+          'TUMAINI COUNSELOR CREDENTIALS',
+          '==============================',
+          `Counselor: ${res.staff.name}`,
+          `Clinical Role: ${res.staff.role}`,
+          `Operator ID: ${res.staffId}`,
+          `Password: ${res.password}`,
+          'Portal Login: https://tumaini-zeta.vercel.app/staff',
+          '==============================',
+          'Confidential. Do not share your login credentials with unauthorized individuals.'
+        ].join('\n');
+
+        this.genResultPre.textContent = text;
+        this.genResultCard.style.display = 'block';
+      }
+
+      if (this.genCounselorName) this.genCounselorName.value = '';
+      if (this.genCounselorPassword) this.genCounselorPassword.value = auth.generateRandomPassword();
+      this.renderCounselorsRoster();
     } else {
-      this.showAuthNotice(res.error, true);
+      alert(res.error || 'Failed to generate counselor credentials.');
     }
   }
 
-  handleRegister() {
-    const name = this.regNameInput ? this.regNameInput.value.trim() : '';
-    const role = this.regRoleSelect ? this.regRoleSelect.value : 'Crisis Counselor';
-    const password = this.regPassInput ? this.regPassInput.value : '';
-    const supervisorKey = this.regSupervisorKeyInput ? this.regSupervisorKeyInput.value.trim() : '';
+  handleCopyCredentials() {
+    if (!this.genResultPre) return;
+    const text = this.genResultPre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      if (this.copyToastMessage) {
+        this.copyToastMessage.style.display = 'block';
+        setTimeout(() => {
+          if (this.copyToastMessage) this.copyToastMessage.style.display = 'none';
+        }, 3500);
+      }
+    }).catch(err => {
+      console.warn('Clipboard write failed', err);
+      alert('Copied text: \n\n' + text);
+    });
+  }
 
-    if (!name || !password) {
-      this.showAuthNotice('Full name and password are required.', true);
+  renderCounselorsRoster() {
+    if (!this.counselorsRosterList) return;
+    const counselors = auth.getCounselors();
+    this.counselorsRosterList.innerHTML = '';
+
+    if (counselors.length === 0) {
+      this.counselorsRosterList.innerHTML = `
+        <div style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 6px 0;">
+          No counselor credentials generated yet. Use the form above to onboard counselors.
+        </div>
+      `;
       return;
     }
 
-    if (!supervisorKey) {
-      this.showAuthNotice('Clinical Supervisor Authorization Key is required for staff onboarding.', true);
-      return;
-    }
+    counselors.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'counselor-roster-item';
+      item.innerHTML = `
+        <div>
+          <strong style="color: var(--brand-eucalyptus-dark); font-family: monospace;">${c.staffId}</strong>
+          <span style="margin: 0 4px; color: var(--text-muted);">&bull;</span>
+          <span style="font-weight: 600; color: var(--text-primary);">${this.escapeHtml(c.name)}</span>
+          <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">(${this.escapeHtml(c.role)})</span>
+        </div>
+        <button type="button" class="btn-revoke-counselor" data-staff-id="${c.staffId}" style="background: none; border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+          Revoke
+        </button>
+      `;
 
-    const res = auth.register({ name, role, password, supervisorKey });
-    if (res.success) {
-      if (this.loginIdInput) this.loginIdInput.value = res.staffId;
-      if (this.loginPassInput) this.loginPassInput.value = password;
+      item.querySelector('.btn-revoke-counselor').addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.staffId;
+        if (confirm(`Revoke access for counselor ${c.name} (${id})? They will no longer be able to log in.`)) {
+          auth.deleteCounselor(id);
+          this.renderCounselorsRoster();
+        }
+      });
 
-      this.switchAuthTab('login');
-      this.showAuthNotice(
-        `Staff registration complete. Your Operator ID is <strong>${res.staffId}</strong>. You can now sign in.`,
-        false
-      );
-    } else {
-      this.showAuthNotice(res.error, true);
-    }
+      this.counselorsRosterList.appendChild(item);
+    });
   }
 
   showAuthNotice(msg, isError) {
@@ -458,8 +552,16 @@ class TumainiStaff {
 
     if (queue.length === 0) {
       this.queueList.innerHTML = `
-        <div style="text-align: center; padding: 40px 16px; color: var(--text-muted); font-size: 13px;">
-          All quiet. No incoming requests in queue.
+        <div style="text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--bg-surface-elevated); display: flex; align-items: center; justify-content: center; color: var(--brand-eucalyptus-dark);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <div>
+            <strong style="display: block; color: var(--text-primary); font-size: 13.5px; margin-bottom: 2px;">Triage Queue Clear</strong>
+            <span style="font-size: 12px; color: var(--text-muted); line-height: 1.4; display: block;">No seekers waiting. Incoming requests will appear in real time.</span>
+          </div>
         </div>
       `;
       return;
@@ -560,6 +662,13 @@ class TumainiStaff {
     const messages = store.getIntakeMessages(this.activeIntake.id);
     this.counselorMessagesList.innerHTML = '';
 
+    if (messages.length > 0) {
+      const datePill = document.createElement('div');
+      datePill.className = 'whatsapp-date-pill';
+      datePill.textContent = 'TODAY';
+      this.counselorMessagesList.appendChild(datePill);
+    }
+
     messages.forEach(msg => {
       const isSystem = msg.sender === 'system';
       const isCounselor = msg.sender === 'counselor';
@@ -572,14 +681,19 @@ class TumainiStaff {
         this.counselorMessagesList.appendChild(div);
       } else {
         const row = document.createElement('div');
-        row.className = `chat-bubble-row ${isCounselor ? 'is-user' : 'is-counselor'}`;
+        row.className = `wa-bubble-row ${isCounselor ? 'is-outgoing' : 'is-incoming'}`;
 
         const senderLabel = isCounselor ? `You (${msg.senderName})` : (msg.senderName || 'Seeker');
 
         row.innerHTML = `
-          <span class="chat-sender-label">${senderLabel}</span>
-          <div class="chat-bubble-box" style="${isCounselor ? 'background: #2d6a4f; color: #fff;' : ''}">${this.escapeHtml(msg.text)}</div>
-          <span class="chat-timestamp">${timeStr}</span>
+          <div class="wa-bubble-card">
+            ${!isCounselor ? `<span class="wa-bubble-author">${this.escapeHtml(senderLabel)}</span>` : ''}
+            <span class="wa-bubble-text">${this.escapeHtml(msg.text)}</span>
+            <span class="wa-bubble-meta">
+              ${timeStr}
+              ${isCounselor ? '<span class="wa-check-ticks">✓✓</span>' : ''}
+            </span>
+          </div>
         `;
         this.counselorMessagesList.appendChild(row);
       }

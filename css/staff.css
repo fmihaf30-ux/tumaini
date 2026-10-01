@@ -876,3 +876,236 @@
     padding: 8px 12px !important;
   }
 }
+
+/* ==========================================================================
+   WHATSAPP CHAT ENGINE STYLING & PROFILE MODAL
+   ========================================================================== */
+.counselor-messages-container,
+.consultation-messages-stream {
+  background-color: #efeae2 !important;
+  background-image: 
+    radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    radial-gradient(rgba(0, 0, 0, 0.04) 1px, #efeae2 1px) !important;
+  background-size: 24px 24px !important;
+  background-position: 0 0, 12px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  padding: 16px 20px !important;
+}
+
+.whatsapp-date-pill {
+  align-self: center;
+  background: #ffffff;
+  color: #54656f;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(11, 20, 26, 0.08);
+  margin: 6px 0 10px;
+  text-transform: uppercase;
+}
+
+.wa-bubble-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+  position: relative;
+  word-break: break-word;
+  animation: waFadeIn 120ms ease;
+}
+
+@keyframes waFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wa-bubble-row.is-outgoing {
+  align-self: flex-end;
+}
+
+.wa-bubble-row.is-incoming {
+  align-self: flex-start;
+}
+
+.wa-bubble-card {
+  position: relative;
+  padding: 6px 9px 5px 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  font-size: 14px;
+  line-height: 1.42;
+  color: #111b21;
+}
+
+.wa-bubble-row.is-incoming .wa-bubble-card {
+  background: #ffffff;
+  border-top-left-radius: 0px;
+}
+
+.wa-bubble-row.is-outgoing .wa-bubble-card {
+  background: #d9fdd3;
+  border-top-right-radius: 0px;
+}
+
+.wa-bubble-author {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.wa-bubble-row.is-incoming .wa-bubble-author {
+  color: #008069;
+}
+
+.wa-bubble-row.is-outgoing .wa-bubble-author {
+  color: #128c7e;
+}
+
+.wa-bubble-text {
+  font-size: 14px;
+  color: #111b21;
+  white-space: pre-wrap;
+  display: inline;
+}
+
+.wa-bubble-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  float: right;
+  margin-left: 10px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: #667781;
+  font-family: inherit;
+  user-select: none;
+}
+
+.wa-check-ticks {
+  color: #53bdeb;
+  font-weight: bold;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* WhatsApp Input Dock */
+.counselor-input-row,
+.consultation-dock {
+  background: #f0f2f5 !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.counselor-text-input,
+.consultation-input {
+  flex: 1 !important;
+  background: #ffffff !important;
+  border: none !important;
+  border-radius: 24px !important;
+  padding: 10px 18px !important;
+  font-size: 14px !important;
+  color: #111b21 !important;
+  box-shadow: 0 1px 2px rgba(11, 20, 26, 0.08) !important;
+  outline: none !important;
+}
+
+.counselor-text-input:focus,
+.consultation-input:focus {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(11, 20, 26, 0.15) !important;
+}
+
+.btn-counselor-send,
+.btn-send-consultation {
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  background: #00a884 !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-shadow: 0 2px 4px rgba(0, 168, 132, 0.3) !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: transform 120ms ease, background 120ms ease !important;
+}
+
+.btn-counselor-send:hover,
+.btn-send-consultation:hover {
+  background: #008f6f !important;
+  transform: scale(1.05) !important;
+}
+
+/* Staff Profile Modal Styles */
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
+}
+
+.profile-avatar-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--brand-eucalyptus-dark);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.profile-info-block {
+  flex: 1;
+}
+
+.profile-meta-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.supervisor-credential-box {
+  background: rgba(92, 151, 132, 0.06);
+  border: 1px solid var(--brand-eucalyptus-border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-top: 14px;
+}
+
+.counselors-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.counselor-roster-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+

@@ -63,13 +63,13 @@ export const PRESET_CATEGORIES = [
 ];
 
 const STORAGE_KEYS = {
-  INTAKES: 'tumaini_intakes_clean_v1',
-  INTAKE_MESSAGES: 'tumaini_intake_messages_clean_v1',
-  GROUP_ROOMS: 'tumaini_group_rooms_clean_v1',
-  GROUP_MESSAGES: 'tumaini_group_messages_clean_v1',
-  CONFESSIONS: 'tumaini_confessions_clean_v1',
-  ACTIVE_USER_INTAKE: 'tumaini_active_user_intake_clean_v1',
-  ACTIVE_STAFF_INTAKE: 'tumaini_active_staff_intake_clean_v1'
+  INTAKES: 'tumaini_intakes_clean_v3',
+  INTAKE_MESSAGES: 'tumaini_intake_messages_clean_v3',
+  GROUP_ROOMS: 'tumaini_group_rooms_clean_v3',
+  GROUP_MESSAGES: 'tumaini_group_messages_clean_v3',
+  CONFESSIONS: 'tumaini_confessions_clean_v3',
+  ACTIVE_USER_INTAKE: 'tumaini_active_user_intake_clean_v3',
+  ACTIVE_STAFF_INTAKE: 'tumaini_active_staff_intake_clean_v3'
 };
 
 class TumainiStore {
@@ -86,32 +86,7 @@ class TumainiStore {
 
     this.purgeOldSessions();
 
-    if (this.intakes.length === 0) {
-      const initialTicketId = 'IN-4821';
-      this.intakes = [
-        {
-          id: initialTicketId,
-          username: 'Steady Kob',
-          emergencyTier: 'tier-2',
-          tierId: 'tier-2',
-          category: 'Academic & Tuition Pressure',
-          createdAt: Date.now() - 720000,
-          status: 'waiting',
-          assignedStaffId: null
-        }
-      ];
-      this.intakeMessages[initialTicketId] = [
-        {
-          id: 'msg-seed-1',
-          sender: 'Steady Kob',
-          senderType: 'user',
-          text: 'Hello. I am feeling an overwhelming panic about my campus tuition and semester deadlines. My heart is racing and I do not have anyone at home I can confide in. Could someone talk to me?',
-          timestamp: Date.now() - 720000
-        }
-      ];
-      this.save(STORAGE_KEYS.INTAKES, this.intakes);
-      this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
-    }
+    // All demo intakes and demo tickets removed: queue begins 100% clean
 
     if (this.confessions.length === 0 || this.confessions.some(c => c.id === 'conf-101') || localStorage.getItem('tumaini_campus_confessions_v2') !== 'true') {
       this.confessions = [
@@ -192,27 +167,7 @@ class TumainiStore {
       this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
     }
 
-    if (this.groupRooms.length === 0) {
-      this.groupRooms = [
-        {
-          id: 'grp-tuition',
-          title: 'Campus & Tuition Support Circle',
-          category: 'Academic & Tuition Pressure',
-          createdByStaffId: 'STF-1001',
-          createdAt: Date.now() - 86400000,
-          members: ['Quiet Crane', 'Steady Kob']
-        },
-        {
-          id: 'grp-grief',
-          title: 'Grief & Healing Circle',
-          category: 'Grief & Loss',
-          createdByStaffId: 'STF-1001',
-          createdAt: Date.now() - 86400000,
-          members: ['Shoebill Sentry']
-        }
-      ];
-      this.save(STORAGE_KEYS.GROUP_ROOMS, this.groupRooms);
-    }
+    // Group circles start empty until created by counselors during triage
   }
 
   load(key, fallback) {
