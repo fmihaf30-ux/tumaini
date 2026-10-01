@@ -1165,38 +1165,175 @@ button:disabled, .btn:disabled {
 
 /* ==========================================================================
    RESPONSIVENESS (MOBILE TO DESKTOP)
+/* ==========================================================================
+   RESPONSIVENESS (MOBILE & SMALL SCREEN ENHANCEMENTS)
    ========================================================================== */
+.helpline-text-mobile, .exit-text-mobile {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .site-header {
-    padding: 0 16px;
-    height: 64px;
+    padding: 0 12px !important;
+    height: 60px !important;
+  }
+  .brand-wrap {
+    gap: 8px !important;
+  }
+  .brand-logo-img {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+  }
+  .brand-title {
+    font-size: 18px !important;
   }
   .brand-subtitle {
-    display: none;
+    display: none !important;
+  }
+  .header-nav {
+    gap: 6px !important;
   }
   .header-nav .nav-btn:not(.btn-danger):not(.btn-helplines) {
-    display: none;
+    display: none !important;
   }
+  .btn-helplines {
+    padding: 6px 10px !important;
+    font-size: 11.5px !important;
+    gap: 5px !important;
+  }
+  .btn-danger {
+    padding: 6px 10px !important;
+    font-size: 11.5px !important;
+  }
+  .helpline-text-desktop, .exit-text-desktop {
+    display: none !important;
+  }
+  .helpline-text-mobile, .exit-text-mobile {
+    display: inline !important;
+  }
+
   .app-container {
-    padding: 24px 16px 64px;
+    padding: 16px 12px 64px !important;
   }
+
+  /* Typography & Hero */
+  .hero-statement h1 {
+    font-size: 26px !important;
+    line-height: 1.25 !important;
+  }
+  .hero-statement p {
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Grid Layouts Stack Cleanly */
   .reassurance-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
   .platform-guide-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
   }
   .category-chips-wrap {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
   }
+  .emergency-tier-cards {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .consultation-layout {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Form Elements */
   .input-with-button {
-    flex-direction: column;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .input-with-button .form-input {
+    width: 100% !important;
+  }
+  .input-with-button .btn-shuffle {
+    width: 100% !important;
+    justify-content: center !important;
   }
   .intake-card-container {
-    padding: 22px 18px;
+    padding: 18px 14px !important;
   }
   .tier-card-btn {
-    padding: 12px 14px;
+    padding: 12px 14px !important;
+  }
+
+  /* Sanctuary Tabs */
+  .sanctuary-nav-tabs {
+    width: 100% !important;
+    padding: 3px !important;
+    gap: 4px !important;
+  }
+  .sanctuary-tab-btn {
+    flex: 1 !important;
+    padding: 9px 8px !important;
+    font-size: 12px !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  /* Chat Input Row */
+  .chat-input-bar {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+  .chat-input {
+    min-width: 0 !important;
+    font-size: 13.5px !important;
+    padding: 10px 12px !important;
+  }
+  .btn-send-chat {
+    padding: 0 16px !important;
+    font-size: 12.5px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Confessions Hearth */
+  .confessions-hero h2 {
+    font-size: 24px !important;
+  }
+  .submit-confession-card {
+    padding: 18px 14px !important;
+    margin-bottom: 24px !important;
+  }
+  .submit-confession-card .btn-submit-intake {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+  .confession-hearth-card {
+    padding: 16px 14px !important;
+  }
+  .confession-text {
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-header {
+    padding: 0 8px !important;
+  }
+  .brand-title {
+    font-size: 16px !important;
+  }
+  .btn-helplines {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+  .btn-danger {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
   }
 }
 
@@ -1224,11 +1361,13 @@ button:disabled, .btn:disabled {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
         </svg>
-        Crisis Helplines (0800)
+        <span class="helpline-text-desktop">Crisis Helplines (0800)</span>
+        <span class="helpline-text-mobile">0800 Help</span>
       </button>
 
       <button class="nav-btn btn-danger" id="btnQuickExit" type="button" title="Quick Safety Exit (Esc)">
-        Quick Exit (Esc)
+        <span class="exit-text-desktop">Quick Exit (Esc)</span>
+        <span class="exit-text-mobile">Exit</span>
       </button>
     </nav>
   </header>
