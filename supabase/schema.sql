@@ -243,12 +243,12 @@ alter table public.group_rooms enable row level security;
 alter table public.group_messages enable row level security;
 
 -- Confessions RLS:
--- Anyone can read approved confessions
+drop policy if exists "Anyone can read approved confessions" on public.confessions;
 create policy "Anyone can read approved confessions"
   on public.confessions for select
   using (status = 'approved');
 
--- Anyone can submit a confession (defaults to pending)
+drop policy if exists "Anyone can submit a confession" on public.confessions;
 create policy "Anyone can submit a confession"
   on public.confessions for insert
   with check (status = 'pending');
@@ -262,34 +262,48 @@ returns void language sql security definer as $$
 $$;
 
 -- Intakes RLS:
--- Anonymous seeker can insert an intake
+drop policy if exists "Seekers can create intakes" on public.intakes;
 create policy "Seekers can create intakes"
   on public.intakes for insert
   with check (true);
 
--- Anyone who provides the matching seeker_token or any active staff can read the intake
+drop policy if exists "Seekers with token can read their intake" on public.intakes;
 create policy "Seekers with token can read their intake"
   on public.intakes for select
   using (true);
 
+drop policy if exists "Seekers and staff can update intakes" on public.intakes;
 create policy "Seekers and staff can update intakes"
   on public.intakes for update
   using (true);
 
 -- Messages RLS:
+drop policy if exists "Messages are readable" on public.intake_messages;
 create policy "Messages are readable"
   on public.intake_messages for select
   using (true);
 
+drop policy if exists "Messages can be posted" on public.intake_messages;
 create policy "Messages can be posted"
   on public.intake_messages for insert
   with check (true);
 
 -- ----------------------------------------------------------------------------
--- 8. REALTIME REPLICATION SETUP
+-- 8. REALTIME REPLICATION SETUP (Safe Idempotent Block)
 -- Enables live Supabase WebSocket subscriptions for chat and queue
 -- ----------------------------------------------------------------------------
-alter publication supabase_realtime add table public.intakes;
-alter publication supabase_realtime add table public.intake_messages;
-alter publication supabase_realtime add table public.confessions;
-alter publication supabase_realtime add table public.group_messages;
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'intakes') then
+    alter publication supabase_realtime add table public.intakes;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'intake_messages') then
+    alter publication supabase_realtime add table public.intake_messages;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'confessions') then
+    alter publication supabase_realtime add table public.confessions;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'group_messages') then
+    alter publication supabase_realtime add table public.group_messages;
+  end if;
+end $$;
