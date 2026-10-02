@@ -62,7 +62,7 @@ export const PRESET_CATEGORIES = [
   'General Emotional Strain'
 ];
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   INTAKES: 'tumaini_intakes_clean_v3',
   INTAKE_MESSAGES: 'tumaini_intake_messages_clean_v3',
   GROUP_ROOMS: 'tumaini_group_rooms_clean_v3',

@@ -8,7 +8,7 @@
    - Web Audio API dual-harmonic chime synthesis
    ========================================================================== */
 
-import { store } from './store.js';
+import { store, STORAGE_KEYS } from './store.js';
 
 const E2EE_KEY_STRING = 'tumaini_uganda_crisis_sanctuary_key_v1';
 const E2EE_SALT = 'tumaini_ug_e2ee_salt_2026';
@@ -155,11 +155,11 @@ class TumainiBus {
         e.key.startsWith('tumaini_group') ||
         e.key.startsWith('tumaini_confessions')
       ) {
-        store.intakes = store.load('tumaini_intakes_clean_v1', []);
-        store.intakeMessages = store.load('tumaini_intake_messages_clean_v1', {});
-        store.groupRooms = store.load('tumaini_group_rooms_clean_v1', []);
-        store.groupMessages = store.load('tumaini_group_messages_clean_v1', {});
-        store.confessions = store.load('tumaini_confessions_clean_v1', []);
+        store.intakes = store.load(STORAGE_KEYS.INTAKES, []);
+        store.intakeMessages = store.load(STORAGE_KEYS.INTAKE_MESSAGES, {});
+        store.groupRooms = store.load(STORAGE_KEYS.GROUP_ROOMS, []);
+        store.groupMessages = store.load(STORAGE_KEYS.GROUP_MESSAGES, {});
+        store.confessions = store.load(STORAGE_KEYS.CONFESSIONS, []);
         store.notify();
       }
     });
@@ -308,7 +308,7 @@ class TumainiBus {
         store.applyRemoteIntake(intake, initialMessages);
         this.playChime(intake.isEmergency ? 'urgent' : 'subtle');
       } else {
-        store.intakes = store.load('tumaini_intakes_clean_v1', []);
+        store.intakes = store.load(STORAGE_KEYS.INTAKES, []);
         store.notify();
       }
     } else if (type === 'MESSAGE_SENT') {
@@ -316,7 +316,7 @@ class TumainiBus {
         store.applyRemoteMessage(payload.intakeId, payload.message);
         this.playChime('subtle');
       } else {
-        store.intakeMessages = store.load('tumaini_intake_messages_clean_v1', {});
+        store.intakeMessages = store.load(STORAGE_KEYS.INTAKE_MESSAGES, {});
         store.notify();
       }
     } else if (type === 'INTAKE_CLAIMED') {
