@@ -91,37 +91,37 @@ class TumainiStore {
 
     // All demo intakes and demo tickets removed: queue begins 100% clean
 
-    if (this.confessions.length === 0 || this.confessions.length > 3 || this.confessions.some(c => c.id === 'conf-101' || c.id === 'campus-conf-104') || localStorage.getItem('tumaini_campus_confessions_clean_v5') !== 'true') {
+    if (this.confessions.length === 0 || this.confessions.length > 3 || this.confessions.some(c => c.id === 'conf-101' || c.id === 'campus-conf-104') || localStorage.getItem('tumaini_open_confessions_v6') !== 'true') {
       this.confessions = [
         {
-          id: 'campus-conf-101',
-          username: 'Anonymous Fresher · Makerere',
-          category: 'Tuition & Exam Permits',
-          text: 'Exams start on Monday and my portal is blocked because my father could not raise the remaining 480k functional fees. Everyone in my discussion group in CEDAT is talking about exam permits and sitting arrangements. I sat on the grass near Lumumba pretending to read, but my chest feels like it is in a vice. I have not slept in three days. I do not know how to look my mother in the eyes when she calls.',
-          createdAt: Date.now() - 3600000 * 2,
+          id: 'conf-open-101',
+          username: 'Silent Pillar · Kampala',
+          category: 'Family Weight & Secret Guilt',
+          text: 'Everyone in my family thinks I have it all together because I send money back home every single month. The truth is I am drowning in debt, skipping meals, and crying in my room late at night. I pretend to be the strong one everyone leans on, but I feel like I am collapsing from the inside. I just needed to say it somewhere where nobody knows my face.',
+          createdAt: Date.now() - 3600000 * 3,
           status: 'approved',
-          empathyCount: 47
+          empathyCount: 58
         },
         {
-          id: 'campus-conf-102',
-          username: 'Quiet Soul · MUBS Nakawa',
-          category: 'Imposter Syndrome & Money',
-          text: 'Everyone around my hostel dresses like their parents run ministries and spend 50k on drinks like it is water. Back home in Bushenyi, my mother sold her two dairy cows and took a SACCO loan just to register me for this degree. I feel sick with guilt anytime I buy a 2,000/= Rolex, but I am terrified to let anyone here know how poor we really are. Carrying this double life every day is crushing me.',
-          createdAt: Date.now() - 3600000 * 5,
+          id: 'conf-open-102',
+          username: 'Wandering Soul · Entebbe',
+          category: 'Heartbreak & Unspoken Grief',
+          text: 'It has been seven months since they walked away, and everyone around me tells me to just move on with life. But some evenings, the silence in my room is so loud it physically aches. I still look for them in crowded taxis and hear their voice in passing songs. I am tired of pretending that I am okay when part of me is still grieving someone who is still alive.',
+          createdAt: Date.now() - 3600000 * 8,
           status: 'approved',
-          empathyCount: 82
+          empathyCount: 94
         },
         {
-          id: 'campus-conf-103',
-          username: 'Finalist in Limbo · Kyambogo',
-          category: 'Missing Marks & Graduation',
-          text: 'I have two missing marks from Year 2 that the department still has not resolved despite submitting my coursework 8 times. My grandmother back in the village already bought her gomesi for my graduation in January. Every time a relative congratulates me for finishing school, I swallow bile. The thought of telling them I might not be on the graduation list makes me want to disappear.',
-          createdAt: Date.now() - 3600000 * 9,
+          id: 'conf-open-103',
+          username: 'Quiet Fighter · Jinja',
+          category: 'Life Pressure & Finding Hope',
+          text: 'I lost my source of income four months ago and have been waking up early pretending to dress up and step out so my relatives do not look down on me. I spent the last few weeks questioning my worth and whether I even belong in this world. Today, for the first time in months, I took a long deep breath and decided: I will give myself another chance. My story is not finished yet.',
+          createdAt: Date.now() - 3600000 * 14,
           status: 'approved',
-          empathyCount: 114
+          empathyCount: 136
         }
       ];
-      try { localStorage.setItem('tumaini_campus_confessions_clean_v5', 'true'); } catch (e) {}
+      try { localStorage.setItem('tumaini_open_confessions_v6', 'true'); } catch (e) {}
       this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
     }
 

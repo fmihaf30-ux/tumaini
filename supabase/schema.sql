@@ -86,13 +86,20 @@ create table if not exists public.confessions (
 
 create index if not exists idx_confessions_status_created on public.confessions (status, created_at desc);
 
--- Seed initial approved campus confessions
+-- Seed initial approved confessions (Universal open confessions: Kampala, Entebbe, Jinja)
+delete from public.confessions where id in ('campus-conf-101', 'campus-conf-102', 'campus-conf-103', 'conf-101');
+
 insert into public.confessions (id, username, category, text, status, empathy_count, created_at)
 values
-  ('campus-conf-101', 'Anonymous Fresher · Makerere', 'Tuition & Exam Permits', 'Exams start on Monday and my portal is blocked because my father could not raise the remaining 480k functional fees. Everyone in my discussion group in CEDAT is talking about exam permits and sitting arrangements. I sat on the grass near Lumumba pretending to read, but my chest feels like it is in a vice. I have not slept in three days. I do not know how to look my mother in the eyes when she calls.', 'approved', 47, now() - interval '2 hours'),
-  ('campus-conf-102', 'Quiet Soul · MUBS Nakawa', 'Imposter Syndrome & Money', 'Everyone around my hostel dresses like their parents run ministries and spend 50k on drinks like it is water. Back home in Bushenyi, my mother sold her two dairy cows and took a SACCO loan just to register me for this degree. I feel sick with guilt anytime I buy a 2,000/= Rolex, but I am terrified to let anyone here know how poor we really are. Carrying this double life every day is crushing me.', 'approved', 82, now() - interval '5 hours'),
-  ('campus-conf-103', 'Finalist in Limbo · Kyambogo', 'Missing Marks & Graduation', 'I have two missing marks from Year 2 that the department still has not resolved despite submitting my coursework 8 times. My grandmother back in the village already bought her gomesi for my graduation in January. Every time a relative congratulates me for finishing school, I swallow bile. The thought of telling them I might not be on the graduation list makes me want to disappear.', 'approved', 114, now() - interval '9 hours')
-on conflict (id) do nothing;
+  ('conf-open-101', 'Silent Pillar · Kampala', 'Family Weight & Secret Guilt', 'Everyone in my family thinks I have it all together because I send money back home every single month. The truth is I am drowning in debt, skipping meals, and crying in my room late at night. I pretend to be the strong one everyone leans on, but I feel like I am collapsing from the inside. I just needed to say it somewhere where nobody knows my face.', 'approved', 58, now() - interval '3 hours'),
+  ('conf-open-102', 'Wandering Soul · Entebbe', 'Heartbreak & Unspoken Grief', 'It has been seven months since they walked away, and everyone around me tells me to just move on with life. But some evenings, the silence in my room is so loud it physically aches. I still look for them in crowded taxis and hear their voice in passing songs. I am tired of pretending that I am okay when part of me is still grieving someone who is still alive.', 'approved', 94, now() - interval '8 hours'),
+  ('conf-open-103', 'Quiet Fighter · Jinja', 'Life Pressure & Finding Hope', 'I lost my source of income four months ago and have been waking up early pretending to dress up and step out so my relatives do not look down on me. I spent the last few weeks questioning my worth and whether I even belong in this world. Today, for the first time in months, I took a long deep breath and decided: I will give myself another chance. My story is not finished yet.', 'approved', 136, now() - interval '14 hours')
+on conflict (id) do update set
+  username = excluded.username,
+  category = excluded.category,
+  text = excluded.text,
+  status = excluded.status,
+  empathy_count = excluded.empathy_count;
 
 -- ----------------------------------------------------------------------------
 -- 5. GROUP SUPPORT CIRCLES
@@ -290,22 +297,54 @@ alter table public.group_messages enable row level security;
 
 -- Confessions RLS:
 drop policy if exists "Anyone can read approved confessions" on public.confessions;
-create policy "Anyone can read approved confessions"
+drop policy if exists "Anyone can read confessions" on public.confessions;
+create policy "Anyone can read confessions"
   on public.confessions for select
-  using (status = 'approved');
+  using (true);
 
 drop policy if exists "Anyone can submit a confession" on public.confessions;
 create policy "Anyone can submit a confession"
   on public.confessions for insert
-  with check (status = 'pending');
+  with check (true);
+
+drop policy if exists "Staff and users can update confessions" on public.confessions;
+create policy "Staff and users can update confessions"
+  on public.confessions for update
+  using (true);
+
+drop policy if exists "Staff can delete confessions" on public.confessions;
+create policy "Staff can delete confessions"
+  on public.confessions for delete
+  using (true);
 
 -- Public increment for empathy counter on approved confessions
 create or replace function public.increment_empathy(confession_id text)
 returns void language sql security definer as $$
   update public.confessions
   set empathy_count = empathy_count + 1
-  where id = confession_id and status = 'approved';
+  where id = confession_id;
 $$;
+
+-- Group Support Circles RLS:
+drop policy if exists "Anyone can read group rooms" on public.group_rooms;
+create policy "Anyone can read group rooms"
+  on public.group_rooms for select
+  using (true);
+
+drop policy if exists "Staff can create group rooms" on public.group_rooms;
+create policy "Staff can create group rooms"
+  on public.group_rooms for insert
+  with check (true);
+
+drop policy if exists "Anyone can read group messages" on public.group_messages;
+create policy "Anyone can read group messages"
+  on public.group_messages for select
+  using (true);
+
+drop policy if exists "Anyone can post group messages" on public.group_messages;
+create policy "Anyone can post group messages"
+  on public.group_messages for insert
+  with check (true);
 
 -- Intakes RLS:
 drop policy if exists "Seekers can create intakes" on public.intakes;

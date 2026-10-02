@@ -3,13 +3,12 @@ TUMAINI - ANONYMOUS CRISIS SANCTUARY & PEER SUPPORT (UGANDA)
 ================================================================================
 
 Tumaini (Swahili for "Hope") is a privacy-first, clinical-grade emotional support
-and crisis triage web platform built specifically for university students and
-young people across Uganda.
+and crisis triage web platform built for individuals and young people across Uganda
+carrying heavy burdens, emotional distress, or mental health strain.
 
-It provides a quiet, dignified, and completely anonymous sanctuary for individuals
-carrying academic pressure, tuition deadlines, exam permit blocks, family friction,
-grief, heartbreak, or late-night anxiety. No accounts, no phone numbers, and no real
-names required.
+It provides a quiet, dignified, and completely anonymous sanctuary for anyone
+carrying life pressure, family burdens, grief, heartbreak, secret guilt, financial
+strain, or late-night anxiety. No accounts, no phone numbers, and no real names required.
 
 Live Production Deployments:
 - Public User Sanctuary: https://tumaini-zeta.vercel.app/
@@ -30,12 +29,13 @@ offline fallback:
    - Emergency Severity Triage Tiers:
      * Tier 1: Critical Crisis / Immediate Danger (High priority, toll-free 0800 alerts)
      * Tier 2: Acute Panic / Severe Distress (Breathing anchors and rapid pacing)
-     * Tier 3: Elevated / Breaking Point (Overwhelmed, tuition strain, active listening)
+     * Tier 3: Elevated / Breaking Point (Overwhelmed, life strain, active listening)
      * Tier 4: Normal / Safe Space (Gentle space to process daily emotions)
    - WhatsApp-Style Chat Interface: Clean, familiar conversational bubbles, message
      status indicators, and instant responsiveness on low-bandwidth mobile networks.
-   - Campus Voices (Peer Reflections): Anonymously share and read moderated reflections
-     from Makerere, MUBS, Kyambogo, UCU, MUST, Kikoni, and Banda.
+   - Confessions / Community Hearth (Ekyoto): Anonymously share and read moderated
+     life reflections, unspoken truths, and secret burdens from across Uganda
+     (Kampala, Entebbe, Jinja, and beyond).
    - Somatic Grounding Drawer: Interactive 4-4-4-4 Box Breathing pacing guide and
      5-4-3-2-1 sensory grounding reset.
    - Instant Safety Quick Exit: Header exit button or "Escape" key redirects instantly
@@ -63,8 +63,8 @@ offline fallback:
    - Dual Desk Navigation:
      * Emergency Triage Desk: Real incoming requests sorted by Emergency Severity Tier.
        All demo tickets and seed data have been completely removed.
-     * Reflection Moderation Desk: Counselors review, approve, or reject student
-       reflections before they go live on the public community hearth.
+     * Confession Moderation Desk: Counselors review, approve, or reject incoming
+       confessions before they go live on the public community hearth.
    - Clinical Workspace: One-click case claiming, live WhatsApp-style chat, clinical
      de-escalation quick snippets, and group support circle invitations.
 
@@ -106,12 +106,12 @@ Tumaini adheres strictly to the Uganda Data Protection and Privacy Act, 2019:
      * Zero permanent archiving of crisis chat transcripts.
    - Tapping "End Session" or "Quick Exit" clears active session tokens immediately.
 
-3. Campus Voices Authenticity & Consent:
-   - The communal reflections board features voluntary anonymous student submissions
-     and synthetic composite archetypes of campus life in Uganda (tuition deadlines,
-     missing marks, hostel rent, family silence).
+3. Community Hearth Authenticity & Moderation:
+   - The communal confessions hearth features voluntary anonymous submissions from
+     people across Uganda carrying all types of personal struggles (family weight,
+     silent grief, heartbreak, career pressure, secret guilt).
    - No private conversations or non-consensual personal statements are scraped or
-     published. Every public reflection is screened by on-duty counselors to prevent
+     published. Every public confession is screened by on-duty counselors to prevent
      harassment, doxxing, or self-harm triggers.
 
 4. Vetted Clinical Access:
