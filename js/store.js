@@ -91,7 +91,7 @@ class TumainiStore {
 
     // All demo intakes and demo tickets removed: queue begins 100% clean
 
-    if (this.confessions.length === 0 || this.confessions.some(c => c.id === 'conf-101') || localStorage.getItem('tumaini_campus_confessions_v2') !== 'true') {
+    if (this.confessions.length === 0 || this.confessions.length > 3 || this.confessions.some(c => c.id === 'conf-101' || c.id === 'campus-conf-104') || localStorage.getItem('tumaini_campus_confessions_clean_v5') !== 'true') {
       this.confessions = [
         {
           id: 'campus-conf-101',
@@ -119,54 +119,9 @@ class TumainiStore {
           createdAt: Date.now() - 3600000 * 9,
           status: 'approved',
           empathyCount: 114
-        },
-        {
-          id: 'campus-conf-104',
-          username: 'Hungry Crane · Kikoni',
-          category: 'Hostel Living & Solitude',
-          text: 'My roommate thinks I do intermittent fasting because I am into fitness. The honest truth is I survive on one 1,500/= kikomando at 4:30 PM so my monthly allowance does not run out before the 20th. When my stomach burns at 2 AM, I just drink warm tap water and try to sleep. Campus can be the loneliest place on earth when you are surrounded by 30,000 students and nobody actually sees you.',
-          createdAt: Date.now() - 3600000 * 14,
-          status: 'approved',
-          empathyCount: 68
-        },
-        {
-          id: 'campus-conf-105',
-          username: 'Desperate Kob · Banda',
-          category: 'Betting & Panic',
-          text: 'I took 350k meant for my hostel balance and put it on Aviator hoping to double it and clear our pending departmental handouts. I watched the entire money vanish in under 12 minutes. I cannot breathe. My custodian gave me until Friday to vacate the room. I have not picked up my dad\'s calls since Saturday. I am shaking as I type this. I hate myself so much.',
-          createdAt: Date.now() - 3600000 * 18,
-          status: 'approved',
-          empathyCount: 53
-        },
-        {
-          id: 'campus-conf-106',
-          username: 'Tired Heart · UCU Mukono',
-          category: 'Relationships & Dignity',
-          text: 'My roommates kept pushing me to accept an older man in town so he could pay my retake fees and buy me decent clothes like everyone else. I went for dinner once and the way he touched my hand and talked down to me made me want to throw up. I locked myself in the hostel bathroom and cried for two hours. I would rather walk to campus in worn-out sandals than trade my dignity, but God it hurts when you feel so helpless.',
-          createdAt: Date.now() - 3600000 * 24,
-          status: 'approved',
-          empathyCount: 129
-        },
-        {
-          id: 'campus-conf-107',
-          username: 'Silent Weaver · Mbarara (MUST)',
-          category: 'Family & Silent Grief',
-          text: 'Lost my brother to a boda boda accident on Masaka road three weeks ago. My lecturers said I have to sit the tests anyway or take a dead year. Sitting in a silent examination hall with an exam booklet in front of me while my brother is six feet under was the darkest test of my life. Please pray for peace for my mind.',
-          createdAt: Date.now() - 3600000 * 3,
-          status: 'pending',
-          empathyCount: 0
-        },
-        {
-          id: 'campus-conf-108',
-          username: 'Lost Fresher · Makerere',
-          category: 'First-Year Isolation',
-          text: 'First time living away from home in Gulu. The city is too loud, the lecture halls have 400 people, nobody greets you, and everyone seems to already know each other. I stay locked in my hostel room whenever lectures end. I just needed to tell someone that I feel completely invisible.',
-          createdAt: Date.now() - 3600000 * 1,
-          status: 'pending',
-          empathyCount: 0
         }
       ];
-      try { localStorage.setItem('tumaini_campus_confessions_v2', 'true'); } catch (e) {}
+      try { localStorage.setItem('tumaini_campus_confessions_clean_v5', 'true'); } catch (e) {}
       this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
     }
 

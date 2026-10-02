@@ -104,6 +104,7 @@ class TumainiStaff {
 
     // Confession Moderation Desk
     this.pendingConfessionsList = document.getElementById('pendingConfessionsList');
+    this.btnResetLocalData = document.getElementById('btnResetLocalData');
   }
 
   bindEvents() {
@@ -132,6 +133,9 @@ class TumainiStaff {
         this.closeProfileModal();
         this.handleLogout();
       });
+    }
+    if (this.btnResetLocalData) {
+      this.btnResetLocalData.addEventListener('click', () => this.handleResetLocalData());
     }
     if (this.btnShufflePassword && this.genCounselorPassword) {
       this.btnShufflePassword.addEventListener('click', () => {
@@ -330,6 +334,49 @@ class TumainiStaff {
     }
     if (this.btnStaffProfile) {
       this.btnStaffProfile.style.display = 'inline-flex';
+    }
+  }
+
+  switchDesk(desk) {
+    if (desk === 'confessions') {
+      if (this.btnDeskTriage) this.btnDeskTriage.classList.remove('active');
+      if (this.btnDeskConfessions) this.btnDeskConfessions.classList.add('active');
+      if (this.deskTriagePane) {
+        this.deskTriagePane.classList.remove('active');
+        this.deskTriagePane.style.display = 'none';
+      }
+      if (this.deskConfessionsPane) {
+        this.deskConfessionsPane.classList.add('active');
+        this.deskConfessionsPane.style.display = 'block';
+      }
+      this.renderConfessionsDesk();
+    } else {
+      if (this.btnDeskConfessions) this.btnDeskConfessions.classList.remove('active');
+      if (this.btnDeskTriage) this.btnDeskTriage.classList.add('active');
+      if (this.deskConfessionsPane) {
+        this.deskConfessionsPane.classList.remove('active');
+        this.deskConfessionsPane.style.display = 'none';
+      }
+      if (this.deskTriagePane) {
+        this.deskTriagePane.classList.add('active');
+        this.deskTriagePane.style.display = 'block';
+      }
+      this.renderQueue();
+      this.renderWorkspace();
+    }
+  }
+
+  handleResetLocalData() {
+    if (confirm('Clear local queue and session cache? This will wipe cached intakes and re-sync fresh from Supabase.')) {
+      try {
+        localStorage.removeItem('tumaini_intakes_clean_v3');
+        localStorage.removeItem('tumaini_intake_messages_clean_v3');
+        localStorage.removeItem('tumaini_active_staff_intake_clean_v3');
+        localStorage.removeItem('tumaini_campus_confessions_v2');
+        localStorage.removeItem('tumaini_campus_confessions_clean_v4');
+        localStorage.removeItem('tumaini_campus_confessions_clean_v5');
+      } catch (e) {}
+      location.reload();
     }
   }
 

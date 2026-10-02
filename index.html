@@ -1479,7 +1479,7 @@ button:disabled, .btn:disabled {
         1-on-1 Counselor Chat
       </button>
       <button class="sanctuary-tab-btn" id="tabConfessions" type="button">
-        Campus Voices (Peer Reflections)
+        Confession / Community Hearth
       </button>
     </nav>
 
@@ -1721,40 +1721,40 @@ button:disabled, .btn:disabled {
     <!-- 3. Confession Room Screen (Community Hearth) -->
     <section class="confessions-view" id="confessionsSection">
       <div class="confessions-hero">
-        <h2>Campus Voices (Peer Reflections)</h2>
+        <h2>Confession / Community Hearth (Ekyoto)</h2>
         <p>
-          A moderated communal hearth for anonymous student reflections across Ugandan universities. Honest reflections shared voluntarily by students navigating tuition pressure, family weight, academic challenges, and loneliness. Moderated by peer counselors to preserve community safety.
+          A quiet, anonymous sanctuary for student confessions across Ugandan campuses. Put down the weight you have been carrying alone: tuition deadlines, examination permits, missing marks, hostel rent, or family expectations. Read words from peers who understand, and know you are never alone.
         </p>
       </div>
 
       <!-- Submit Confession Card -->
       <div class="submit-confession-card">
-        <h3>Share Your Reflection Anonymously</h3>
-        <span class="confession-notice-pill">Submissions are reviewed by counselors before appearing around this hearth</span>
+        <h3>Share Your Confession Anonymously</h3>
+        <span class="confession-notice-pill">Every confession is reviewed by counselors to keep this hearth safe and peaceful</span>
         
         <form id="submitConfessionForm" style="display: flex; flex-direction: column; gap: 14px;">
           <input 
             type="text" 
             id="confessionCategory" 
             class="form-input" 
-            placeholder="Topic (e.g. Tuition pressure, Family silence, Retake anxiety)" 
+            placeholder="Topic (e.g. Tuition deadline, Missing marks, Family silence)" 
             maxlength="40" 
             required
           >
           <textarea 
             id="confessionText" 
             class="confession-textarea" 
-            placeholder="Write your honest reflection or what you have been unable to say out loud..." 
+            placeholder="Write your honest confession or what you have been unable to say out loud..." 
             required
           ></textarea>
 
           <button class="btn-submit-intake" type="submit" style="align-self: flex-start; padding: 12px 24px; font-size: 13.5px;">
-            Submit Reflection for Moderation
+            Submit Confession to Hearth
           </button>
         </form>
 
         <div id="confessionSubmittedNotice" style="display: none; background: #eef7f4; border: 1px solid #c3e2d7; padding: 14px 18px; border-radius: 8px; font-size: 13px; color: var(--brand-eucalyptus-dark); margin-top: 14px;">
-          Your reflection has been received and queued for counselor review. To protect community safety, it will appear once verified by on-duty counselors.
+          Your confession has been received and queued for counselor review. To protect community safety, it will appear once verified by on-duty counselors.
         </div>
       </div>
 

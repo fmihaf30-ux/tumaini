@@ -35,9 +35,26 @@ class TumainiBus {
     this.channel = null;
     this.eventSource = null;
     this.audioCtx = null;
+    this.audioUnlocked = false;
     this.processedCloudIds = new Set();
     this.isCloudConnected = false;
     this.cryptoKey = null;
+
+    const unlock = () => {
+      this.audioUnlocked = true;
+      if (!this.audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.audioCtx = new AudioCtx();
+      }
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume().catch(() => {});
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('click', unlock, { once: true, passive: true });
+      window.addEventListener('keydown', unlock, { once: true, passive: true });
+      window.addEventListener('touchstart', unlock, { once: true, passive: true });
+    }
 
     this.initCryptoKey();
     this.initChannel();
@@ -404,13 +421,16 @@ class TumainiBus {
   }
 
   initAudio() {
-    if (!this.audioCtx) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (AudioContext) this.audioCtx = new AudioContext();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
+    if (!this.audioUnlocked) return;
+    try {
+      if (!this.audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.audioCtx = new AudioCtx();
+      }
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume().catch(() => {});
+      }
+    } catch (e) {}
   }
 
   playChime(type = 'subtle') {
