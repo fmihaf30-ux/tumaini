@@ -432,6 +432,11 @@ class TumainiSupabaseService {
       )
       .subscribe();
 
+    return () => {
+      this.client.removeChannel(channel);
+    };
+  }
+
   subscribeToAllMessages(onMessage) {
     if (!this.isConfigured || !this.client) return () => {};
 
