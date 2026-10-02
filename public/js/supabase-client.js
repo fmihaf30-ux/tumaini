@@ -9,9 +9,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 // Default / Configured Supabase Credentials
-// Replace these with your Supabase Project URL and Public Anon Key
-const DEFAULT_SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const DEFAULT_SUPABASE_URL = 'https://ddgkgrtiplvhlrwzoiia.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkZ2tncnRpcGx2aGxyd3pvaWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjMxNzUsImV4cCI6MjEwNjQ5OTE3NX0.gT4QkgQJKN7KG1NQewBNAkkgE_gaVmE6e97F4o8AwVk';
 
 // Check for runtime configured or stored credentials
 function getSupabaseConfig() {
@@ -417,6 +416,33 @@ class TumainiSupabaseService {
           schema: 'public',
           table: 'intake_messages',
           filter: `intake_id=eq.${intakeId}`
+        },
+        payload => {
+          if (onMessage && payload.new) {
+            onMessage({
+              id: payload.new.id,
+              intakeId: payload.new.intake_id,
+              sender: payload.new.sender,
+              authorName: payload.new.author_name,
+              text: payload.new.text,
+              timestamp: new Date(payload.new.created_at).getTime()
+            });
+          }
+        }
+      )
+      .subscribe();
+
+  subscribeToAllMessages(onMessage) {
+    if (!this.isConfigured || !this.client) return () => {};
+
+    const channel = this.client
+      .channel('public:all_intake_messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'intake_messages'
         },
         payload => {
           if (onMessage && payload.new) {

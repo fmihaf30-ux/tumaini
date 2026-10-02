@@ -6,6 +6,8 @@
    - Zero hardcoded mock tickets or messages
    ========================================================================== */
 
+import { supabase } from './supabase-client.js';
+
 export const EMERGENCY_TIERS = {
   'tier-1': {
     id: 'tier-1',
@@ -85,6 +87,7 @@ class TumainiStore {
     this.activeStaffIntakeId = localStorage.getItem(STORAGE_KEYS.ACTIVE_STAFF_INTAKE) || null;
 
     this.purgeOldSessions();
+    this.initSupabaseSync();
 
     // All demo intakes and demo tickets removed: queue begins 100% clean
 
@@ -198,6 +201,39 @@ class TumainiStore {
     });
   }
 
+  async initSupabaseSync() {
+    if (supabase && supabase.isConfigured) {
+      try {
+        const remoteConfessions = await supabase.fetchApprovedConfessions();
+        if (remoteConfessions && remoteConfessions.length > 0) {
+          this.confessions = remoteConfessions;
+          this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+        }
+        const remoteIntakes = await supabase.fetchActiveIntakes();
+        if (remoteIntakes && remoteIntakes.length > 0) {
+          const mapped = remoteIntakes.map(r => ({
+            id: r.id,
+            username: r.alias,
+            category: r.category,
+            emergencyTier: r.tier,
+            isEmergency: r.tier === 'tier-1' || r.tier === 'tier-2',
+            createdAt: new Date(r.created_at).getTime(),
+            status: r.status,
+            counselorId: r.claimed_by_id,
+            counselorName: r.claimed_by_name,
+            seekerToken: r.seeker_token,
+            notes: r.summary || ''
+          }));
+          this.intakes = mapped;
+          this.save(STORAGE_KEYS.INTAKES, this.intakes);
+        }
+        this.notify();
+      } catch (e) {
+        console.warn('[Tumaini Store] Supabase sync fallback:', e);
+      }
+    }
+  }
+
   // --- 1. User Intake Creation ---
   createIntake({ username, category, emergencyTier }) {
     const tierMeta = EMERGENCY_TIERS[emergencyTier] || EMERGENCY_TIERS['tier-4'];
@@ -218,6 +254,18 @@ class TumainiStore {
 
     this.intakes = [newIntake, ...this.intakes];
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.createIntake({
+        id: newIntake.id,
+        alias: newIntake.username,
+        tier: newIntake.emergencyTier,
+        category: newIntake.category,
+        summary: newIntake.notes || '',
+        seekerToken: newIntake.id + '_' + Date.now(),
+        createdAt: newIntake.createdAt
+      });
+    }
 
     // Initial greeting in 1-on-1 stream
     this.addIntakeMessage({
@@ -304,6 +352,14 @@ class TumainiStore {
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
     this.setActiveStaffIntake(intakeId);
 
+    if (supabase && supabase.isConfigured) {
+      supabase.updateIntakeStatus(intakeId, 'active', {
+        staffId: staffSession.staffId,
+        name: staffSession.name,
+        role: staffSession.role
+      });
+    }
+
     this.addIntakeMessage({
       intakeId,
       sender: 'system',
@@ -317,6 +373,11 @@ class TumainiStore {
   updateIntakeStatus(intakeId, status) {
     this.intakes = this.intakes.map(i => i.id === intakeId ? { ...i, status } : i);
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.updateIntakeStatus(intakeId, status);
+    }
+
     this.notify();
   }
 
@@ -340,6 +401,15 @@ class TumainiStore {
     const thread = this.intakeMessages[intakeId] ? [...this.intakeMessages[intakeId], newMsg] : [newMsg];
     this.intakeMessages = { ...this.intakeMessages, [intakeId]: thread };
     this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.sendMessage(intakeId, {
+        sender: sender === 'user' ? 'user' : (sender === 'system' ? 'system' : 'counselor'),
+        authorName: senderName || 'Anonymous',
+        text: text.trim()
+      });
+    }
+
     this.notify();
     return newMsg;
   }
@@ -470,6 +540,16 @@ class TumainiStore {
 
     this.confessions = [newConfession, ...this.confessions];
     this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.createConfession({
+        id: newConfession.id,
+        username: newConfession.username,
+        category: newConfession.category,
+        text: newConfession.text
+      });
+    }
+
     this.notify();
     return newConfession;
   }
@@ -490,6 +570,11 @@ class TumainiStore {
       return c;
     });
     this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.updateConfessionStatus(confessionId, 'approved');
+    }
+
     this.notify();
   }
 
@@ -501,6 +586,11 @@ class TumainiStore {
       return c;
     });
     this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.updateConfessionStatus(confessionId, 'rejected');
+    }
+
     this.notify();
   }
 
@@ -512,6 +602,11 @@ class TumainiStore {
       return c;
     });
     this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.incrementEmpathy(confessionId);
+    }
+
     this.notify();
   }
 

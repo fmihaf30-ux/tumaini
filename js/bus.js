@@ -9,6 +9,7 @@
    ========================================================================== */
 
 import { store, STORAGE_KEYS } from './store.js';
+import { supabase } from './supabase-client.js';
 
 const E2EE_KEY_STRING = 'tumaini_uganda_crisis_sanctuary_key_v1';
 const E2EE_SALT = 'tumaini_ug_e2ee_salt_2026';
@@ -173,10 +174,59 @@ class TumainiBus {
   initCloudRelay() {
     if (typeof window === 'undefined') return;
 
-    // 1. Initial hydration: fetch recent messages from cloud cache
+    if (supabase && supabase.isConfigured) {
+      this.isCloudConnected = true;
+      this.updateCloudSyncBadge(true);
+
+      // 1. Real-time subscriptions for intakes
+      supabase.subscribeToIntakes(
+        (newIntake) => {
+          store.applyRemoteIntake({
+            id: newIntake.id,
+            username: newIntake.alias,
+            category: newIntake.category,
+            emergencyTier: newIntake.tier,
+            isEmergency: newIntake.tier === 'tier-1' || newIntake.tier === 'tier-2',
+            createdAt: new Date(newIntake.created_at).getTime(),
+            status: newIntake.status,
+            counselorId: newIntake.claimed_by_id,
+            counselorName: newIntake.claimed_by_name,
+            seekerToken: newIntake.seeker_token,
+            notes: newIntake.summary || ''
+          });
+          this.playChime(newIntake.tier === 'tier-1' ? 'urgent' : 'subtle');
+        },
+        (updatedIntake) => {
+          store.applyRemoteIntakeStatus(updatedIntake.id, updatedIntake.status);
+          if (updatedIntake.claimed_by_id) {
+            store.applyRemoteClaim(updatedIntake.id, {
+              staffId: updatedIntake.claimed_by_id,
+              name: updatedIntake.claimed_by_name,
+              role: updatedIntake.claimed_by_role
+            });
+          }
+        }
+      );
+
+      // 2. Real-time subscriptions for consultation messages
+      supabase.subscribeToAllMessages((msg) => {
+        store.applyRemoteMessage(msg.intakeId, {
+          id: msg.id,
+          intakeId: msg.intakeId,
+          sender: msg.sender,
+          senderName: msg.authorName,
+          text: msg.text,
+          timestamp: msg.timestamp
+        });
+        this.playChime('subtle');
+      });
+
+      return;
+    }
+
+    // Fallback: Initial hydration and SSE from local cloud cache
     this.syncRecentCloudEvents();
 
-    // 2. Real-time stream via Server-Sent Events (SSE)
     if ('EventSource' in window) {
       try {
         this.eventSource = new EventSource(`${this.cloudRelayUrl}/sse`);
@@ -207,7 +257,6 @@ class TumainiBus {
         this.eventSource.onerror = () => {
           this.isCloudConnected = false;
           this.updateCloudSyncBadge(false);
-          // SSE automatically attempts reconnection in standard browsers
         };
       } catch (err) {
         console.warn('EventSource initialization error', err);
@@ -249,7 +298,8 @@ class TumainiBus {
     if (badge) {
       if (isConnected) {
         badge.style.display = 'inline-flex';
-        badge.innerHTML = '<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 5px;"></span> E2EE CLOUD SYNC';
+        const label = (supabase && supabase.isConfigured) ? 'SUPABASE REALTIME CLOUD' : 'E2EE CLOUD SYNC';
+        badge.innerHTML = `<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 5px;"></span> ${label}`;
         badge.style.color = '#10b981';
       } else {
         badge.innerHTML = '<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; margin-right: 5px;"></span> RECONNECTING...';
