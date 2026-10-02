@@ -18,9 +18,14 @@ create table if not exists public.counselors (
   password_hash text not null,
   is_supervisor boolean not null default false,
   is_active boolean not null default true,
+  is_on_duty boolean not null default false,
+  shift_started_at timestamptz,
   created_at timestamptz not null default now(),
   last_login_at timestamptz
 );
+
+alter table public.counselors add column if not exists is_on_duty boolean not null default false;
+alter table public.counselors add column if not exists shift_started_at timestamptz;
 
 -- Seed default master supervisor (password: tumaini2026)
 -- Uses crypt() with blowfish salt for secure one-way hashing
@@ -255,6 +260,35 @@ begin
   where upper(c.staff_id) = upper(trim(p_target_id));
 
   return found;
+end;
+$$;
+
+-- Shift Duty Synchronization across multiple devices
+create or replace function public.set_counselor_duty_status(
+  p_staff_id text,
+  p_is_on_duty boolean,
+  p_shift_started_at timestamptz default null
+) returns boolean language plpgsql security definer as $$
+begin
+  update public.counselors
+  set is_on_duty = p_is_on_duty,
+      shift_started_at = case when p_is_on_duty then coalesce(p_shift_started_at, now()) else null end
+  where upper(staff_id) = upper(trim(p_staff_id));
+  return found;
+end;
+$$;
+
+create or replace function public.get_counselor_duty_status(p_staff_id text)
+returns table (
+  is_on_duty boolean,
+  shift_started_at timestamptz
+) language plpgsql security definer as $$
+begin
+  return query
+  select c.is_on_duty, c.shift_started_at
+  from public.counselors c
+  where upper(c.staff_id) = upper(trim(p_staff_id))
+  limit 1;
 end;
 $$;
 

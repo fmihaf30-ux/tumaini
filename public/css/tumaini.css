@@ -723,8 +723,9 @@ button:disabled, .btn:disabled {
 
 .consultation-meta {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .consultation-title {
@@ -734,12 +735,12 @@ button:disabled, .btn:disabled {
 }
 
 .consultation-category-text {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  background: var(--bg-surface);
-  padding: 3px 10px;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
 }
 
 /* Group Circle Invitation Card */
@@ -1382,5 +1383,213 @@ button:disabled, .btn:disabled {
   .btn-danger {
     padding: 5px 8px !important;
     font-size: 11px !important;
+  }
+}
+
+/* Mobile Sidebar Drawer & Responsive Header */
+.mobile-header-actions {
+  display: none;
+}
+
+.mobile-phone-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--brand-ochre-soft);
+  color: var(--brand-ochre-dark) !important;
+  border: 1px solid var(--brand-ochre-border);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+}
+
+.mobile-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  padding: 6px 9px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.mobile-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(25, 40, 35, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.mobile-drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 84%;
+  max-width: 330px;
+  height: 100%;
+  background: var(--bg-surface);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+}
+
+.mobile-drawer-close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.mobile-drawer-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.drawer-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.drawer-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.drawer-nav-link:hover, .drawer-nav-link:active {
+  background: var(--brand-eucalyptus-soft);
+  border-color: var(--brand-eucalyptus-border);
+  color: var(--brand-eucalyptus-dark);
+}
+
+.drawer-helplines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-helpline-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 9px 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.drawer-helpline-card:active {
+  background: #fdf2f2;
+}
+
+.drawer-helpline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-helpline-info strong {
+  font-size: 12px;
+  color: var(--brand-eucalyptus-dark);
+}
+
+.drawer-helpline-info span {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.drawer-dial-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 3px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.helpline-dial-link {
+  text-decoration: underline;
+  color: var(--brand-eucalyptus-dark) !important;
+  cursor: pointer;
+}
+
+.chat-tel-link {
+  color: var(--brand-eucalyptus-dark);
+  text-decoration: underline;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .header-nav {
+    display: none !important;
+  }
+  .mobile-header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
   }
 }

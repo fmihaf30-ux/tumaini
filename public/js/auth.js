@@ -7,6 +7,7 @@
    ========================================================================== */
 
 import { supabase } from './supabase-client.js';
+import { bus } from './bus.js';
 
 const STORAGE_KEYS = {
   STAFF_ACCOUNTS: 'haven_staff_accounts_v5',
@@ -260,13 +261,18 @@ class StaffAuthManager {
       return { success: false, error: 'Invalid Operator ID or Password. Credentials must be issued by the Clinical Supervisor.' };
     }
 
+    let remoteDuty = null;
+    if (supabase && supabase.isConfigured) {
+      remoteDuty = await supabase.getDutyStatus(account.staffId);
+    }
+
     this.session = {
       staffId: account.staffId,
       name: account.name,
       role: account.role,
       isSupervisor: !!account.isSupervisor,
-      isOnDuty: false,
-      shiftStartedAt: null
+      isOnDuty: remoteDuty ? !!remoteDuty.isOnDuty : false,
+      shiftStartedAt: remoteDuty ? remoteDuty.shiftStartedAt : null
     };
 
     this.saveSession();
@@ -278,6 +284,18 @@ class StaffAuthManager {
     this.session.isOnDuty = true;
     this.session.shiftStartedAt = Date.now();
     this.saveSession();
+
+    if (supabase && supabase.isConfigured) {
+      supabase.setDutyStatus(this.session.staffId, true, this.session.shiftStartedAt);
+    }
+    try {
+      bus.broadcast('STAFF_SHIFT_CHANGE', {
+        staffId: this.session.staffId,
+        isOnDuty: true,
+        shiftStartedAt: this.session.shiftStartedAt
+      });
+    } catch (e) {}
+
     return true;
   }
 
@@ -286,6 +304,18 @@ class StaffAuthManager {
     this.session.isOnDuty = false;
     this.session.shiftStartedAt = null;
     this.saveSession();
+
+    if (supabase && supabase.isConfigured) {
+      supabase.setDutyStatus(this.session.staffId, false, null);
+    }
+    try {
+      bus.broadcast('STAFF_SHIFT_CHANGE', {
+        staffId: this.session.staffId,
+        isOnDuty: false,
+        shiftStartedAt: null
+      });
+    } catch (e) {}
+
     return true;
   }
 

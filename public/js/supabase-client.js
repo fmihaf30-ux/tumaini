@@ -54,6 +54,37 @@ class TumainiSupabaseService {
           }
         });
         console.log('[Tumaini] Supabase Client Initialized:', this.url);
+
+        if (typeof window !== 'undefined') {
+          window.addEventListener('pageshow', (event) => {
+            if (event.persisted && this.client && this.client.realtime) {
+              try {
+                this.client.realtime.disconnect();
+                setTimeout(() => {
+                  if (this.client && this.client.realtime) this.client.realtime.connect();
+                }, 300);
+              } catch (e) {}
+            }
+          });
+
+          window.addEventListener('pagehide', (event) => {
+            if (event.persisted && this.client && this.client.realtime) {
+              try {
+                this.client.realtime.disconnect();
+              } catch (e) {}
+            }
+          });
+
+          window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this.client && this.client.realtime) {
+              try {
+                if (!this.client.realtime.isConnected()) {
+                  this.client.realtime.connect();
+                }
+              } catch (e) {}
+            }
+          });
+        }
       } catch (err) {
         console.error('[Tumaini] Error initializing Supabase client', err);
       }
@@ -97,6 +128,17 @@ class TumainiSupabaseService {
 
       if (data && data.length > 0 && data[0].success) {
         const row = data[0];
+        let isOnDuty = !!row.is_on_duty;
+        let shiftStartedAt = row.shift_started_at ? new Date(row.shift_started_at).getTime() : null;
+
+        if (!isOnDuty) {
+          const remoteDuty = await this.getDutyStatus(row.staff_id);
+          if (remoteDuty && remoteDuty.isOnDuty) {
+            isOnDuty = true;
+            shiftStartedAt = remoteDuty.shiftStartedAt;
+          }
+        }
+
         return {
           success: true,
           staff: {
@@ -104,8 +146,8 @@ class TumainiSupabaseService {
             name: row.name,
             role: row.role,
             isSupervisor: row.is_supervisor,
-            isOnDuty: false,
-            shiftStartedAt: null
+            isOnDuty,
+            shiftStartedAt
           }
         };
       }
@@ -185,6 +227,60 @@ class TumainiSupabaseService {
       return !error && !!data;
     } catch (e) {
       return false;
+    }
+  }
+
+  // --- Shift Duty Synchronization ---
+  async setDutyStatus(staffId, isOnDuty, shiftStartedAt) {
+    if (!this.isConfigured || !this.client || !staffId) return false;
+    try {
+      const shiftIso = shiftStartedAt ? new Date(shiftStartedAt).toISOString() : null;
+      const { data, error } = await this.client.rpc('set_counselor_duty_status', {
+        p_staff_id: staffId.trim(),
+        p_is_on_duty: !!isOnDuty,
+        p_shift_started_at: shiftIso
+      });
+      if (error) {
+        // Direct table update fallback
+        const { error: updErr } = await this.client
+          .from('counselors')
+          .update({ is_on_duty: !!isOnDuty, shift_started_at: shiftIso })
+          .ilike('staff_id', staffId.trim());
+        return !updErr;
+      }
+      return !error && !!data;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async getDutyStatus(staffId) {
+    if (!this.isConfigured || !this.client || !staffId) return null;
+    try {
+      const { data, error } = await this.client.rpc('get_counselor_duty_status', {
+        p_staff_id: staffId.trim()
+      });
+      if (!error && data && data.length > 0) {
+        return {
+          isOnDuty: !!data[0].is_on_duty,
+          shiftStartedAt: data[0].shift_started_at ? new Date(data[0].shift_started_at).getTime() : null
+        };
+      }
+      // Direct table query fallback
+      const { data: rows, error: qErr } = await this.client
+        .from('counselors')
+        .select('is_on_duty, shift_started_at')
+        .ilike('staff_id', staffId.trim())
+        .limit(1);
+      if (!qErr && rows && rows.length > 0) {
+        return {
+          isOnDuty: !!rows[0].is_on_duty,
+          shiftStartedAt: rows[0].shift_started_at ? new Date(rows[0].shift_started_at).getTime() : null
+        };
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -280,17 +376,20 @@ class TumainiSupabaseService {
     }
   }
 
-  async sendMessage(intakeId, { sender, authorName, text }) {
+  async sendMessage(intakeId, { id, sender, authorName, text }) {
     if (!this.isConfigured || !this.client) return null;
     try {
+      const payload = {
+        intake_id: intakeId,
+        sender,
+        author_name: authorName,
+        text
+      };
+      if (id) payload.id = id;
+
       const { data, error } = await this.client
         .from('intake_messages')
-        .insert([{
-          intake_id: intakeId,
-          sender,
-          author_name: authorName,
-          text
-        }])
+        .insert([payload])
         .select();
 
       if (error) console.error('Error sending message:', error);

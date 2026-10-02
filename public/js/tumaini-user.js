@@ -51,6 +51,8 @@ class TumainiUser {
     this.intakeForm = document.getElementById('intakeForm');
     this.usernameInput = document.getElementById('userCustomNameInput');
     this.btnShuffleName = document.getElementById('btnShuffleName');
+    this.categorySelect = document.getElementById('categorySelect');
+    this.customCategoryWrap = document.getElementById('customCategoryWrap');
     this.categoryChipsContainer = document.getElementById('categoryChipsContainer');
     this.customCategoryInput = document.getElementById('customCategoryInput');
     this.tierRadios = document.querySelectorAll('input[name="emergencyTier"]');
@@ -74,6 +76,17 @@ class TumainiUser {
     this.confessionText = document.getElementById('confessionText');
     this.confessionCategory = document.getElementById('confessionCategory');
     this.confessionNotice = document.getElementById('confessionSubmittedNotice');
+
+    // Mobile Sidebar Drawer
+    this.btnOpenDrawer = document.getElementById('btnOpenDrawer');
+    this.btnCloseDrawer = document.getElementById('btnCloseDrawer');
+    this.mobileDrawer = document.getElementById('mobileDrawer');
+    this.mobileDrawerOverlay = document.getElementById('mobileDrawerOverlay');
+    this.drawerLinkChat = document.getElementById('drawerLinkChat');
+    this.drawerLinkConfessions = document.getElementById('drawerLinkConfessions');
+    this.drawerLinkAbout = document.getElementById('drawerLinkAbout');
+    this.drawerLinkPrivacy = document.getElementById('drawerLinkPrivacy');
+    this.drawerQuickExit = document.getElementById('drawerQuickExit');
 
     // Modals
     this.aboutModal = document.getElementById('aboutModal');
@@ -104,6 +117,19 @@ class TumainiUser {
     if (this.btnShuffleName && this.usernameInput) {
       this.btnShuffleName.addEventListener('click', () => {
         this.usernameInput.value = this.generateWildlifeHandle();
+      });
+    }
+
+    // Category Dropdown Selection
+    if (this.categorySelect) {
+      this.categorySelect.addEventListener('change', () => {
+        if (this.categorySelect.value === 'Other') {
+          if (this.customCategoryWrap) this.customCategoryWrap.style.display = 'block';
+          if (this.customCategoryInput) this.customCategoryInput.focus();
+        } else {
+          if (this.customCategoryWrap) this.customCategoryWrap.style.display = 'none';
+          if (this.customCategoryInput) this.customCategoryInput.value = '';
+        }
       });
     }
 
@@ -232,6 +258,51 @@ class TumainiUser {
       });
     }
 
+    // Mobile Sidebar Drawer
+    const openDrawer = () => {
+      if (this.mobileDrawer) this.mobileDrawer.classList.add('open');
+      if (this.mobileDrawerOverlay) this.mobileDrawerOverlay.classList.add('open');
+    };
+    const closeDrawer = () => {
+      if (this.mobileDrawer) this.mobileDrawer.classList.remove('open');
+      if (this.mobileDrawerOverlay) this.mobileDrawerOverlay.classList.remove('open');
+    };
+
+    if (this.btnOpenDrawer) this.btnOpenDrawer.addEventListener('click', openDrawer);
+    if (this.btnCloseDrawer) this.btnCloseDrawer.addEventListener('click', closeDrawer);
+    if (this.mobileDrawerOverlay) this.mobileDrawerOverlay.addEventListener('click', closeDrawer);
+
+    if (this.drawerLinkChat) {
+      this.drawerLinkChat.addEventListener('click', () => {
+        closeDrawer();
+        this.switchSanctuaryTab('intake');
+      });
+    }
+    if (this.drawerLinkConfessions) {
+      this.drawerLinkConfessions.addEventListener('click', () => {
+        closeDrawer();
+        this.switchSanctuaryTab('confessions');
+      });
+    }
+    if (this.drawerLinkAbout) {
+      this.drawerLinkAbout.addEventListener('click', () => {
+        closeDrawer();
+        openModal(this.aboutModal);
+      });
+    }
+    if (this.drawerLinkPrivacy) {
+      this.drawerLinkPrivacy.addEventListener('click', () => {
+        closeDrawer();
+        openModal(this.privacyModal);
+      });
+    }
+    if (this.drawerQuickExit) {
+      this.drawerQuickExit.addEventListener('click', () => {
+        closeDrawer();
+        this.quickExit();
+      });
+    }
+
     // Quick Safety Exit
     if (this.btnQuickExit) {
       this.btnQuickExit.addEventListener('click', () => this.quickExit());
@@ -327,15 +398,19 @@ class TumainiUser {
     const rawUsername = this.usernameInput ? this.usernameInput.value.trim() : '';
     const username = rawUsername || this.generateWildlifeHandle();
 
-    // Category selection: check radio or custom text input
+    // Category selection: check custom input, dropdown select, or radio
     let category = 'General Emotional Strain';
-    const checkedRadio = document.querySelector('input[name="categoryRadio"]:checked');
     const customCat = this.customCategoryInput ? this.customCategoryInput.value.trim() : '';
 
     if (customCat) {
       category = customCat;
-    } else if (checkedRadio && checkedRadio.value) {
-      category = checkedRadio.value;
+    } else if (this.categorySelect && this.categorySelect.value && this.categorySelect.value !== 'Other') {
+      category = this.categorySelect.value;
+    } else {
+      const checkedRadio = document.querySelector('input[name="categoryRadio"]:checked');
+      if (checkedRadio && checkedRadio.value) {
+        category = checkedRadio.value;
+      }
     }
 
     // Emergency Tier
@@ -415,7 +490,7 @@ class TumainiUser {
       if (isSystem) {
         const div = document.createElement('div');
         div.className = 'chat-system-row';
-        div.textContent = msg.text;
+        div.innerHTML = this.formatSystemMessageHtml(msg.text);
         this.chatStream.appendChild(div);
       } else {
         const row = document.createElement('div');
@@ -546,6 +621,17 @@ class TumainiUser {
 
   quickExit() {
     window.location.replace('https://www.google.com/search?q=uganda+weather');
+  }
+
+  formatSystemMessageHtml(text) {
+    let safe = this.escapeHtml(text || '');
+    safe = safe.replace(/\b0800\s*21\s*21\s*21\b/g, '<a href="tel:0800212121" class="chat-tel-link">0800 21 21 21</a>');
+    safe = safe.replace(/\b0800\s*211\s*306\b/g, '<a href="tel:0800211306" class="chat-tel-link">0800 211 306</a>');
+    safe = safe.replace(/\b0800\s*200\s*600\b/g, '<a href="tel:0800200600" class="chat-tel-link">0800 200 600</a>');
+    safe = safe.replace(/\b(Sauti\s*)?116\b/gi, (match) => {
+      return match.includes('Sauti') ? 'Sauti <a href="tel:116" class="chat-tel-link">116</a>' : '<a href="tel:116" class="chat-tel-link">116</a>';
+    });
+    return safe;
   }
 
   escapeHtml(str) {

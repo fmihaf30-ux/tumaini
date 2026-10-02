@@ -2547,7 +2547,7 @@ button:disabled, .btn:disabled {
       </div>
 
       <!-- Login Form (Single secure sign-in; no public registration) -->
-      <form class="auth-form" id="staffLoginForm">
+      <form class="auth-form" id="staffLoginForm" autocomplete="off">
         <div class="form-group">
           <label class="form-label" for="loginStaffId">Operator Staff ID</label>
           <input 
@@ -2555,7 +2555,7 @@ button:disabled, .btn:disabled {
             id="loginStaffId" 
             class="form-input" 
             placeholder="e.g. STF-4821" 
-            autocomplete="username"
+            autocomplete="off"
             required
           >
         </div>
@@ -2567,7 +2567,7 @@ button:disabled, .btn:disabled {
             id="loginPassword" 
             class="form-input" 
             placeholder="••••••••" 
-            autocomplete="current-password"
+            autocomplete="new-password"
             required
           >
         </div>
@@ -2595,10 +2595,6 @@ button:disabled, .btn:disabled {
           <span id="staffRoleDisplay" style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">Crisis Counselor</span>
         </div>
         <span class="badge" id="dutyStatusBadge" style="background: rgba(100, 116, 139, 0.15); color: #64748b;">OFF DUTY</span>
-        <span class="badge" id="cloudSyncStatusBadge" style="display: inline-flex; align-items: center; background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 10.5px; padding: 3px 8px;">
-          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 5px;"></span>
-          E2EE CLOUD SYNC
-        </span>
       </div>
 
       <div class="staff-duty-controls">
@@ -2856,33 +2852,6 @@ button:disabled, .btn:disabled {
             </span>
             <div id="counselorsRosterList" class="counselors-roster-list">
               <!-- Dynamically populated -->
-            </div>
-          </div>
-
-          <!-- Supabase Backend Cloud Connection -->
-          <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">
-                Supabase PostgreSQL Backend
-              </span>
-              <span id="supabaseStatusBadge" class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">
-                Local Fallback Mode
-              </span>
-            </div>
-            <p style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 10px;">
-              Connect your live Supabase project to enable multi-device counselor accounts and server-side encryption.
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <input type="text" id="inputSupabaseUrl" class="form-input" placeholder="Supabase Project URL (e.g. https://xyz.supabase.co)" style="font-size: 12px; padding: 7px 10px;">
-              <input type="password" id="inputSupabaseAnonKey" class="form-input" placeholder="Supabase Anon / Public Key (eyJhbGci...)" style="font-size: 12px; padding: 7px 10px;">
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button type="button" id="btnSaveSupabaseConfig" class="nav-btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">
-                  Save & Connect Database
-                </button>
-                <span id="supabaseSaveSuccess" style="display: none; font-size: 11.5px; color: #15803d; font-weight: 600;">
-                  Connected! Reloading...
-                </span>
-              </div>
             </div>
           </div>
         </div>

@@ -57,11 +57,6 @@ class TumainiStaff {
     this.btnCopyCredentials = document.getElementById('btnCopyCredentials');
     this.copyToastMessage = document.getElementById('copyToastMessage');
     this.counselorsRosterList = document.getElementById('counselorsRosterList');
-    this.supabaseStatusBadge = document.getElementById('supabaseStatusBadge');
-    this.inputSupabaseUrl = document.getElementById('inputSupabaseUrl');
-    this.inputSupabaseAnonKey = document.getElementById('inputSupabaseAnonKey');
-    this.btnSaveSupabaseConfig = document.getElementById('btnSaveSupabaseConfig');
-    this.supabaseSaveSuccess = document.getElementById('supabaseSaveSuccess');
 
     // Duty Strip
     this.staffOperatorTag = document.getElementById('staffOperatorTag');
@@ -151,23 +146,15 @@ class TumainiStaff {
     if (this.btnCopyCredentials) {
       this.btnCopyCredentials.addEventListener('click', () => this.handleCopyCredentials());
     }
-    if (this.btnSaveSupabaseConfig) {
-      this.btnSaveSupabaseConfig.addEventListener('click', () => {
-        const url = this.inputSupabaseUrl ? this.inputSupabaseUrl.value.trim() : '';
-        const key = this.inputSupabaseAnonKey ? this.inputSupabaseAnonKey.value.trim() : '';
-        if (!url || !key) {
-          alert('Please enter both Supabase Project URL and Public Anon Key.');
-          return;
-        }
-        const success = supabase.configureCredentials(url, key);
-        if (success) {
-          if (this.supabaseSaveSuccess) this.supabaseSaveSuccess.style.display = 'inline';
-          setTimeout(() => { location.reload(); }, 1000);
-        } else {
-          alert('Failed to save Supabase configuration.');
-        }
-      });
-    }
+    // Multi-Device Shift Synchronization
+    window.addEventListener('tumaini:shift-sync', (e) => {
+      const session = auth.getSession();
+      if (session && e.detail && e.detail.staffId && session.staffId.toUpperCase() === e.detail.staffId.toUpperCase()) {
+        session.isOnDuty = !!e.detail.isOnDuty;
+        session.shiftStartedAt = e.detail.shiftStartedAt || null;
+        this.syncDutyStrip();
+      }
+    });
 
     // Duty Strip
     if (this.btnClockIn) this.btnClockIn.addEventListener('click', () => this.handleClockIn());
@@ -437,7 +424,6 @@ class TumainiStaff {
       if (this.genCounselorPassword && !this.genCounselorPassword.value) {
         this.genCounselorPassword.value = auth.generateRandomPassword();
       }
-      this.syncSupabaseStatus();
       await this.renderCounselorsRoster();
     } else {
       if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'none';
@@ -445,27 +431,6 @@ class TumainiStaff {
 
     this.staffProfileModal.classList.add('open');
     this.staffProfileModal.classList.add('active');
-  }
-
-  syncSupabaseStatus() {
-    if (!this.supabaseStatusBadge) return;
-    if (supabase && supabase.isConfigured) {
-      this.supabaseStatusBadge.textContent = '● Supabase Connected';
-      this.supabaseStatusBadge.style.background = '#dcfce7';
-      this.supabaseStatusBadge.style.color = '#15803d';
-      this.supabaseStatusBadge.style.borderColor = '#bbf7d0';
-    } else {
-      this.supabaseStatusBadge.textContent = 'Local Fallback Mode';
-      this.supabaseStatusBadge.style.background = '#fef3c7';
-      this.supabaseStatusBadge.style.color = '#b45309';
-      this.supabaseStatusBadge.style.borderColor = '#fde68a';
-    }
-    if (this.inputSupabaseUrl && supabase.url && !supabase.url.includes('YOUR_PROJECT_ID')) {
-      this.inputSupabaseUrl.value = supabase.url;
-    }
-    if (this.inputSupabaseAnonKey && supabase.anonKey && !supabase.anonKey.includes('YOUR_SUPABASE_ANON_KEY')) {
-      this.inputSupabaseAnonKey.value = supabase.anonKey;
-    }
   }
 
   closeProfileModal() {
@@ -906,7 +871,9 @@ class TumainiStaff {
       roomTitle: room.title,
       staffName: session.name
     });
-    alert(`Invitation to "${room.title}" sent to ${this.activeIntake.username}.`);
+    setTimeout(() => {
+      alert(`Invitation to "${room.title}" sent to ${this.activeIntake.username}.`);
+    }, 10);
   }
 
   handleCreateAndInviteRoom() {
@@ -947,7 +914,9 @@ class TumainiStaff {
       roomTitle: newRoom.title,
       staffName: session.name
     });
-    alert(`Circle "${newRoom.title}" created and invitation sent to ${this.activeIntake.username}.`);
+    setTimeout(() => {
+      alert(`Circle "${newRoom.title}" created and invitation sent to ${this.activeIntake.username}.`);
+    }, 10);
   }
 
   // --- Confession Moderation Desk ---

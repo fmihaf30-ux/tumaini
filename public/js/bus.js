@@ -211,7 +211,9 @@ class TumainiBus {
             seekerToken: newIntake.seeker_token,
             notes: newIntake.summary || ''
           });
-          this.playChime(newIntake.tier === 'tier-1' ? 'urgent' : 'subtle');
+          if (this.shouldPlayAlertForNewIntake(newIntake)) {
+            this.playChime(newIntake.tier === 'tier-1' ? 'urgent' : 'subtle');
+          }
         },
         (updatedIntake) => {
           store.applyRemoteIntakeStatus(updatedIntake.id, updatedIntake.status);
@@ -235,7 +237,9 @@ class TumainiBus {
           text: msg.text,
           timestamp: msg.timestamp
         });
-        this.playChime('subtle');
+        if (this.shouldPlayAlertForMessage(msg)) {
+          this.playChime('subtle');
+        }
       });
 
       return;
@@ -342,15 +346,38 @@ class TumainiBus {
       }
     }
 
-    // 2. Encrypt with AES-GCM before transmitting over the cloud relay
+    // 2. Transmit over fallback cloud relay only when Supabase is not active
+    if (!supabase || !supabase.isConfigured) {
+      try {
+        const encryptedBody = await this.encryptEnvelope(envelope);
+        fetch(this.cloudRelayUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: encryptedBody
+        }).catch(() => {});
+      } catch (e) {}
+    }
+  }
+
+  shouldPlayAlertForMessage(msg) {
+    if (!msg || !msg.intakeId) return false;
+    const isStaff = typeof window !== 'undefined' && window.location.pathname.includes('staff');
+    if (isStaff) {
+      return msg.sender === 'user' && store.activeStaffIntakeId === msg.intakeId;
+    } else {
+      return msg.sender !== 'user' && store.activeUserIntakeId === msg.intakeId;
+    }
+  }
+
+  shouldPlayAlertForNewIntake(intake) {
+    const isStaff = typeof window !== 'undefined' && window.location.pathname.includes('staff');
+    if (!isStaff) return false;
     try {
-      const encryptedBody = await this.encryptEnvelope(envelope);
-      fetch(this.cloudRelayUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: encryptedBody
-      }).catch(() => {});
-    } catch (e) {}
+      const session = JSON.parse(localStorage.getItem('haven_active_staff_session_v5') || '{}');
+      return !!session.isOnDuty;
+    } catch (e) {
+      return false;
+    }
   }
 
   handleLocalMessage(envelope) {
@@ -373,7 +400,9 @@ class TumainiBus {
       const initialMessages = payload?.initialMessages || [];
       if (intake && intake.id) {
         store.applyRemoteIntake(intake, initialMessages);
-        this.playChime(intake.isEmergency ? 'urgent' : 'subtle');
+        if (this.shouldPlayAlertForNewIntake(intake)) {
+          this.playChime(intake.isEmergency ? 'urgent' : 'subtle');
+        }
       } else {
         store.intakes = store.load(STORAGE_KEYS.INTAKES, []);
         store.notify();
@@ -381,10 +410,27 @@ class TumainiBus {
     } else if (type === 'MESSAGE_SENT') {
       if (payload && payload.intakeId && payload.message) {
         store.applyRemoteMessage(payload.intakeId, payload.message);
-        this.playChime('subtle');
+        if (this.shouldPlayAlertForMessage(payload.message)) {
+          this.playChime('subtle');
+        }
       } else {
         store.intakeMessages = store.load(STORAGE_KEYS.INTAKE_MESSAGES, {});
         store.notify();
+      }
+    } else if (type === 'STAFF_SHIFT_CHANGE') {
+      if (payload && payload.staffId) {
+        try {
+          const raw = localStorage.getItem('haven_active_staff_session_v5');
+          if (raw) {
+            const sess = JSON.parse(raw);
+            if (sess && sess.staffId && sess.staffId.toUpperCase() === payload.staffId.toUpperCase()) {
+              sess.isOnDuty = !!payload.isOnDuty;
+              sess.shiftStartedAt = payload.shiftStartedAt || null;
+              localStorage.setItem('haven_active_staff_session_v5', JSON.stringify(sess));
+              window.dispatchEvent(new CustomEvent('tumaini:shift-sync', { detail: payload }));
+            }
+          }
+        } catch (e) {}
       }
     } else if (type === 'INTAKE_CLAIMED') {
       if (payload && payload.intakeId) {

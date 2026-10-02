@@ -1,155 +1,116 @@
-================================================================================
-TUMAINI - ANONYMOUS CRISIS SANCTUARY & PEER SUPPORT (UGANDA)
-================================================================================
+# Tumaini - Anonymous Crisis Sanctuary & Peer Support (Uganda)
 
-Tumaini (Swahili for "Hope") is a privacy-first, clinical-grade emotional support
-and crisis triage web platform built for individuals and young people across Uganda
-carrying heavy burdens, emotional distress, or mental health strain.
+Tumaini (Swahili for "Hope") is a privacy-first, clinical-grade emotional support and crisis triage web platform built for individuals and young people across Uganda carrying heavy burdens, emotional distress, or mental health strain.
 
-It provides a quiet, dignified, and completely anonymous sanctuary for anyone
-carrying life pressure, family burdens, grief, heartbreak, secret guilt, financial
-strain, or late-night anxiety. No accounts, no phone numbers, and no real names required.
+It provides a quiet, dignified, and completely anonymous sanctuary for anyone carrying life pressure, family burdens, grief, heartbreak, secret guilt, financial strain, or late-night anxiety. No accounts, no phone numbers, and no real names required.
 
-Live Production Deployments:
-- Public User Sanctuary: https://tumaini-zeta.vercel.app/
-- Staff Counselor Console: https://tumaini-zeta.vercel.app/staff
-- GitHub Repository: https://github.com/fmihaf30-ux/tumaini
+## Live Production Deployments
+- **Public User Sanctuary**: [https://tumaini-zeta.vercel.app/](https://tumaini-zeta.vercel.app/)
+- **Staff Counselor Console**: [https://tumaini-zeta.vercel.app/staff](https://tumaini-zeta.vercel.app/staff)
+- **GitHub Repository**: [https://github.com/fmihaf30-ux/tumaini](https://github.com/fmihaf30-ux/tumaini)
 
-================================================================================
-CORE ARCHITECTURE & DUAL-TERMINAL DESIGN
-================================================================================
+---
 
-Tumaini operates as two synchronized environments connected via a high-performance
-cloud backend (Supabase PostgreSQL + Realtime WebSockets) with seamless local-first
-offline fallback:
+## Core Architecture & Dual-Terminal Design
 
-1. PUBLIC USER SANCTUARY (index.html)
-   - Anonymous Pseudonym Generator: Auto-generates calm Ugandan wildlife handles
-     (e.g., "Steady Kob 42", "Quiet Crane 18", "Brave Shoebill 95") or custom handle.
-   - Emergency Severity Triage Tiers:
-     * Tier 1: Critical Crisis / Immediate Danger (High priority, toll-free 0800 alerts)
-     * Tier 2: Acute Panic / Severe Distress (Breathing anchors and rapid pacing)
-     * Tier 3: Elevated / Breaking Point (Overwhelmed, life strain, active listening)
-     * Tier 4: Normal / Safe Space (Gentle space to process daily emotions)
-   - WhatsApp-Style Chat Interface: Clean, familiar conversational bubbles, message
-     status indicators, and instant responsiveness on low-bandwidth mobile networks.
-   - Confessions / Community Hearth (Ekyoto): Anonymously share and read moderated
-     life reflections, unspoken truths, and secret burdens from across Uganda
-     (Kampala, Entebbe, Jinja, and beyond).
-   - Somatic Grounding Drawer: Interactive 4-4-4-4 Box Breathing pacing guide and
-     5-4-3-2-1 sensory grounding reset.
-   - Instant Safety Quick Exit: Header exit button or "Escape" key redirects instantly
-     to Google for user physical safety.
-   - Certified Ugandan Emergency Hotlines: Mental Health Uganda toll-free (0800 21 21 21),
-     Butabika National Referral Hospital (0800 211 306), and StrongMinds (0800 200 600).
-   - In-App Privacy Charter: Directly visible from header navigation and intake form,
-     articulating statutory compliance with the Uganda Data Protection and Privacy Act, 2019.
+Tumaini operates as two synchronized environments connected via a high-performance cloud backend (Supabase PostgreSQL + Realtime WebSockets) with seamless local-first offline fallback:
 
-2. STAFF & COUNSELOR COMMAND TERMINAL (staff.html)
-   - Zero Public Self-Registration: Public registration is permanently removed.
-     Counselor accounts must be generated and issued exclusively by the Clinical
-     Supervisor to prevent unauthorized access to vulnerable users.
-   - Master Supervisor Access: Administrative console authenticated via Supervisor ID
-     (SUPERVISOR) with cryptographically hashed credentials.
-   - Supervisor Credential Generator: The supervisor can generate unique Operator
-     IDs (e.g. STF-XXXX) and secure passwords from the Profile modal, ready to copy
-     and send directly to vetted counselors via WhatsApp or SMS.
-   - Active Counselors Roster: The supervisor can view and revoke active counselor
-     credentials at any time.
-   - WhatsApp-Style Clinical Chat: Real-time 1-on-1 counseling workspace styled with
-     familiar WhatsApp speech bubbles, delivery checkmarks, and timestamps.
-   - Shift Duty Engine: Counselors must "Clock In" to begin handling cases. Shift
-     timer tracks active duty duration.
-   - Dual Desk Navigation:
-     * Emergency Triage Desk: Real incoming requests sorted by Emergency Severity Tier.
-       All demo tickets and seed data have been completely removed.
-     * Confession Moderation Desk: Counselors review, approve, or reject incoming
-       confessions before they go live on the public community hearth.
-   - Clinical Workspace: One-click case claiming, live WhatsApp-style chat, clinical
-     de-escalation quick snippets, and group support circle invitations.
+### 1. Public User Sanctuary (`index.html`)
+- **Anonymous Pseudonym Generator**: Auto-generates calm Ugandan wildlife handles (e.g., "Steady Kob 42", "Quiet Crane 18", "Brave Shoebill 95") or custom handle.
+- **Emergency Severity Triage Tiers**:
+  - **Tier 1: Critical Crisis / Immediate Danger** (High priority, toll-free 0800 alerts)
+  - **Tier 2: Acute Panic / Severe Distress** (Breathing anchors and rapid pacing)
+  - **Tier 3: Elevated / Breaking Point** (Overwhelmed, life strain, active listening)
+  - **Tier 4: Normal / Safe Space** (Gentle space to process daily emotions)
+- **WhatsApp-Style Chat Interface**: Clean, familiar conversational bubbles, message status indicators, and instant responsiveness on low-bandwidth mobile networks.
+- **Confessions / Community Hearth (Ekyoto)**: Anonymously share and read moderated life reflections, unspoken truths, and secret burdens from across Uganda (Kampala, Entebbe, Jinja, and beyond).
+- **Somatic Grounding Drawer**: Interactive 4-4-4-4 Box Breathing pacing guide and 5-4-3-2-1 sensory grounding reset.
+- **Instant Safety Quick Exit**: Header exit button or "Escape" key redirects instantly to Google for user physical safety.
+- **Certified Ugandan Emergency Hotlines**: Mental Health Uganda toll-free (0800 21 21 21), Butabika National Referral Hospital (0800 211 306), and StrongMinds (0800 200 600).
+- **In-App Privacy Charter**: Directly visible from header navigation and intake form, articulating statutory compliance with the Uganda Data Protection and Privacy Act, 2019.
 
-================================================================================
-PRODUCTION BACKEND & DATABASE SPECIFICATION
-================================================================================
+### 2. Staff & Counselor Command Terminal (`staff.html`)
+- **Zero Public Self-Registration**: Public registration is permanently removed. Counselor accounts must be generated and issued exclusively by the Clinical Supervisor to prevent unauthorized access to vulnerable users.
+- **Master Supervisor Access**: Administrative console authenticated via Supervisor ID (`SUPERVISOR`) with cryptographically hashed credentials.
+- **Supervisor Credential Generator**: The supervisor can generate unique Operator IDs (e.g. `STF-XXXX`) and secure passwords from the Profile modal, ready to copy and send directly to vetted counselors via WhatsApp or SMS.
+- **Active Counselors Roster**: The supervisor can view and revoke active counselor credentials at any time.
+- **WhatsApp-Style Clinical Chat**: Real-time 1-on-1 counseling workspace styled with familiar WhatsApp speech bubbles, delivery checkmarks, and timestamps.
+- **Shift Duty Engine**: Counselors must "Clock In" to begin handling cases. Shift timer tracks active duty duration.
+- **Dual Desk Navigation**:
+  - **Emergency Triage Desk**: Real incoming requests sorted by Emergency Severity Tier. All demo tickets and seed data have been completely removed.
+  - **Confession Moderation Desk**: Counselors review, approve, or reject incoming confessions before they go live on the public community hearth.
+- **Clinical Workspace**: One-click case claiming, live WhatsApp-style chat, clinical de-escalation quick snippets, and group support circle invitations.
+
+---
+
+## Production Backend & Database Specification
 
 Tumaini utilizes Supabase as its primary cloud data and realtime infrastructure:
-- PostgreSQL Database with pgcrypto Blowfish one-way password hashing.
-- Realtime WebSocket Channels: postgres_changes triggers instant triage queue alerts
-  and sub-second bidirectional message streaming between seekers and counselors.
-- Server-Side Stored Procedures (RPC):
-  * verify_counselor_login: Server-side credential verification with zero plaintext
-    password exposure to client scripts.
-  * create_counselor_account: Supervisor-authenticated generation of unique STF-XXXX IDs.
-  * revoke_counselor_account: Supervisor-controlled deactivation of counselor access.
-  * increment_empathy: Atomic increment of peer support reactions on approved reflections.
-- Row-Level Security (RLS):
-  * Counselors roster is locked against public reading.
-  * Confessions table restricts public queries exclusively to approved posts.
-  * Intakes and messages are protected with session tokens.
+- **PostgreSQL Database** with `pgcrypto` Blowfish one-way password hashing.
+- **Realtime WebSocket Channels**: `postgres_changes` triggers instant triage queue alerts and sub-second bidirectional message streaming between seekers and counselors.
+- **Server-Side Stored Procedures (RPC)**:
+  - `verify_counselor_login`: Server-side credential verification with zero plaintext password exposure to client scripts.
+  - `create_counselor_account`: Supervisor-authenticated generation of unique `STF-XXXX` IDs.
+  - `revoke_counselor_account`: Supervisor-controlled deactivation of counselor access.
+  - `increment_empathy`: Atomic increment of peer support reactions on approved reflections.
+- **Row-Level Security (RLS)**:
+  - Counselors roster is locked against public reading.
+  - Confessions table restricts public queries exclusively to approved posts.
+  - Intakes and messages are protected with session tokens.
 
-================================================================================
-DATA PROTECTION, PRIVACY & RETENTION POLICY
-================================================================================
+---
+
+## Data Protection, Privacy & Retention Policy
 
 Tumaini adheres strictly to the Uganda Data Protection and Privacy Act, 2019:
 
-1. Zero Personal Identifiers:
-   - Tumaini requires no user registration, no email address, no phone number,
-     and no National Identification Number (NIN). Sessions exist under ephemeral
-     pseudonyms.
-
-2. Ephemeral Storage & Session Purging:
-   - Data is stored in client-side memory and short-lived database rows.
-   - Automatic purge policy:
-     * Resolved consultation cases and messages are deleted within 2 hours of completion.
-     * Stale or unlinked sessions are purged completely after 24 hours.
-     * Zero permanent archiving of crisis chat transcripts.
+1. **Zero Personal Identifiers**: Tumaini requires no user registration, no email address, no phone number, and no National Identification Number (NIN). Sessions exist under ephemeral pseudonyms.
+2. **Ephemeral Storage & Session Purging**:
+   - Resolved consultation cases and messages are deleted within 2 hours of completion.
+   - Stale or unlinked sessions are purged completely after 24 hours.
+   - Zero permanent archiving of crisis chat transcripts.
    - Tapping "End Session" or "Quick Exit" clears active session tokens immediately.
+3. **Community Hearth Authenticity & Moderation**:
+   - The communal confessions hearth features voluntary anonymous submissions from people across Uganda carrying all types of personal struggles (family weight, silent grief, heartbreak, career pressure, secret guilt).
+   - No private conversations or non-consensual personal statements are scraped or published. Every public confession is screened by on-duty counselors to prevent harassment, doxxing, or self-harm triggers.
+4. **Vetted Clinical Access**:
+   - Unvetted self-registration is eliminated. Only verified volunteer counselors holding supervisor-issued credentials can access the triage queue.
 
-3. Community Hearth Authenticity & Moderation:
-   - The communal confessions hearth features voluntary anonymous submissions from
-     people across Uganda carrying all types of personal struggles (family weight,
-     silent grief, heartbreak, career pressure, secret guilt).
-   - No private conversations or non-consensual personal statements are scraped or
-     published. Every public confession is screened by on-duty counselors to prevent
-     harassment, doxxing, or self-harm triggers.
+---
 
-4. Vetted Clinical Access:
-   - Unvetted self-registration is eliminated. Only verified volunteer counselors
-     holding supervisor-issued credentials can access the triage queue.
-
-================================================================================
-LOCAL DEVELOPMENT & TESTING
-================================================================================
+## Local Development & Testing
 
 Prerequisites: Node.js (v18+)
 
-1. Clone the repository:
-   git clone https://github.com/fmihaf30-ux/tumaini.git
-   cd tumaini
+```bash
+# 1. Clone the repository
+git clone https://github.com/fmihaf30-ux/tumaini.git
+cd tumaini
 
-2. Start the local server:
-   node local-server.js
+# 2. Start the local server
+node local-server.js
 
-3. Open in your browser:
-   - Public Sanctuary: http://localhost:3000/
-   - Staff Console: http://localhost:3000/staff
+# 3. Open in your browser
+# Public Sanctuary: http://localhost:3000/
+# Staff Console:    http://localhost:3000/staff
+```
 
 Default Local Supervisor Credentials:
-- Operator ID: SUPERVISOR
-- Password: tumaini2026
+- **Operator ID**: `SUPERVISOR`
+- **Password**: `tumaini2026`
 
-================================================================================
-PROJECT STRUCTURE
-================================================================================
+---
 
+## Project Structure
+
+```text
 tumaini/
 ├── index.html            Public User Sanctuary (self-contained production build)
 ├── staff.html            Staff Counselor Terminal (self-contained production build)
 ├── vercel.json           Vercel deployment configuration and clean URL routing
 ├── package.json          Project metadata and local runner scripts
 ├── local-server.js       Local development HTTP server
-├── README                Plain-text documentation (this file)
+├── README                Plain-text documentation
 ├── README.md             Markdown documentation mirror
 ├── css/
 │   ├── tumaini.css       User sanctuary styling, WhatsApp chat styling, mobile layout
@@ -167,13 +128,14 @@ tumaini/
 ├── supabase/
 │   └── schema.sql        PostgreSQL DDL schema, pgcrypto hashing, RLS, and RPCs
 └── public/               Public distribution directory mirrors for static hosts
+```
 
-================================================================================
-EMERGENCY CRISIS CONTACTS (UGANDA)
-================================================================================
+---
 
-- Mental Health Uganda Toll-Free Helpline: 0800 21 21 21
-- Butabika National Referral Hospital Helpline: 0800 211 306
-- StrongMinds Uganda Toll-Free: 0800 200 600
-- Uganda Police Emergency Dispatch: 999 / 112
-- Child & Youth Helpline (Sauti): 116
+## Emergency Crisis Contacts (Uganda)
+
+- **Mental Health Uganda Toll-Free Helpline**: 0800 21 21 21
+- **Butabika National Referral Hospital Helpline**: 0800 211 306
+- **StrongMinds Uganda Toll-Free**: 0800 200 600
+- **Uganda Police Emergency Dispatch**: 999 / 112
+- **Child & Youth Helpline (Sauti)**: 116

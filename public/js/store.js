@@ -344,8 +344,24 @@ class TumainiStore {
   addIntakeMessage({ intakeId, sender, senderName, text }) {
     if (!intakeId || !text.trim()) return null;
 
+    let msgId;
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      try {
+        msgId = crypto.randomUUID();
+      } catch (e) {
+        msgId = null;
+      }
+    }
+    if (!msgId) {
+      msgId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
     const newMsg = {
-      id: 'msg-' + Math.floor(100000 + Math.random() * 900000),
+      id: msgId,
       intakeId,
       sender, // 'user' | 'counselor' | 'system'
       senderName,
@@ -359,6 +375,7 @@ class TumainiStore {
 
     if (supabase && supabase.isConfigured) {
       supabase.sendMessage(intakeId, {
+        id: newMsg.id,
         sender: sender === 'user' ? 'user' : (sender === 'system' ? 'system' : 'counselor'),
         authorName: senderName || 'Anonymous',
         text: text.trim()
@@ -594,7 +611,21 @@ class TumainiStore {
   applyRemoteMessage(intakeId, message) {
     if (!intakeId || !message || !message.id) return;
     const current = this.intakeMessages[intakeId] || [];
-    if (current.some(m => m.id === message.id)) return;
+
+    // Deduplicate by message ID or matching text, sender, and recent timestamp
+    const existingIndex = current.findIndex(m =>
+      m.id === message.id ||
+      (m.sender === message.sender && m.text && message.text && m.text.trim() === message.text.trim() && Math.abs((m.timestamp || 0) - (message.timestamp || 0)) < 20000)
+    );
+
+    if (existingIndex >= 0) {
+      if (current[existingIndex].id !== message.id) {
+        current[existingIndex] = { ...current[existingIndex], id: message.id };
+        this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+      }
+      return;
+    }
+
     this.intakeMessages = {
       ...this.intakeMessages,
       [intakeId]: [...current, message]
