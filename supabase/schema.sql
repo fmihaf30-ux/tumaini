@@ -396,6 +396,11 @@ create policy "Seekers and staff can update intakes"
   on public.intakes for update
   using (true);
 
+drop policy if exists "Seekers and staff can delete intakes" on public.intakes;
+create policy "Seekers and staff can delete intakes"
+  on public.intakes for delete
+  using (true);
+
 -- Messages RLS:
 drop policy if exists "Messages are readable" on public.intake_messages;
 create policy "Messages are readable"
@@ -406,6 +411,39 @@ drop policy if exists "Messages can be posted" on public.intake_messages;
 create policy "Messages can be posted"
   on public.intake_messages for insert
   with check (true);
+
+drop policy if exists "Messages can be deleted" on public.intake_messages;
+create policy "Messages can be deleted"
+  on public.intake_messages for delete
+  using (true);
+
+-- Secure Confession Submission RPC
+create or replace function public.submit_confession_secure(
+  p_id text,
+  p_username text,
+  p_category text,
+  p_text text
+) returns table (
+  id text,
+  username text,
+  category text,
+  text text,
+  status text,
+  created_at timestamptz
+) language plpgsql security definer as $$
+begin
+  return query
+  insert into public.confessions (id, username, category, text, status)
+  values (
+    coalesce(nullif(trim(p_id), ''), 'conf-' || (floor(random() * 900000 + 100000)::bigint)::text),
+    trim(p_username),
+    trim(p_category),
+    trim(p_text),
+    'pending'
+  )
+  returning confessions.id, confessions.username, confessions.category, confessions.text, confessions.status, confessions.created_at;
+end;
+$$;
 
 -- ----------------------------------------------------------------------------
 -- 8. REALTIME REPLICATION SETUP (Safe Idempotent Block)

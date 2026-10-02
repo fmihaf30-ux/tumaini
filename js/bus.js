@@ -217,7 +217,7 @@ class TumainiBus {
         },
         (updatedIntake) => {
           store.applyRemoteIntakeStatus(updatedIntake.id, updatedIntake.status);
-          if (updatedIntake.claimed_by_id) {
+          if (updatedIntake.status !== 'resolved' && updatedIntake.claimed_by_id) {
             store.applyRemoteClaim(updatedIntake.id, {
               staffId: updatedIntake.claimed_by_id,
               name: updatedIntake.claimed_by_name,
@@ -241,6 +241,18 @@ class TumainiBus {
           this.playChime('subtle');
         }
       });
+
+      // 3. Real-time subscriptions for confessions
+      if (typeof supabase.subscribeToConfessions === 'function') {
+        supabase.subscribeToConfessions(
+          (newConfession) => {
+            store.applyRemoteConfession(newConfession);
+          },
+          (updatedConfession) => {
+            store.applyRemoteConfessionStatus(updatedConfession.id, updatedConfession.status);
+          }
+        );
+      }
 
       return;
     }
@@ -480,6 +492,10 @@ class TumainiBus {
   }
 
   playChime(type = 'subtle') {
+    const nowMs = Date.now();
+    if (this._lastChimeTime && nowMs - this._lastChimeTime < 1000) return;
+    this._lastChimeTime = nowMs;
+
     try {
       this.initAudio();
       if (!this.audioCtx) return;

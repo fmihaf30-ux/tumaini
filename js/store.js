@@ -159,13 +159,23 @@ class TumainiStore {
   async initSupabaseSync() {
     if (supabase && supabase.isConfigured) {
       try {
-        const remoteConfessions = await supabase.fetchApprovedConfessions();
-        if (remoteConfessions && remoteConfessions.length > 0) {
-          this.confessions = remoteConfessions;
-          this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+        let remoteConfessions = [];
+        if (typeof supabase.fetchAllConfessions === 'function') {
+          remoteConfessions = await supabase.fetchAllConfessions();
+        } else {
+          remoteConfessions = await supabase.fetchApprovedConfessions();
         }
+
+        if (remoteConfessions && remoteConfessions.length > 0) {
+          const filtered = remoteConfessions.filter(c => !c.id.startsWith('campus-conf-'));
+          if (filtered.length > 0) {
+            this.confessions = filtered;
+            this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+          }
+        }
+
         const remoteIntakes = await supabase.fetchActiveIntakes();
-        if (remoteIntakes && remoteIntakes.length > 0) {
+        if (Array.isArray(remoteIntakes)) {
           const mapped = remoteIntakes.map(r => ({
             id: r.id,
             username: r.alias,
@@ -210,6 +220,26 @@ class TumainiStore {
     this.intakes = [newIntake, ...this.intakes];
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
 
+    // Initial greeting in 1-on-1 stream (add locally first)
+    const welcomeMsg = this.addIntakeMessage({
+      intakeId: newIntake.id,
+      sender: 'system',
+      senderName: 'Tumaini Care Desk',
+      text: `Hello, ${newIntake.username}. Your confidential request has been queued with ${tierMeta.shortTitle} priority. A staff counselor will be with you shortly.`,
+      skipRemoteSync: true
+    });
+
+    let safetyMsg = null;
+    if (tierMeta.isEmergency) {
+      safetyMsg = this.addIntakeMessage({
+        intakeId: newIntake.id,
+        sender: 'system',
+        senderName: 'Emergency Safety Alert',
+        text: 'If you are in immediate danger of self-harm, please contact Mental Health Uganda toll-free at 0800 21 21 21 or Butabika at 0800 211 306 immediately.',
+        skipRemoteSync: true
+      });
+    }
+
     if (supabase && supabase.isConfigured) {
       supabase.createIntake({
         id: newIntake.id,
@@ -217,25 +247,29 @@ class TumainiStore {
         tier: newIntake.emergencyTier,
         category: newIntake.category,
         summary: newIntake.notes || '',
+        status: 'waiting',
         seekerToken: newIntake.id + '_' + Date.now(),
         createdAt: newIntake.createdAt
-      });
-    }
-
-    // Initial greeting in 1-on-1 stream
-    this.addIntakeMessage({
-      intakeId: newIntake.id,
-      sender: 'system',
-      senderName: 'Tumaini Care Desk',
-      text: `Hello, ${newIntake.username}. Your confidential request has been queued with ${tierMeta.shortTitle} priority. A staff counselor will be with you shortly.`
-    });
-
-    if (tierMeta.isEmergency) {
-      this.addIntakeMessage({
-        intakeId: newIntake.id,
-        sender: 'system',
-        senderName: 'Emergency Safety Alert',
-        text: 'If you are in immediate danger of self-harm, please contact Mental Health Uganda toll-free at 0800 21 21 21 or Butabika at 0800 211 306 immediately.'
+      }).then(() => {
+        // Parent intake is now guaranteed committed in PostgreSQL
+        if (welcomeMsg) {
+          supabase.sendMessage(newIntake.id, {
+            id: welcomeMsg.id,
+            sender: 'system',
+            authorName: welcomeMsg.senderName,
+            text: welcomeMsg.text
+          });
+        }
+        if (safetyMsg) {
+          supabase.sendMessage(newIntake.id, {
+            id: safetyMsg.id,
+            sender: 'system',
+            authorName: safetyMsg.senderName,
+            text: safetyMsg.text
+          });
+        }
+      }).catch(err => {
+        console.warn('[Tumaini Store] Remote intake creation fallback:', err);
       });
     }
 
@@ -341,7 +375,7 @@ class TumainiStore {
     return this.intakeMessages[intakeId] || [];
   }
 
-  addIntakeMessage({ intakeId, sender, senderName, text }) {
+  addIntakeMessage({ intakeId, sender, senderName, text, skipRemoteSync = false }) {
     if (!intakeId || !text.trim()) return null;
 
     let msgId;
@@ -373,7 +407,7 @@ class TumainiStore {
     this.intakeMessages = { ...this.intakeMessages, [intakeId]: thread };
     this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
 
-    if (supabase && supabase.isConfigured) {
+    if (!skipRemoteSync && supabase && supabase.isConfigured) {
       supabase.sendMessage(intakeId, {
         id: newMsg.id,
         sender: sender === 'user' ? 'user' : (sender === 'system' ? 'system' : 'counselor'),
@@ -638,10 +672,11 @@ class TumainiStore {
     if (!intakeId) return;
     this.intakes = this.intakes.map(i => {
       if (i.id === intakeId) {
+        if (i.status === 'resolved') return i; // Never un-resolve a resolved case
         return {
           ...i,
           status: 'in_session',
-          counselorId: staffSession?.id || 'STF-ON-DUTY',
+          counselorId: staffSession?.id || staffSession?.staffId || 'STF-ON-DUTY',
           counselorName: staffSession?.name || 'On-Duty Counselor'
         };
       }
@@ -654,6 +689,14 @@ class TumainiStore {
   applyRemoteIntakeStatus(intakeId, status) {
     if (!intakeId) return;
     this.intakes = this.intakes.map(i => i.id === intakeId ? { ...i, status } : i);
+    if (status === 'resolved') {
+      if (this.activeStaffIntakeId === intakeId) {
+        this.setActiveStaffIntake(null);
+      }
+      if (this.activeUserIntakeId === intakeId) {
+        this.setActiveUserIntake(null);
+      }
+    }
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
     this.notify();
   }
@@ -775,3 +818,7 @@ class TumainiStore {
 }
 
 export const store = new TumainiStore();
+
+if (typeof window !== 'undefined') {
+  window.__tumaini_get_intake = (id) => store.getIntake(id);
+}

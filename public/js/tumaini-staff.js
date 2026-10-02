@@ -208,10 +208,10 @@ class TumainiStaff {
       this.btnReleaseCase.addEventListener('click', () => {
         if (this.activeIntake) {
           const intakeId = this.activeIntake.id;
+          this.activeIntake = null;
+          store.setActiveStaffIntake(null);
           store.updateIntakeStatus(intakeId, 'resolved');
           bus.broadcast('INTAKE_STATUS', { intakeId, status: 'resolved' });
-          store.setActiveStaffIntake(null);
-          this.activeIntake = null;
           this.renderWorkspace();
           this.renderQueue();
         }
@@ -258,12 +258,13 @@ class TumainiStaff {
 
       if (this.activeIntake) {
         const updated = store.intakes.find(i => i.id === this.activeIntake.id);
-        if (updated) {
+        if (updated && updated.status !== 'resolved') {
           this.activeIntake = updated;
           this.renderMessages();
           this.syncWorkspaceHeader();
         } else {
           this.activeIntake = null;
+          store.setActiveStaffIntake(null);
           this.renderWorkspace();
         }
       }

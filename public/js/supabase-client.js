@@ -309,17 +309,17 @@ class TumainiSupabaseService {
     try {
       const { data, error } = await this.client
         .from('intakes')
-        .insert([{
+        .upsert([{
           id: intakeData.id,
           alias: intakeData.alias,
           tier: intakeData.tier,
           category: intakeData.category,
           summary: intakeData.summary || '',
-          status: 'waiting',
+          status: intakeData.status || 'waiting',
           seeker_token: intakeData.seekerToken || '',
           created_at: new Date(intakeData.createdAt || Date.now()).toISOString(),
           updated_at: new Date(intakeData.updatedAt || Date.now()).toISOString()
-        }])
+        }], { onConflict: 'id' })
         .select();
 
       if (error) console.error('Error creating intake:', error);
@@ -387,10 +387,35 @@ class TumainiSupabaseService {
       };
       if (id) payload.id = id;
 
-      const { data, error } = await this.client
+      let { data, error } = await this.client
         .from('intake_messages')
         .insert([payload])
         .select();
+
+      // Auto-heal on foreign key constraint 23503 (parent intake not yet committed)
+      if (error && error.code === '23503') {
+        const localIntake = typeof window !== 'undefined' && typeof window.__tumaini_get_intake === 'function'
+          ? window.__tumaini_get_intake(intakeId)
+          : null;
+        if (localIntake) {
+          await this.createIntake({
+            id: localIntake.id,
+            alias: localIntake.username,
+            tier: localIntake.emergencyTier,
+            category: localIntake.category,
+            summary: localIntake.notes || '',
+            status: localIntake.status || 'waiting',
+            seekerToken: localIntake.seekerToken || (localIntake.id + '_' + Date.now()),
+            createdAt: localIntake.createdAt
+          });
+          const retryRes = await this.client
+            .from('intake_messages')
+            .insert([payload])
+            .select();
+          data = retryRes.data;
+          error = retryRes.error;
+        }
+      }
 
       if (error) console.error('Error sending message:', error);
       return data?.[0] || null;
@@ -400,6 +425,29 @@ class TumainiSupabaseService {
   }
 
   // --- 4. Confessions ---
+  async fetchAllConfessions() {
+    if (!this.isConfigured || !this.client) return [];
+    try {
+      const { data, error } = await this.client
+        .from('confessions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) return [];
+      return (data || []).map(c => ({
+        id: c.id,
+        username: c.username,
+        category: c.category,
+        text: c.text,
+        status: c.status,
+        empathyCount: c.empathy_count,
+        createdAt: new Date(c.created_at).getTime()
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
   async fetchApprovedConfessions() {
     if (!this.isConfigured || !this.client) return [];
     try {
@@ -451,6 +499,18 @@ class TumainiSupabaseService {
   async createConfession({ id, username, category, text }) {
     if (!this.isConfigured || !this.client) return null;
     try {
+      // 1. Try secure RPC function first
+      const { data: rpcData, error: rpcErr } = await this.client.rpc('submit_confession_secure', {
+        p_id: id || `conf-${Date.now()}`,
+        p_username: username,
+        p_category: category,
+        p_text: text
+      });
+      if (!rpcErr && rpcData && rpcData.length > 0) {
+        return rpcData[0];
+      }
+
+      // 2. Direct table insert fallback
       const { data, error } = await this.client
         .from('confessions')
         .insert([{
@@ -569,6 +629,44 @@ class TumainiSupabaseService {
             });
           }
         }
+      )
+      .subscribe();
+
+    return () => {
+      this.client.removeChannel(channel);
+    };
+  }
+
+  subscribeToConfessions(onInsert, onUpdate) {
+    if (!this.isConfigured || !this.client) return () => {};
+
+    const channel = this.client
+      .channel('public:confessions')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'confessions' },
+        payload => onInsert && onInsert({
+          id: payload.new.id,
+          username: payload.new.username,
+          category: payload.new.category,
+          text: payload.new.text,
+          status: payload.new.status,
+          empathyCount: payload.new.empathy_count,
+          createdAt: new Date(payload.new.created_at).getTime()
+        })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'confessions' },
+        payload => onUpdate && onUpdate({
+          id: payload.new.id,
+          username: payload.new.username,
+          category: payload.new.category,
+          text: payload.new.text,
+          status: payload.new.status,
+          empathyCount: payload.new.empathy_count,
+          createdAt: new Date(payload.new.created_at).getTime()
+        })
       )
       .subscribe();
 

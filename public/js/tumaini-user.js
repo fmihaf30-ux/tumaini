@@ -331,10 +331,14 @@ class TumainiUser {
     store.subscribe(() => {
       if (this.currentIntake) {
         const updated = store.intakes.find(i => i.id === this.currentIntake.id);
-        if (updated) {
+        if (updated && updated.status !== 'resolved') {
           this.currentIntake = updated;
           this.syncConsultationView();
           this.renderMessages();
+        } else {
+          this.currentIntake = null;
+          store.setActiveUserIntake(null);
+          this.showIntakeView();
         }
       }
       this.renderConfessions();
@@ -543,11 +547,12 @@ class TumainiUser {
 
   endConsultation() {
     if (this.currentIntake) {
-      store.updateIntakeStatus(this.currentIntake.id, 'resolved');
-      bus.broadcast('INTAKE_STATUS', { intakeId: this.currentIntake.id, status: 'resolved' });
+      const intakeId = this.currentIntake.id;
+      this.currentIntake = null;
+      store.setActiveUserIntake(null);
+      store.updateIntakeStatus(intakeId, 'resolved');
+      bus.broadcast('INTAKE_STATUS', { intakeId, status: 'resolved' });
     }
-    store.setActiveUserIntake(null);
-    this.currentIntake = null;
     this.showIntakeView();
   }
 
