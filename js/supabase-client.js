@@ -117,18 +117,23 @@ class TumainiSupabaseService {
     }
   }
 
-  async createCounselor({ supervisorId, name, role, password }) {
+  async createCounselor({ supervisorId, supervisorPassword, name, role, password }) {
     if (!this.isConfigured || !this.client) {
       return { success: false, fallback: true, error: 'Supabase backend not connected.' };
     }
 
     try {
-      const { data, error } = await this.client.rpc('create_counselor_account', {
+      const payload = {
         p_supervisor_id: supervisorId,
         p_name: name,
         p_role: role || 'Crisis Counselor',
         p_password: password
-      });
+      };
+      if (supervisorPassword) {
+        payload.p_supervisor_password = supervisorPassword;
+      }
+
+      const { data, error } = await this.client.rpc('create_counselor_account', payload);
 
       if (error) return { success: false, error: error.message };
       if (data && data.length > 0 && data[0].success) {
@@ -166,13 +171,17 @@ class TumainiSupabaseService {
     }
   }
 
-  async revokeCounselor(supervisorId, targetStaffId) {
+  async revokeCounselor(supervisorId, targetStaffId, supervisorPassword) {
     if (!this.isConfigured || !this.client) return false;
     try {
-      const { data, error } = await this.client.rpc('revoke_counselor_account', {
+      const payload = {
         p_supervisor_id: supervisorId,
         p_target_id: targetStaffId
-      });
+      };
+      if (supervisorPassword) {
+        payload.p_supervisor_password = supervisorPassword;
+      }
+      const { data, error } = await this.client.rpc('revoke_counselor_account', payload);
       return !error && !!data;
     } catch (e) {
       return false;

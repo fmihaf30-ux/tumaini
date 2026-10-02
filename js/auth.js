@@ -121,8 +121,10 @@ class StaffAuthManager {
     // 1. If Supabase is connected, create in cloud database
     if (supabase && supabase.isConfigured) {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
+      const supervisorPassword = this.session?.authSecret || '';
       const sbRes = await supabase.createCounselor({
         supervisorId,
+        supervisorPassword,
         name: name.trim(),
         role: role || 'Crisis Counselor',
         password: cleanPass
@@ -176,7 +178,8 @@ class StaffAuthManager {
 
     if (supabase && supabase.isConfigured) {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
-      await supabase.revokeCounselor(supervisorId, target);
+      const supervisorPassword = this.session?.authSecret || '';
+      await supabase.revokeCounselor(supervisorId, target, supervisorPassword);
     }
 
     const idx = this.accounts.findIndex(acc => acc.staffId === target);
@@ -216,6 +219,7 @@ class StaffAuthManager {
       const res = await supabase.verifyLogin(trimmedId, trimmedPass);
       if (res.success && res.staff) {
         this.session = res.staff;
+        this.session.authSecret = trimmedPass;
         this.saveSession();
         return { success: true, staff: this.session };
       }

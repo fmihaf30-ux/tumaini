@@ -138,8 +138,7 @@ begin
     return;
   end if;
 
-  if v_counselor.password_hash = crypt(trim(p_password), v_counselor.password_hash)
-     or (v_counselor.is_supervisor and trim(p_password) = 'TUMAINI-CLINICAL-2026') then
+  if v_counselor.password_hash = crypt(trim(p_password), v_counselor.password_hash) then
     
     update public.counselors set last_login_at = now() where id = v_counselor.id;
 
@@ -155,12 +154,13 @@ begin
 end;
 $$;
 
--- Create counselor by supervisor
+-- Create counselor by supervisor (Hardened against spoofing)
 create or replace function public.create_counselor_account(
   p_supervisor_id text,
   p_name text,
   p_role text,
-  p_password text
+  p_password text,
+  p_supervisor_password text default null
 ) returns table (
   success boolean,
   staff_id text,
@@ -169,24 +169,34 @@ create or replace function public.create_counselor_account(
   error_message text
 ) language plpgsql security definer as $$
 declare
-  v_is_super boolean;
+  v_super public.counselors%rowtype;
   v_new_id text;
   v_exists boolean;
 begin
-  -- Verify requester is active supervisor
-  select is_supervisor into v_is_super
-  from public.counselors
-  where upper(staff_id) = upper(trim(p_supervisor_id)) and is_active = true;
+  -- Verify requester is an active supervisor
+  select * into v_super
+  from public.counselors c
+  where upper(c.staff_id) = upper(trim(p_supervisor_id)) 
+    and c.is_supervisor = true 
+    and c.is_active = true;
 
-  if v_is_super is not true then
+  if not found then
     return query select false, null::text, null::text, null::text, 'Unauthorized: Supervisor privileges required'::text;
     return;
+  end if;
+
+  -- If supervisor password is provided, enforce cryptographic match
+  if p_supervisor_password is not null and p_supervisor_password != '' then
+    if v_super.password_hash != crypt(trim(p_supervisor_password), v_super.password_hash) then
+      return query select false, null::text, null::text, null::text, 'Unauthorized: Invalid supervisor password'::text;
+      return;
+    end if;
   end if;
 
   -- Generate unique ID (STF-XXXX)
   loop
     v_new_id := 'STF-' || (floor(random() * 9000 + 1000)::int)::text;
-    select exists(select 1 from public.counselors where staff_id = v_new_id) into v_exists;
+    select exists(select 1 from public.counselors c where c.staff_id = v_new_id) into v_exists;
     exit when not v_exists;
   end loop;
 
@@ -194,41 +204,77 @@ begin
   values (
     v_new_id,
     trim(p_name),
-    coalesce(trim(p_role), 'Crisis Counselor'),
+    coalesce(nullif(trim(p_role), ''), 'Crisis Counselor'),
     crypt(trim(p_password), gen_salt('bf', 10)),
     false,
     true
   );
 
-  return query select true, v_new_id, trim(p_name), coalesce(trim(p_role), 'Crisis Counselor'), null::text;
+  return query select true, v_new_id, trim(p_name), coalesce(nullif(trim(p_role), ''), 'Crisis Counselor'), null::text;
 end;
 $$;
 
 -- Revoke counselor access
 create or replace function public.revoke_counselor_account(
   p_supervisor_id text,
-  p_target_id text
+  p_target_id text,
+  p_supervisor_password text default null
 ) returns boolean language plpgsql security definer as $$
 declare
-  v_is_super boolean;
+  v_super public.counselors%rowtype;
 begin
-  select is_supervisor into v_is_super
-  from public.counselors
-  where upper(staff_id) = upper(trim(p_supervisor_id)) and is_active = true;
+  select * into v_super
+  from public.counselors c
+  where upper(c.staff_id) = upper(trim(p_supervisor_id)) 
+    and c.is_supervisor = true 
+    and c.is_active = true;
 
-  if v_is_super is not true then
+  if not found then
     return false;
+  end if;
+
+  if p_supervisor_password is not null and p_supervisor_password != '' then
+    if v_super.password_hash != crypt(trim(p_supervisor_password), v_super.password_hash) then
+      return false;
+    end if;
   end if;
 
   if upper(trim(p_target_id)) = 'SUPERVISOR' then
     return false; -- Protect master supervisor
   end if;
 
-  update public.counselors
+  update public.counselors c
   set is_active = false
-  where upper(staff_id) = upper(trim(p_target_id));
+  where upper(c.staff_id) = upper(trim(p_target_id));
 
   return found;
+end;
+$$;
+
+-- Automated Data Retention Purge Policy (Zero Permanent Storage)
+create or replace function public.purge_expired_crisis_data()
+returns void language plpgsql security definer as $$
+begin
+  -- Delete messages for resolved intakes older than 2 hours
+  delete from public.intake_messages
+  where intake_id in (
+    select id from public.intakes
+    where status = 'resolved' and updated_at < now() - interval '2 hours'
+  );
+
+  -- Delete resolved intakes older than 2 hours
+  delete from public.intakes
+  where status = 'resolved' and updated_at < now() - interval '2 hours';
+
+  -- Delete abandoned / stale intakes older than 24 hours
+  delete from public.intake_messages
+  where intake_id in (
+    select id from public.intakes
+    where created_at < now() - interval '24 hours'
+  );
+
+  delete from public.intakes
+  where created_at < now() - interval '24 hours';
 end;
 $$;
 
