@@ -6,6 +6,8 @@
    - Shift Clock-In / Clock-Out state tracking
    ========================================================================== */
 
+import { supabase } from './supabase-client.js';
+
 const STORAGE_KEYS = {
   STAFF_ACCOUNTS: 'haven_staff_accounts_v5',
   ACTIVE_SESSION: 'haven_active_staff_session_v5'
@@ -112,11 +114,39 @@ class StaffAuthManager {
   }
 
   // Supervisor creates new counselor credentials
-  createCounselor({ name, role, password }) {
+  async createCounselor({ name, role, password }) {
     if (!name || !name.trim()) return { success: false, error: 'Counselor name is required.' };
     const cleanPass = (password && password.trim().length >= 4) ? password.trim() : this.generateRandomPassword();
-    const staffId = this.generateStaffId();
 
+    // 1. If Supabase is connected, create in cloud database
+    if (supabase && supabase.isConfigured) {
+      const supervisorId = this.session?.staffId || 'SUPERVISOR';
+      const sbRes = await supabase.createCounselor({
+        supervisorId,
+        name: name.trim(),
+        role: role || 'Crisis Counselor',
+        password: cleanPass
+      });
+      if (sbRes.success) {
+        const newStaff = {
+          staffId: sbRes.staffId,
+          name: sbRes.name,
+          role: sbRes.role,
+          password: cleanPass,
+          isSupervisor: false,
+          registeredAt: Date.now()
+        };
+        this.accounts.push(newStaff);
+        this.saveAccounts();
+        return { success: true, staffId: sbRes.staffId, password: cleanPass, staff: newStaff };
+      }
+      if (!sbRes.fallback) {
+        return { success: false, error: sbRes.error || 'Failed to create counselor in Supabase.' };
+      }
+    }
+
+    // 2. Local fallback
+    const staffId = this.generateStaffId();
     const newStaff = {
       staffId,
       name: name.trim(),
@@ -138,31 +168,63 @@ class StaffAuthManager {
   }
 
   // Revoke/Delete a counselor account (cannot delete supervisor)
-  deleteCounselor(staffId) {
+  async deleteCounselor(staffId) {
     const target = (staffId || '').trim().toUpperCase();
     if (target === 'SUPERVISOR') {
       return { success: false, error: 'Cannot delete the master Supervisor account.' };
     }
-    const idx = this.accounts.findIndex(acc => acc.staffId === target);
-    if (idx === -1) return { success: false, error: 'Counselor not found.' };
 
-    this.accounts.splice(idx, 1);
-    this.saveAccounts();
+    if (supabase && supabase.isConfigured) {
+      const supervisorId = this.session?.staffId || 'SUPERVISOR';
+      await supabase.revokeCounselor(supervisorId, target);
+    }
+
+    const idx = this.accounts.findIndex(acc => acc.staffId === target);
+    if (idx !== -1) {
+      this.accounts.splice(idx, 1);
+      this.saveAccounts();
+    }
     return { success: true };
   }
 
   // List all counselors created by supervisor
-  getCounselors() {
+  async getCounselors() {
+    if (supabase && supabase.isConfigured) {
+      const supervisorId = this.session?.staffId || 'SUPERVISOR';
+      const remote = await supabase.getCounselors(supervisorId);
+      if (remote && remote.length > 0) {
+        return remote.map(c => ({
+          staffId: c.staff_id,
+          name: c.name,
+          role: c.role,
+          isSupervisor: c.is_supervisor,
+          lastLoginAt: c.last_login_at
+        }));
+      }
+    }
     return this.accounts.filter(acc => acc.staffId !== 'SUPERVISOR');
   }
 
   // Login handler
-  login({ staffId, password }) {
+  async login({ staffId, password }) {
     const rawId = (staffId || '').trim();
     const trimmedId = rawId.toUpperCase();
     const trimmedPass = (password || '').trim();
 
-    // Check for Supervisor aliases
+    // 1. Try Supabase verification if configured
+    if (supabase && supabase.isConfigured) {
+      const res = await supabase.verifyLogin(trimmedId, trimmedPass);
+      if (res.success && res.staff) {
+        this.session = res.staff;
+        this.saveSession();
+        return { success: true, staff: this.session };
+      }
+      if (!res.fallback) {
+        return { success: false, error: res.error || 'Invalid Operator ID or Password.' };
+      }
+    }
+
+    // 2. Local fallback verification
     let account = null;
     if (trimmedId === 'SUPERVISOR' || trimmedId === 'ADMIN' || trimmedId === 'STF-ADMIN' || trimmedId === 'STF-7700') {
       account = this.accounts.find(acc => acc.staffId === 'SUPERVISOR' || acc.isSupervisor);

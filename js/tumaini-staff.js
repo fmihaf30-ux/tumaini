@@ -10,6 +10,7 @@
 import { auth } from './auth.js';
 import { store, EMERGENCY_TIERS } from './store.js';
 import { bus } from './bus.js';
+import { supabase } from './supabase-client.js';
 
 class TumainiStaff {
   constructor() {
@@ -56,6 +57,11 @@ class TumainiStaff {
     this.btnCopyCredentials = document.getElementById('btnCopyCredentials');
     this.copyToastMessage = document.getElementById('copyToastMessage');
     this.counselorsRosterList = document.getElementById('counselorsRosterList');
+    this.supabaseStatusBadge = document.getElementById('supabaseStatusBadge');
+    this.inputSupabaseUrl = document.getElementById('inputSupabaseUrl');
+    this.inputSupabaseAnonKey = document.getElementById('inputSupabaseAnonKey');
+    this.btnSaveSupabaseConfig = document.getElementById('btnSaveSupabaseConfig');
+    this.supabaseSaveSuccess = document.getElementById('supabaseSaveSuccess');
 
     // Duty Strip
     this.staffOperatorTag = document.getElementById('staffOperatorTag');
@@ -140,6 +146,23 @@ class TumainiStaff {
     }
     if (this.btnCopyCredentials) {
       this.btnCopyCredentials.addEventListener('click', () => this.handleCopyCredentials());
+    }
+    if (this.btnSaveSupabaseConfig) {
+      this.btnSaveSupabaseConfig.addEventListener('click', () => {
+        const url = this.inputSupabaseUrl ? this.inputSupabaseUrl.value.trim() : '';
+        const key = this.inputSupabaseAnonKey ? this.inputSupabaseAnonKey.value.trim() : '';
+        if (!url || !key) {
+          alert('Please enter both Supabase Project URL and Public Anon Key.');
+          return;
+        }
+        const success = supabase.configureCredentials(url, key);
+        if (success) {
+          if (this.supabaseSaveSuccess) this.supabaseSaveSuccess.style.display = 'inline';
+          setTimeout(() => { location.reload(); }, 1000);
+        } else {
+          alert('Failed to save Supabase configuration.');
+        }
+      });
     }
 
     // Duty Strip
@@ -310,7 +333,7 @@ class TumainiStaff {
     }
   }
 
-  handleLogin() {
+  async handleLogin() {
     this.hideAuthNotice();
     const staffId = this.loginIdInput ? this.loginIdInput.value.trim() : '';
     const password = this.loginPassInput ? this.loginPassInput.value.trim() : '';
@@ -320,7 +343,7 @@ class TumainiStaff {
       return;
     }
 
-    const res = auth.login({ staffId, password });
+    const res = await auth.login({ staffId, password });
     if (res.success) {
       if (this.loginPassInput) this.loginPassInput.value = '';
       this.showConsole();
@@ -340,7 +363,7 @@ class TumainiStaff {
     }
   }
 
-  openProfileModal() {
+  async openProfileModal() {
     if (!this.staffProfileModal) return;
     const session = auth.getSession();
     if (!session) {
@@ -367,7 +390,8 @@ class TumainiStaff {
       if (this.genCounselorPassword && !this.genCounselorPassword.value) {
         this.genCounselorPassword.value = auth.generateRandomPassword();
       }
-      this.renderCounselorsRoster();
+      this.syncSupabaseStatus();
+      await this.renderCounselorsRoster();
     } else {
       if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'none';
     }
@@ -376,13 +400,34 @@ class TumainiStaff {
     this.staffProfileModal.classList.add('active');
   }
 
+  syncSupabaseStatus() {
+    if (!this.supabaseStatusBadge) return;
+    if (supabase && supabase.isConfigured) {
+      this.supabaseStatusBadge.textContent = '● Supabase Connected';
+      this.supabaseStatusBadge.style.background = '#dcfce7';
+      this.supabaseStatusBadge.style.color = '#15803d';
+      this.supabaseStatusBadge.style.borderColor = '#bbf7d0';
+    } else {
+      this.supabaseStatusBadge.textContent = 'Local Fallback Mode';
+      this.supabaseStatusBadge.style.background = '#fef3c7';
+      this.supabaseStatusBadge.style.color = '#b45309';
+      this.supabaseStatusBadge.style.borderColor = '#fde68a';
+    }
+    if (this.inputSupabaseUrl && supabase.url && !supabase.url.includes('YOUR_PROJECT_ID')) {
+      this.inputSupabaseUrl.value = supabase.url;
+    }
+    if (this.inputSupabaseAnonKey && supabase.anonKey && !supabase.anonKey.includes('YOUR_SUPABASE_ANON_KEY')) {
+      this.inputSupabaseAnonKey.value = supabase.anonKey;
+    }
+  }
+
   closeProfileModal() {
     if (!this.staffProfileModal) return;
     this.staffProfileModal.classList.remove('open');
     this.staffProfileModal.classList.remove('active');
   }
 
-  handleGenerateCounselor() {
+  async handleGenerateCounselor() {
     const name = this.genCounselorName ? this.genCounselorName.value.trim() : '';
     const role = this.genCounselorRole ? this.genCounselorRole.value : 'Crisis Counselor';
     const password = this.genCounselorPassword ? this.genCounselorPassword.value.trim() : '';
@@ -392,7 +437,7 @@ class TumainiStaff {
       return;
     }
 
-    const res = auth.createCounselor({ name, role, password });
+    const res = await auth.createCounselor({ name, role, password });
     if (res.success) {
       if (this.genResultPre && this.genResultCard) {
         const text = [
@@ -414,7 +459,7 @@ class TumainiStaff {
 
       if (this.genCounselorName) this.genCounselorName.value = '';
       if (this.genCounselorPassword) this.genCounselorPassword.value = auth.generateRandomPassword();
-      this.renderCounselorsRoster();
+      await this.renderCounselorsRoster();
     } else {
       alert(res.error || 'Failed to generate counselor credentials.');
     }
@@ -436,9 +481,9 @@ class TumainiStaff {
     });
   }
 
-  renderCounselorsRoster() {
+  async renderCounselorsRoster() {
     if (!this.counselorsRosterList) return;
-    const counselors = auth.getCounselors();
+    const counselors = await auth.getCounselors();
     this.counselorsRosterList.innerHTML = '';
 
     if (counselors.length === 0) {
@@ -465,11 +510,11 @@ class TumainiStaff {
         </button>
       `;
 
-      item.querySelector('.btn-revoke-counselor').addEventListener('click', (e) => {
+      item.querySelector('.btn-revoke-counselor').addEventListener('click', async (e) => {
         const id = e.currentTarget.dataset.staffId;
         if (confirm(`Revoke access for counselor ${c.name} (${id})? They will no longer be able to log in.`)) {
-          auth.deleteCounselor(id);
-          this.renderCounselorsRoster();
+          await auth.deleteCounselor(id);
+          await this.renderCounselorsRoster();
         }
       });
 
