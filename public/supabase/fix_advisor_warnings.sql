@@ -97,8 +97,8 @@ begin
 end;
 $$;
 
-revoke all on function public.verify_counselor_login(text, text) from public;
-grant execute on function public.verify_counselor_login(text, text) to anon, authenticated, service_role;
+revoke all on function public.verify_counselor_login(text, text) from public, authenticated;
+grant execute on function public.verify_counselor_login(text, text) to anon, service_role;
 
 
 -- B. Hardened Counselor Account Creation (Mandatory Supervisor Password Verification)
@@ -177,8 +177,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_counselor_account(text, text, text, text, text) from public;
-grant execute on function public.create_counselor_account(text, text, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.create_counselor_account(text, text, text, text, text) from public, authenticated;
+grant execute on function public.create_counselor_account(text, text, text, text, text) to anon, service_role;
 
 
 -- C. Hardened Counselor Account Revocation
@@ -222,8 +222,8 @@ begin
 end;
 $$;
 
-revoke all on function public.revoke_counselor_account(text, text, text) from public;
-grant execute on function public.revoke_counselor_account(text, text, text) to anon, authenticated, service_role;
+revoke all on function public.revoke_counselor_account(text, text, text) from public, authenticated;
+grant execute on function public.revoke_counselor_account(text, text, text) to anon, service_role;
 
 
 -- D. Active Counselors Roster Lookup (Fixes the /staff console 404 & protects password_hash)
@@ -246,13 +246,13 @@ as $$
   order by created_at desc;
 $$;
 
-revoke all on function public.get_active_counselors_roster() from public;
-grant execute on function public.get_active_counselors_roster() to anon, authenticated, service_role;
+revoke all on function public.get_active_counselors_roster() from public, authenticated;
+grant execute on function public.get_active_counselors_roster() to anon, service_role;
 
 
--- E. Constrained Increment Empathy Counter
+-- E. Constrained Increment Empathy Counter (SECURITY INVOKER: Runs under caller RLS)
 create or replace function public.increment_empathy(confession_id text)
-returns void language sql security definer
+returns void language sql security invoker
 set search_path = public, pg_temp
 as $$
   update public.confessions
@@ -260,8 +260,8 @@ as $$
   where id = confession_id and status = 'approved';
 $$;
 
-revoke all on function public.increment_empathy(text) from public;
-grant execute on function public.increment_empathy(text) to anon, authenticated, service_role;
+revoke all on function public.increment_empathy(text) from public, authenticated;
+grant execute on function public.increment_empathy(text) to anon, service_role;
 
 
 -- F. Maintenance Purge (Strictly revoked from anon and authenticated clients)
@@ -314,7 +314,8 @@ begin
   return found;
 end;
 $$;
-grant execute on function public.set_counselor_duty_status(text, boolean, timestamptz) to anon, authenticated, service_role;
+revoke all on function public.set_counselor_duty_status(text, boolean, timestamptz) from public, authenticated;
+grant execute on function public.set_counselor_duty_status(text, boolean, timestamptz) to anon, service_role;
 
 create or replace function public.get_counselor_duty_status(p_staff_id text)
 returns table (
@@ -331,7 +332,8 @@ begin
   limit 1;
 end;
 $$;
-grant execute on function public.get_counselor_duty_status(text) to anon, authenticated, service_role;
+revoke all on function public.get_counselor_duty_status(text) from public, authenticated;
+grant execute on function public.get_counselor_duty_status(text) to anon, service_role;
 
 create or replace function public.update_staff_profile(
   p_staff_id text,
@@ -362,7 +364,8 @@ begin
   return found;
 end;
 $$;
-grant execute on function public.update_staff_profile(text, text, text) to anon, authenticated, service_role;
+revoke all on function public.update_staff_profile(text, text, text) from public, authenticated;
+grant execute on function public.update_staff_profile(text, text, text) to anon, service_role;
 
 create or replace function public.reset_counselor_password(
   p_supervisor_id text,
@@ -396,8 +399,10 @@ begin
   return found;
 end;
 $$;
-grant execute on function public.reset_counselor_password(text, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.reset_counselor_password(text, text, text, text) from public, authenticated;
+grant execute on function public.reset_counselor_password(text, text, text, text) to anon, service_role;
 
+-- Secure Confession Submission RPC (SECURITY INVOKER: Runs under caller RLS)
 create or replace function public.submit_confession_secure(
   p_id text,
   p_username text,
@@ -410,7 +415,7 @@ create or replace function public.submit_confession_secure(
   text text,
   status text,
   created_at timestamptz
-) language plpgsql security definer
+) language plpgsql security invoker
 set search_path = public, pg_temp
 as $$
 begin
@@ -426,7 +431,8 @@ begin
   returning confessions.id, confessions.username, confessions.category, confessions.text, confessions.status, confessions.created_at;
 end;
 $$;
-grant execute on function public.submit_confession_secure(text, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.submit_confession_secure(text, text, text, text) from public, authenticated;
+grant execute on function public.submit_confession_secure(text, text, text, text) to anon, service_role;
 
 -- ----------------------------------------------------------------------------
 -- 4. HARDENED ROW-LEVEL SECURITY (RLS) POLICIES

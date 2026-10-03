@@ -197,8 +197,8 @@ begin
 end;
 $$;
 
-revoke all on function public.verify_counselor_login(text, text) from public;
-grant execute on function public.verify_counselor_login(text, text) to anon, authenticated, service_role;
+revoke all on function public.verify_counselor_login(text, text) from public, authenticated;
+grant execute on function public.verify_counselor_login(text, text) to anon, service_role;
 
 -- Create counselor by supervisor (Hardened with mandatory supervisor password check)
 create or replace function public.create_counselor_account(
@@ -237,7 +237,7 @@ begin
     return;
   end if;
 
-  -- Verify supervisor authorization
+  -- Verify requester is an active supervisor
   select * into v_super
   from public.counselors c
   where upper(c.staff_id) = upper(trim(p_supervisor_id)) 
@@ -276,8 +276,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_counselor_account(text, text, text, text, text) from public;
-grant execute on function public.create_counselor_account(text, text, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.create_counselor_account(text, text, text, text, text) from public, authenticated;
+grant execute on function public.create_counselor_account(text, text, text, text, text) to anon, service_role;
 
 -- Revoke counselor access
 create or replace function public.revoke_counselor_account(
@@ -320,8 +320,8 @@ begin
 end;
 $$;
 
-revoke all on function public.revoke_counselor_account(text, text, text) from public;
-grant execute on function public.revoke_counselor_account(text, text, text) to anon, authenticated, service_role;
+revoke all on function public.revoke_counselor_account(text, text, text) from public, authenticated;
+grant execute on function public.revoke_counselor_account(text, text, text) to anon, service_role;
 
 -- Shift Duty Synchronization across multiple devices
 create or replace function public.set_counselor_duty_status(
@@ -340,8 +340,8 @@ begin
 end;
 $$;
 
-revoke all on function public.set_counselor_duty_status(text, boolean, timestamptz) from public;
-grant execute on function public.set_counselor_duty_status(text, boolean, timestamptz) to anon, authenticated, service_role;
+revoke all on function public.set_counselor_duty_status(text, boolean, timestamptz) from public, authenticated;
+grant execute on function public.set_counselor_duty_status(text, boolean, timestamptz) to anon, service_role;
 
 create or replace function public.get_counselor_duty_status(p_staff_id text)
 returns table (
@@ -359,8 +359,8 @@ begin
 end;
 $$;
 
-revoke all on function public.get_counselor_duty_status(text) from public;
-grant execute on function public.get_counselor_duty_status(text) to anon, authenticated, service_role;
+revoke all on function public.get_counselor_duty_status(text) from public, authenticated;
+grant execute on function public.get_counselor_duty_status(text) to anon, service_role;
 
 -- Self-Service Profile Update RPC (Name and optional Password)
 create or replace function public.update_staff_profile(
@@ -393,8 +393,8 @@ begin
 end;
 $$;
 
-revoke all on function public.update_staff_profile(text, text, text) from public;
-grant execute on function public.update_staff_profile(text, text, text) to anon, authenticated, service_role;
+revoke all on function public.update_staff_profile(text, text, text) from public, authenticated;
+grant execute on function public.update_staff_profile(text, text, text) to anon, service_role;
 
 -- Supervisor Reset Counselor Password RPC
 create or replace function public.reset_counselor_password(
@@ -430,8 +430,8 @@ begin
 end;
 $$;
 
-revoke all on function public.reset_counselor_password(text, text, text, text) from public;
-grant execute on function public.reset_counselor_password(text, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.reset_counselor_password(text, text, text, text) from public, authenticated;
+grant execute on function public.reset_counselor_password(text, text, text, text) to anon, service_role;
 
 -- Counselor Roster Lookup RPC (Safe projection without exposing password_hash)
 create or replace function public.get_active_counselors_roster()
@@ -453,8 +453,8 @@ as $$
   order by created_at desc;
 $$;
 
-revoke all on function public.get_active_counselors_roster() from public;
-grant execute on function public.get_active_counselors_roster() to anon, authenticated, service_role;
+revoke all on function public.get_active_counselors_roster() from public, authenticated;
+grant execute on function public.get_active_counselors_roster() to anon, service_role;
 
 -- Automated Data Retention Purge Policy (Zero Permanent Storage)
 create or replace function public.purge_expired_crisis_data()
@@ -489,9 +489,9 @@ $$;
 revoke all on function public.purge_expired_crisis_data() from public, anon, authenticated;
 grant execute on function public.purge_expired_crisis_data() to service_role;
 
--- Public increment for empathy counter on approved confessions
+-- Public increment for empathy counter on approved confessions (SECURITY INVOKER)
 create or replace function public.increment_empathy(confession_id text)
-returns void language sql security definer
+returns void language sql security invoker
 set search_path = public, pg_temp
 as $$
   update public.confessions
@@ -499,10 +499,10 @@ as $$
   where id = confession_id and status = 'approved';
 $$;
 
-revoke all on function public.increment_empathy(text) from public;
-grant execute on function public.increment_empathy(text) to anon, authenticated, service_role;
+revoke all on function public.increment_empathy(text) from public, authenticated;
+grant execute on function public.increment_empathy(text) to anon, service_role;
 
--- Secure Confession Submission RPC
+-- Secure Confession Submission RPC (SECURITY INVOKER)
 create or replace function public.submit_confession_secure(
   p_id text,
   p_username text,
@@ -515,7 +515,7 @@ create or replace function public.submit_confession_secure(
   text text,
   status text,
   created_at timestamptz
-) language plpgsql security definer
+) language plpgsql security invoker
 set search_path = public, pg_temp
 as $$
 begin
@@ -532,8 +532,8 @@ begin
 end;
 $$;
 
-revoke all on function public.submit_confession_secure(text, text, text, text) from public;
-grant execute on function public.submit_confession_secure(text, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.submit_confession_secure(text, text, text, text) from public, authenticated;
+grant execute on function public.submit_confession_secure(text, text, text, text) to anon, service_role;
 
 -- ----------------------------------------------------------------------------
 -- 7. ROW-LEVEL SECURITY (RLS) POLICIES
