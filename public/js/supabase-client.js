@@ -39,6 +39,10 @@ class TumainiSupabaseService {
     this.isConfigured = isConfigured;
     this.client = null;
     this.channels = {};
+    this.dutyRpcDisabled = false;
+    this.dutyColumnsDisabled = false;
+    this.shiftsTableDisabled = false;
+    this.profileRpcDisabled = false;
 
     if (this.isConfigured) {
       try {
@@ -233,25 +237,55 @@ class TumainiSupabaseService {
     }
   }
 
+  async broadcastStaffRevocation(staffId) {
+    if (!this.isConfigured || !this.client || !staffId) return;
+    try {
+      if (!this.channels['staff_broadcast']) {
+        this.channels['staff_broadcast'] = this.client.channel('tumaini_staff_channel');
+        this.channels['staff_broadcast'].subscribe();
+      }
+      await this.channels['staff_broadcast'].send({
+        type: 'broadcast',
+        event: 'STAFF_REVOKED',
+        payload: { staffId: staffId.toUpperCase(), timestamp: Date.now() }
+      });
+    } catch (e) {}
+  }
+
   // --- Shift Duty Synchronization ---
   async setDutyStatus(staffId, isOnDuty, shiftStartedAt) {
     if (!this.isConfigured || !this.client || !staffId) return false;
+    if (this.dutyRpcDisabled && this.dutyColumnsDisabled) return false;
+
     try {
       const shiftIso = shiftStartedAt ? new Date(shiftStartedAt).toISOString() : null;
-      const { data, error } = await this.client.rpc('set_counselor_duty_status', {
-        p_staff_id: staffId.trim(),
-        p_is_on_duty: !!isOnDuty,
-        p_shift_started_at: shiftIso
-      });
-      if (error) {
-        // Direct table update fallback
+
+      if (!this.dutyRpcDisabled) {
+        const { data, error } = await this.client.rpc('set_counselor_duty_status', {
+          p_staff_id: staffId.trim(),
+          p_is_on_duty: !!isOnDuty,
+          p_shift_started_at: shiftIso
+        });
+        if (!error && data !== undefined) {
+          return true;
+        }
+        if (error && (error.code === 'PGRST202' || error.message?.includes('function') || error.status === 404)) {
+          this.dutyRpcDisabled = true;
+        }
+      }
+
+      if (!this.dutyColumnsDisabled) {
         const { error: updErr } = await this.client
           .from('counselors')
           .update({ is_on_duty: !!isOnDuty, shift_started_at: shiftIso })
           .ilike('staff_id', staffId.trim());
+        if (updErr && (updErr.code === '42703' || updErr.message?.includes('column') || updErr.status === 400)) {
+          this.dutyColumnsDisabled = true;
+          return false;
+        }
         return !updErr;
       }
-      return !error && !!data;
+      return false;
     } catch (e) {
       return false;
     }
@@ -259,31 +293,132 @@ class TumainiSupabaseService {
 
   async getDutyStatus(staffId) {
     if (!this.isConfigured || !this.client || !staffId) return null;
+    if (this.dutyRpcDisabled && this.dutyColumnsDisabled) return null;
+
     try {
-      const { data, error } = await this.client.rpc('get_counselor_duty_status', {
-        p_staff_id: staffId.trim()
-      });
-      if (!error && data && data.length > 0) {
-        return {
-          isOnDuty: !!data[0].is_on_duty,
-          shiftStartedAt: data[0].shift_started_at ? new Date(data[0].shift_started_at).getTime() : null
-        };
+      if (!this.dutyRpcDisabled) {
+        const { data, error } = await this.client.rpc('get_counselor_duty_status', {
+          p_staff_id: staffId.trim()
+        });
+        if (!error && data && data.length > 0) {
+          return {
+            isOnDuty: !!data[0].is_on_duty,
+            shiftStartedAt: data[0].shift_started_at ? new Date(data[0].shift_started_at).getTime() : null
+          };
+        }
+        if (error && (error.code === 'PGRST202' || error.message?.includes('function') || error.status === 404)) {
+          this.dutyRpcDisabled = true;
+        }
       }
-      // Direct table query fallback
-      const { data: rows, error: qErr } = await this.client
-        .from('counselors')
-        .select('is_on_duty, shift_started_at')
-        .ilike('staff_id', staffId.trim())
-        .limit(1);
-      if (!qErr && rows && rows.length > 0) {
-        return {
-          isOnDuty: !!rows[0].is_on_duty,
-          shiftStartedAt: rows[0].shift_started_at ? new Date(rows[0].shift_started_at).getTime() : null
-        };
+
+      if (!this.dutyColumnsDisabled) {
+        const { data: rows, error: qErr } = await this.client
+          .from('counselors')
+          .select('is_on_duty, shift_started_at')
+          .ilike('staff_id', staffId.trim())
+          .limit(1);
+        if (qErr && (qErr.code === '42703' || qErr.message?.includes('column') || qErr.status === 400)) {
+          this.dutyColumnsDisabled = true;
+          return null;
+        }
+        if (!qErr && rows && rows.length > 0) {
+          return {
+            isOnDuty: !!rows[0].is_on_duty,
+            shiftStartedAt: rows[0].shift_started_at ? new Date(rows[0].shift_started_at).getTime() : null
+          };
+        }
       }
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  // --- Profile Management ---
+  async updateStaffProfile({ staffId, name, password }) {
+    if (!this.isConfigured || !this.client || !staffId) return false;
+    try {
+      if (!this.profileRpcDisabled) {
+        const { data, error } = await this.client.rpc('update_staff_profile', {
+          p_staff_id: staffId.trim(),
+          p_name: (name || '').trim(),
+          p_new_password: password ? password.trim() : null
+        });
+        if (!error && data) return true;
+        if (error && (error.code === 'PGRST202' || error.status === 404)) {
+          this.profileRpcDisabled = true;
+        }
+      }
+      const payload = { name: (name || '').trim() };
+      const { error: updErr } = await this.client
+        .from('counselors')
+        .update(payload)
+        .ilike('staff_id', staffId.trim());
+      return !updErr;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async resetCounselorPassword({ supervisorId, targetStaffId, newPassword, supervisorPassword }) {
+    if (!this.isConfigured || !this.client || !targetStaffId || !newPassword) return false;
+    try {
+      const { data, error } = await this.client.rpc('reset_counselor_password', {
+        p_supervisor_id: supervisorId || 'SUPERVISOR',
+        p_target_id: targetStaffId.trim(),
+        p_new_password: newPassword.trim(),
+        p_supervisor_password: supervisorPassword || ''
+      });
+      return !error && !!data;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- Shift Attendance Logging ---
+  async logShiftStart(shift) {
+    if (!this.isConfigured || !this.client || !shift || this.shiftsTableDisabled) return false;
+    try {
+      const { error } = await this.client
+        .from('staff_shifts')
+        .upsert([{
+          id: shift.id,
+          staff_id: shift.staffId,
+          staff_name: shift.name,
+          staff_role: shift.role,
+          clock_in_time: new Date(shift.clockInTime).toISOString(),
+          clock_out_time: null,
+          duration_minutes: null,
+          date_str: shift.dateStr
+        }], { onConflict: 'id' });
+      if (error && (error.code === '42P01' || error.status === 404)) {
+        this.shiftsTableDisabled = true;
+        return false;
+      }
+      return !error;
+    } catch (e) {
+      this.shiftsTableDisabled = true;
+      return false;
+    }
+  }
+
+  async logShiftEnd(shift) {
+    if (!this.isConfigured || !this.client || !shift || this.shiftsTableDisabled) return false;
+    try {
+      const { error } = await this.client
+        .from('staff_shifts')
+        .update({
+          clock_out_time: new Date(shift.clockOutTime || Date.now()).toISOString(),
+          duration_minutes: shift.durationMinutes || 0
+        })
+        .eq('id', shift.id);
+      if (error && (error.code === '42P01' || error.status === 404)) {
+        this.shiftsTableDisabled = true;
+        return false;
+      }
+      return !error;
+    } catch (e) {
+      return false;
     }
   }
 

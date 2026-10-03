@@ -358,8 +358,9 @@ class TumainiBus {
       }
     }
 
-    // 2. Transmit over fallback cloud relay only when Supabase is not active
-    if (!supabase || !supabase.isConfigured) {
+    // 2. Transmit over cloud relay for cross-device synchronization
+    const isCriticalStaffEvent = type === 'STAFF_REVOKED' || type === 'STAFF_SHIFT_CHANGE' || type === 'STAFF_PROFILE_UPDATED';
+    if (!supabase || !supabase.isConfigured || isCriticalStaffEvent) {
       try {
         const encryptedBody = await this.encryptEnvelope(envelope);
         fetch(this.cloudRelayUrl, {
@@ -443,6 +444,25 @@ class TumainiBus {
             }
           }
         } catch (e) {}
+      }
+    } else if (type === 'STAFF_REVOKED') {
+      if (payload && payload.staffId) {
+        try {
+          const raw = localStorage.getItem('haven_active_staff_session_v5');
+          if (raw) {
+            const sess = JSON.parse(raw);
+            if (sess && sess.staffId && sess.staffId.toUpperCase() === payload.staffId.toUpperCase()) {
+              localStorage.removeItem('haven_active_staff_session_v5');
+            }
+          }
+        } catch (e) {}
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('tumaini:staff-revoked', { detail: payload }));
+        }
+      }
+    } else if (type === 'STAFF_PROFILE_UPDATED') {
+      if (payload && payload.staffId && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tumaini:staff-profile-updated', { detail: payload }));
       }
     } else if (type === 'INTAKE_CLAIMED') {
       if (payload && payload.intakeId) {

@@ -38,6 +38,7 @@ class TumainiStaff {
 
     // Profile & Supervisor Desk Elements
     this.btnStaffProfile = document.getElementById('btnStaffProfile');
+    this.btnDutyProfile = document.getElementById('btnDutyProfile');
     this.staffProfileModal = document.getElementById('staffProfileModal');
     this.btnCloseStaffProfile = document.getElementById('btnCloseStaffProfile');
     this.btnProfileLogout = document.getElementById('btnProfileLogout');
@@ -46,6 +47,12 @@ class TumainiStaff {
     this.profileIdBadge = document.getElementById('profileIdBadge');
     this.profileRoleBadge = document.getElementById('profileRoleBadge');
     this.profileDutyBadge = document.getElementById('profileDutyBadge');
+    this.formEditSelfProfile = document.getElementById('formEditSelfProfile');
+    this.inputSelfName = document.getElementById('inputSelfName');
+    this.inputSelfPassword = document.getElementById('inputSelfPassword');
+    this.selfProfileStatusMsg = document.getElementById('selfProfileStatusMsg');
+    this.selfShiftHistoryList = document.getElementById('selfShiftHistoryList');
+    this.totalHoursWorkedBadge = document.getElementById('totalHoursWorkedBadge');
     this.supervisorDeskSection = document.getElementById('supervisorDeskSection');
     this.formGenerateCounselor = document.getElementById('formGenerateCounselor');
     this.genCounselorName = document.getElementById('genCounselorName');
@@ -57,6 +64,20 @@ class TumainiStaff {
     this.btnCopyCredentials = document.getElementById('btnCopyCredentials');
     this.copyToastMessage = document.getElementById('copyToastMessage');
     this.counselorsRosterList = document.getElementById('counselorsRosterList');
+    this.allStaffShiftsList = document.getElementById('allStaffShiftsList');
+
+    // Reset Password Modal
+    this.resetPasswordModal = document.getElementById('resetPasswordModal');
+    this.btnCloseResetPassword = document.getElementById('btnCloseResetPassword');
+    this.formResetCounselorPassword = document.getElementById('formResetCounselorPassword');
+    this.resetTargetIdHidden = document.getElementById('resetTargetIdHidden');
+    this.resetTargetName = document.getElementById('resetTargetName');
+    this.resetTargetStaffId = document.getElementById('resetTargetStaffId');
+    this.inputResetNewPassword = document.getElementById('inputResetNewPassword');
+    this.btnShuffleResetPassword = document.getElementById('btnShuffleResetPassword');
+    this.resetResultCard = document.getElementById('resetResultCard');
+    this.resetResultPre = document.getElementById('resetResultPre');
+    this.btnCopyResetCredentials = document.getElementById('btnCopyResetCredentials');
 
     // Duty Strip
     this.staffOperatorTag = document.getElementById('staffOperatorTag');
@@ -115,6 +136,9 @@ class TumainiStaff {
     if (this.btnStaffProfile) {
       this.btnStaffProfile.addEventListener('click', () => this.openProfileModal());
     }
+    if (this.btnDutyProfile) {
+      this.btnDutyProfile.addEventListener('click', () => this.openProfileModal());
+    }
     if (this.btnCloseStaffProfile) {
       this.btnCloseStaffProfile.addEventListener('click', () => this.closeProfileModal());
     }
@@ -128,6 +152,34 @@ class TumainiStaff {
         this.closeProfileModal();
         this.handleLogout();
       });
+    }
+    if (this.formEditSelfProfile) {
+      this.formEditSelfProfile.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleSaveSelfProfile();
+      });
+    }
+    if (this.btnCloseResetPassword) {
+      this.btnCloseResetPassword.addEventListener('click', () => this.closeResetPasswordModal());
+    }
+    if (this.resetPasswordModal) {
+      this.resetPasswordModal.addEventListener('click', (e) => {
+        if (e.target === this.resetPasswordModal) this.closeResetPasswordModal();
+      });
+    }
+    if (this.btnShuffleResetPassword && this.inputResetNewPassword) {
+      this.btnShuffleResetPassword.addEventListener('click', () => {
+        this.inputResetNewPassword.value = auth.generateRandomPassword();
+      });
+    }
+    if (this.formResetCounselorPassword) {
+      this.formResetCounselorPassword.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleResetCounselorPasswordSubmit();
+      });
+    }
+    if (this.btnCopyResetCredentials) {
+      this.btnCopyResetCredentials.addEventListener('click', () => this.handleCopyResetCredentials());
     }
     if (this.btnResetLocalData) {
       this.btnResetLocalData.addEventListener('click', () => this.handleResetLocalData());
@@ -146,6 +198,40 @@ class TumainiStaff {
     if (this.btnCopyCredentials) {
       this.btnCopyCredentials.addEventListener('click', () => this.handleCopyCredentials());
     }
+
+    // Instant Staff Revocation Event Listener (Real-Time Kickout)
+    window.addEventListener('tumaini:staff-revoked', (e) => {
+      const revokedId = (e.detail?.staffId || '').toUpperCase();
+      const currentSession = auth.getSession();
+      if (currentSession && currentSession.staffId.toUpperCase() === revokedId) {
+        auth.logout();
+        this.stopShiftTimer();
+        this.activeIntake = null;
+        this.closeProfileModal();
+        this.closeResetPasswordModal();
+        this.showAuth();
+        this.showAuthNotice('Your operator account has been deactivated by the supervisor. Your session has ended immediately.', true);
+        alert('Your operator account has been deactivated by the supervisor. You have been logged out.');
+      } else if (auth.isSupervisor()) {
+        this.renderCounselorsRoster();
+        this.renderAllStaffShifts();
+      }
+    });
+
+    // Profile update sync across tabs
+    window.addEventListener('tumaini:staff-profile-updated', (e) => {
+      const updatedId = (e.detail?.staffId || '').toUpperCase();
+      const currentSession = auth.getSession();
+      if (currentSession && currentSession.staffId.toUpperCase() === updatedId) {
+        if (e.detail.name) currentSession.name = e.detail.name;
+        this.syncDutyStrip();
+      }
+      if (auth.isSupervisor()) {
+        this.renderCounselorsRoster();
+        this.renderAllStaffShifts();
+      }
+    });
+
     // Multi-Device Shift Synchronization
     window.addEventListener('tumaini:shift-sync', (e) => {
       const session = auth.getSession();
@@ -154,7 +240,24 @@ class TumainiStaff {
         session.shiftStartedAt = e.detail.shiftStartedAt || null;
         this.syncDutyStrip();
       }
+      if (auth.isSupervisor()) {
+        this.renderCounselorsRoster();
+        this.renderAllStaffShifts();
+      }
     });
+
+    // Heartbeat safety check for revocation every 4 seconds
+    setInterval(() => {
+      const currentSession = auth.getSession();
+      if (currentSession && auth.isRevoked(currentSession.staffId)) {
+        auth.logout();
+        this.stopShiftTimer();
+        this.activeIntake = null;
+        this.closeProfileModal();
+        this.showAuth();
+        this.showAuthNotice('Your operator account has been deactivated by the supervisor.', true);
+      }
+    }, 4000);
 
     // Duty Strip
     if (this.btnClockIn) this.btnClockIn.addEventListener('click', () => this.handleClockIn());
@@ -406,6 +509,12 @@ class TumainiStaff {
       return;
     }
 
+    if (auth.isRevoked(session.staffId)) {
+      alert('Your account has been revoked by the supervisor.');
+      this.handleLogout();
+      return;
+    }
+
     if (this.profileAvatarCircle) {
       const initials = session.name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
       this.profileAvatarCircle.textContent = initials || 'OP';
@@ -419,6 +528,21 @@ class TumainiStaff {
       this.profileDutyBadge.style.color = session.isOnDuty ? '#10b981' : '#64748b';
     }
 
+    // Populate self profile edit inputs
+    if (this.inputSelfName) {
+      this.inputSelfName.value = session.name || '';
+    }
+    if (this.inputSelfPassword) {
+      this.inputSelfPassword.value = '';
+    }
+    if (this.selfProfileStatusMsg) {
+      this.selfProfileStatusMsg.style.display = 'none';
+      this.selfProfileStatusMsg.textContent = '';
+    }
+
+    // Render self shift attendance history
+    this.renderSelfShiftHistory();
+
     // Supervisor Desk Visibility
     if (auth.isSupervisor()) {
       if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'block';
@@ -426,6 +550,7 @@ class TumainiStaff {
         this.genCounselorPassword.value = auth.generateRandomPassword();
       }
       await this.renderCounselorsRoster();
+      this.renderAllStaffShifts();
     } else {
       if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'none';
     }
@@ -438,6 +563,246 @@ class TumainiStaff {
     if (!this.staffProfileModal) return;
     this.staffProfileModal.classList.remove('open');
     this.staffProfileModal.classList.remove('active');
+    if (this.selfProfileStatusMsg) {
+      this.selfProfileStatusMsg.style.display = 'none';
+    }
+  }
+
+  async handleSaveSelfProfile() {
+    const session = auth.getSession();
+    if (!session) return;
+    if (auth.isRevoked(session.staffId)) {
+      alert('Your account has been revoked.');
+      this.handleLogout();
+      return;
+    }
+
+    const newName = this.inputSelfName ? this.inputSelfName.value.trim() : '';
+    const newPass = this.inputSelfPassword ? this.inputSelfPassword.value.trim() : '';
+
+    if (!newName) {
+      if (this.selfProfileStatusMsg) {
+        this.selfProfileStatusMsg.textContent = 'Display name cannot be empty.';
+        this.selfProfileStatusMsg.style.color = '#ef4444';
+        this.selfProfileStatusMsg.style.display = 'block';
+      }
+      return;
+    }
+
+    if (newPass && newPass.length < 4) {
+      if (this.selfProfileStatusMsg) {
+        this.selfProfileStatusMsg.textContent = 'New password must be at least 4 characters long.';
+        this.selfProfileStatusMsg.style.color = '#ef4444';
+        this.selfProfileStatusMsg.style.display = 'block';
+      }
+      return;
+    }
+
+    if (this.selfProfileStatusMsg) {
+      this.selfProfileStatusMsg.textContent = 'Saving changes...';
+      this.selfProfileStatusMsg.style.color = 'var(--text-muted)';
+      this.selfProfileStatusMsg.style.display = 'block';
+    }
+
+    const res = await auth.updateProfile({ name: newName, password: newPass });
+    if (res.success) {
+      if (this.profileNameDisplay) this.profileNameDisplay.textContent = newName;
+      if (this.staffNameDisplay) this.staffNameDisplay.textContent = newName;
+      if (this.inputSelfPassword) this.inputSelfPassword.value = '';
+      if (this.selfProfileStatusMsg) {
+        this.selfProfileStatusMsg.textContent = 'Profile updated successfully!';
+        this.selfProfileStatusMsg.style.color = '#10b981';
+        this.selfProfileStatusMsg.style.display = 'block';
+        setTimeout(() => {
+          if (this.selfProfileStatusMsg) this.selfProfileStatusMsg.style.display = 'none';
+        }, 3500);
+      }
+      this.syncDutyStrip();
+    } else {
+      if (this.selfProfileStatusMsg) {
+        this.selfProfileStatusMsg.textContent = res.error || 'Failed to update profile.';
+        this.selfProfileStatusMsg.style.color = '#ef4444';
+        this.selfProfileStatusMsg.style.display = 'block';
+      }
+    }
+  }
+
+  renderSelfShiftHistory() {
+    if (!this.selfShiftHistoryList) return;
+    const session = auth.getSession();
+    if (!session) return;
+
+    const shifts = auth.getStaffShiftHistory(session.staffId);
+    const total = auth.getTotalHoursWorked(session.staffId);
+
+    if (this.totalHoursWorkedBadge) {
+      this.totalHoursWorkedBadge.textContent = total.text;
+    }
+
+    this.selfShiftHistoryList.innerHTML = '';
+    if (shifts.length === 0) {
+      this.selfShiftHistoryList.innerHTML = `
+        <div style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 12px 0; text-align: center;">
+          No shift history recorded yet. Clock in using the top bar to record your clinical duty hours.
+        </div>
+      `;
+      return;
+    }
+
+    shifts.slice(0, 10).forEach(shift => {
+      const inDate = shift.clockInTime ? new Date(shift.clockInTime) : null;
+      const inTimeStr = inDate ? inDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+      const inDateStr = inDate ? inDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+      let outStr = 'Active On Duty';
+      let durationStr = 'In Progress';
+      let statusColor = '#10b981';
+
+      if (shift.clockOutTime) {
+        const outDate = new Date(shift.clockOutTime);
+        outStr = outDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        statusColor = 'var(--text-secondary)';
+        const mins = shift.durationMinutes || Math.max(1, Math.round((shift.clockOutTime - shift.clockInTime) / 60000));
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        durationStr = `${h}h ${m}m`;
+      }
+
+      const item = document.createElement('div');
+      item.className = 'shift-history-item';
+      item.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; font-size: 12px;';
+      item.innerHTML = `
+        <div>
+          <div style="font-weight: 600; color: var(--text-primary);">${inDateStr}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">In: ${inTimeStr} &bull; Out: ${outStr}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 700; color: ${statusColor}; font-family: monospace;">${durationStr}</div>
+          <div style="font-size: 10.5px; color: var(--text-muted);">${shift.clockOutTime ? 'Completed' : 'Current'}</div>
+        </div>
+      `;
+      this.selfShiftHistoryList.appendChild(item);
+    });
+  }
+
+  renderAllStaffShifts() {
+    if (!this.allStaffShiftsList) return;
+    const allShifts = auth.getAllShiftHistory();
+    this.allStaffShiftsList.innerHTML = '';
+
+    if (allShifts.length === 0) {
+      this.allStaffShiftsList.innerHTML = `
+        <div style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 8px 0; text-align: center;">
+          No staff shifts recorded yet.
+        </div>
+      `;
+      return;
+    }
+
+    allShifts.slice(0, 20).forEach(shift => {
+      const inDate = shift.clockInTime ? new Date(shift.clockInTime) : null;
+      const inTimeStr = inDate ? inDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+      const inDateStr = inDate ? inDate.toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
+
+      let outStr = 'Active On Duty';
+      let durationStr = 'In Progress';
+      let statusColor = '#10b981';
+
+      if (shift.clockOutTime) {
+        const outDate = new Date(shift.clockOutTime);
+        outStr = outDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        statusColor = 'var(--text-secondary)';
+        const mins = shift.durationMinutes || Math.max(1, Math.round((shift.clockOutTime - shift.clockInTime) / 60000));
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        durationStr = `${h}h ${m}m`;
+      }
+
+      const item = document.createElement('div');
+      item.className = 'all-shift-history-item';
+      item.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; font-size: 11.5px;';
+      item.innerHTML = `
+        <div>
+          <div style="font-weight: 600; color: var(--text-primary);">
+            <span>${this.escapeHtml(shift.name || shift.staffId)}</span>
+            <span style="font-size: 10.5px; color: var(--brand-eucalyptus-dark); font-family: monospace; margin-left: 4px;">(${shift.staffId})</span>
+          </div>
+          <div style="font-size: 10.5px; color: var(--text-muted);">${inDateStr} &bull; In: ${inTimeStr} &bull; Out: ${outStr}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 700; color: ${statusColor}; font-family: monospace; font-size: 11px;">${durationStr}</div>
+          <div style="font-size: 10px; color: var(--text-muted);">${shift.clockOutTime ? 'Closed' : 'Active'}</div>
+        </div>
+      `;
+      this.allStaffShiftsList.appendChild(item);
+    });
+  }
+
+  openResetPasswordModal(counselor) {
+    if (!this.resetPasswordModal || !counselor) return;
+    if (this.resetTargetIdHidden) this.resetTargetIdHidden.value = counselor.staffId;
+    if (this.resetTargetName) this.resetTargetName.textContent = counselor.name;
+    if (this.resetTargetStaffId) this.resetTargetStaffId.textContent = counselor.staffId;
+    if (this.inputResetNewPassword) this.inputResetNewPassword.value = auth.generateRandomPassword();
+    if (this.resetResultCard) this.resetResultCard.style.display = 'none';
+
+    this.resetPasswordModal.classList.add('open');
+    this.resetPasswordModal.classList.add('active');
+  }
+
+  closeResetPasswordModal() {
+    if (!this.resetPasswordModal) return;
+    this.resetPasswordModal.classList.remove('open');
+    this.resetPasswordModal.classList.remove('active');
+    if (this.resetResultCard) this.resetResultCard.style.display = 'none';
+  }
+
+  async handleResetCounselorPasswordSubmit() {
+    const targetStaffId = this.resetTargetIdHidden ? this.resetTargetIdHidden.value : '';
+    const newPassword = this.inputResetNewPassword ? this.inputResetNewPassword.value.trim() : '';
+    const counselorName = this.resetTargetName ? this.resetTargetName.textContent : targetStaffId;
+
+    if (!targetStaffId) {
+      alert('Missing target counselor identifier.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 4) {
+      alert('Password must be at least 4 characters long.');
+      return;
+    }
+
+    const res = await auth.resetCounselorPassword(targetStaffId, newPassword);
+    if (res.success) {
+      if (this.resetResultPre && this.resetResultCard) {
+        const text = [
+          '==============================',
+          'UPDATED COUNSELOR CREDENTIALS',
+          '==============================',
+          `Counselor: ${counselorName}`,
+          `Operator ID: ${targetStaffId}`,
+          `New Password: ${newPassword}`,
+          'Portal Login: https://tumaini-zeta.vercel.app/staff',
+          '==============================',
+          'Securely transmit these new credentials to the counselor.'
+        ].join('\n');
+
+        this.resetResultPre.textContent = text;
+        this.resetResultCard.style.display = 'block';
+      }
+    } else {
+      alert(res.error || 'Failed to reset password for counselor.');
+    }
+  }
+
+  handleCopyResetCredentials() {
+    if (!this.resetResultPre) return;
+    const text = this.resetResultPre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('New credentials copied to clipboard!');
+    }).catch(err => {
+      console.warn('Clipboard write failed', err);
+      alert('Copied credentials:\n\n' + text);
+    });
   }
 
   async handleGenerateCounselor() {
@@ -511,6 +876,7 @@ class TumainiStaff {
     counselors.forEach(c => {
       const item = document.createElement('div');
       item.className = 'counselor-roster-item';
+      item.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; margin-bottom: 6px;';
       item.innerHTML = `
         <div>
           <strong style="color: var(--brand-eucalyptus-dark); font-family: monospace;">${c.staffId}</strong>
@@ -518,16 +884,26 @@ class TumainiStaff {
           <span style="font-weight: 600; color: var(--text-primary);">${this.escapeHtml(c.name)}</span>
           <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">(${this.escapeHtml(c.role)})</span>
         </div>
-        <button type="button" class="btn-revoke-counselor" data-staff-id="${c.staffId}" style="background: none; border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
-          Revoke
-        </button>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" class="btn-reset-counselor-pass" data-staff-id="${c.staffId}" style="background: none; border: 1px solid var(--border-medium); color: var(--brand-eucalyptus-dark); border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; font-weight: 500;">
+            Reset Password
+          </button>
+          <button type="button" class="btn-revoke-counselor" data-staff-id="${c.staffId}" style="background: none; border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; font-weight: 500;">
+            Revoke
+          </button>
+        </div>
       `;
+
+      item.querySelector('.btn-reset-counselor-pass').addEventListener('click', () => {
+        this.openResetPasswordModal(c);
+      });
 
       item.querySelector('.btn-revoke-counselor').addEventListener('click', async (e) => {
         const id = e.currentTarget.dataset.staffId;
-        if (confirm(`Revoke access for counselor ${c.name} (${id})? They will no longer be able to log in.`)) {
+        if (confirm(`Revoke access for counselor ${c.name} (${id})? This will immediately log them out across all devices and terminate their access.`)) {
           await auth.deleteCounselor(id);
           await this.renderCounselorsRoster();
+          this.renderAllStaffShifts();
         }
       });
 
@@ -585,6 +961,16 @@ class TumainiStaff {
   }
 
   handleClockIn() {
+    const session = auth.getSession();
+    if (!session) {
+      this.showAuth();
+      return;
+    }
+    if (auth.isRevoked(session.staffId)) {
+      alert('Your operator account has been deactivated by the supervisor.');
+      this.handleLogout();
+      return;
+    }
     auth.clockIn();
     this.syncDutyStrip();
   }
@@ -699,7 +1085,16 @@ class TumainiStaff {
 
   claimCase(item) {
     const session = auth.getSession();
-    if (!session || !session.isOnDuty) {
+    if (!session) {
+      this.showAuth();
+      return;
+    }
+    if (auth.isRevoked(session.staffId)) {
+      alert('Your operator account has been deactivated by the supervisor.');
+      this.handleLogout();
+      return;
+    }
+    if (!session.isOnDuty) {
       alert('You must Clock In on the top bar before claiming or handling support cases.');
       return;
     }
@@ -799,7 +1194,16 @@ class TumainiStaff {
   handleSendCounselorMessage() {
     if (!this.activeIntake || !this.counselorInput) return;
     const session = auth.getSession();
-    if (!session || !session.isOnDuty) {
+    if (!session) {
+      this.showAuth();
+      return;
+    }
+    if (auth.isRevoked(session.staffId)) {
+      alert('Your operator account has been deactivated by the supervisor.');
+      this.handleLogout();
+      return;
+    }
+    if (!session.isOnDuty) {
       alert('You must be Clocked In to message seekers.');
       return;
     }

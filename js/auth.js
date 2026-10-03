@@ -11,7 +11,8 @@ import { bus } from './bus.js';
 
 const STORAGE_KEYS = {
   STAFF_ACCOUNTS: 'haven_staff_accounts_v5',
-  ACTIVE_SESSION: 'haven_active_staff_session_v5'
+  ACTIVE_SESSION: 'haven_active_staff_session_v5',
+  SHIFT_HISTORY: 'tumaini_shift_history_v1'
 };
 
 const CLINICAL_SUPERVISOR_KEY = 'TUMAINI-CLINICAL-2026';
@@ -20,6 +21,7 @@ class StaffAuthManager {
   constructor() {
     this.accounts = this.loadAccounts();
     this.session = this.loadSession();
+    this.shifts = this.loadShiftHistory();
     this.subscribers = new Set();
   }
 
@@ -81,6 +83,23 @@ class StaffAuthManager {
       console.warn('Error saving staff session', e);
     }
     this.notify();
+  }
+
+  loadShiftHistory() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.SHIFT_HISTORY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  saveShiftHistory() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SHIFT_HISTORY, JSON.stringify(this.shifts));
+    } catch (e) {
+      console.warn('Error saving shift history', e);
+    }
   }
 
   subscribe(callback) {
@@ -181,6 +200,9 @@ class StaffAuthManager {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
       const supervisorPassword = this.session?.authSecret || 'tumaini2026';
       await supabase.revokeCounselor(supervisorId, target, supervisorPassword);
+      if (typeof supabase.broadcastStaffRevocation === 'function') {
+        await supabase.broadcastStaffRevocation(target);
+      }
     }
 
     const idx = this.accounts.findIndex(acc => acc.staffId === target);
@@ -188,7 +210,106 @@ class StaffAuthManager {
       this.accounts.splice(idx, 1);
       this.saveAccounts();
     }
+
+    // Close any active open shifts for revoked counselor
+    const openShift = this.shifts.find(s => (s.staffId || '').toUpperCase() === target && !s.clockOutTime);
+    if (openShift) {
+      openShift.clockOutTime = Date.now();
+      const ms = Math.max(0, openShift.clockOutTime - openShift.clockInTime);
+      openShift.durationMinutes = Math.max(1, Math.round(ms / 60000));
+      this.saveShiftHistory();
+    }
+
+    // Instant multi-tab and cross-device revocation broadcast
+    try {
+      bus.broadcast('STAFF_REVOKED', { staffId: target, timestamp: Date.now() });
+    } catch (e) {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('tumaini:staff-revoked', { detail: { staffId: target } }));
+    }
+
     return { success: true };
+  }
+
+  isRevoked(staffId) {
+    if (!staffId) return true;
+    const target = staffId.trim().toUpperCase();
+    if (target === 'SUPERVISOR') return false;
+    const exists = this.accounts.some(a => a.staffId.toUpperCase() === target);
+    return !exists;
+  }
+
+  // Self-service profile update (Name and optional Password)
+  async updateProfile({ name, password }) {
+    if (!this.session) return { success: false, error: 'No active session.' };
+    const cleanName = (name || '').trim();
+    if (!cleanName) return { success: false, error: 'Display name cannot be empty.' };
+
+    this.session.name = cleanName;
+    const cleanPass = (password || '').trim();
+    const hasNewPass = cleanPass.length >= 4;
+
+    if (hasNewPass) {
+      this.session.authSecret = cleanPass;
+    }
+
+    // Update in local accounts list
+    const acc = this.accounts.find(a => a.staffId.toUpperCase() === this.session.staffId.toUpperCase());
+    if (acc) {
+      acc.name = cleanName;
+      if (hasNewPass) {
+        acc.password = cleanPass;
+      }
+      this.saveAccounts();
+    }
+
+    // Update in remote Supabase if connected
+    if (supabase && supabase.isConfigured && typeof supabase.updateStaffProfile === 'function') {
+      await supabase.updateStaffProfile({
+        staffId: this.session.staffId,
+        name: cleanName,
+        password: hasNewPass ? cleanPass : null
+      });
+    }
+
+    this.saveSession();
+
+    try {
+      bus.broadcast('STAFF_PROFILE_UPDATED', {
+        staffId: this.session.staffId,
+        name: cleanName
+      });
+    } catch (e) {}
+
+    return { success: true, staff: this.session };
+  }
+
+  // Supervisor resets counselor password
+  async resetCounselorPassword(targetStaffId, newPassword) {
+    const target = (targetStaffId || '').trim().toUpperCase();
+    if (!target) return { success: false, error: 'Target Counselor ID required.' };
+    const cleanPass = (newPassword || '').trim();
+    if (cleanPass.length < 4) return { success: false, error: 'Password must be at least 4 characters.' };
+
+    const acc = this.accounts.find(a => a.staffId.toUpperCase() === target);
+    if (acc) {
+      acc.password = cleanPass;
+      this.saveAccounts();
+    }
+
+    if (supabase && supabase.isConfigured && typeof supabase.resetCounselorPassword === 'function') {
+      const supervisorId = this.session?.staffId || 'SUPERVISOR';
+      const supervisorPassword = this.session?.authSecret || 'tumaini2026';
+      await supabase.resetCounselorPassword({
+        supervisorId,
+        targetStaffId: target,
+        newPassword: cleanPass,
+        supervisorPassword
+      });
+    }
+
+    return { success: true, staffId: target, password: cleanPass };
   }
 
   // List all counselors created by supervisor
@@ -285,8 +406,26 @@ class StaffAuthManager {
     this.session.shiftStartedAt = Date.now();
     this.saveSession();
 
+    // Record new active shift entry
+    const shiftId = 'SHF-' + Date.now().toString(36) + '-' + Math.floor(100 + Math.random() * 900);
+    const shiftRecord = {
+      id: shiftId,
+      staffId: this.session.staffId,
+      name: this.session.name,
+      role: this.session.role,
+      clockInTime: this.session.shiftStartedAt,
+      clockOutTime: null,
+      durationMinutes: null,
+      dateStr: new Date(this.session.shiftStartedAt).toLocaleDateString('en-GB')
+    };
+    this.shifts.unshift(shiftRecord);
+    this.saveShiftHistory();
+
     if (supabase && supabase.isConfigured) {
       supabase.setDutyStatus(this.session.staffId, true, this.session.shiftStartedAt);
+      if (typeof supabase.logShiftStart === 'function') {
+        supabase.logShiftStart(shiftRecord);
+      }
     }
     try {
       bus.broadcast('STAFF_SHIFT_CHANGE', {
@@ -301,12 +440,25 @@ class StaffAuthManager {
 
   clockOut() {
     if (!this.session) return false;
+    const now = Date.now();
     this.session.isOnDuty = false;
+
+    // Find and update the open shift
+    const openShift = this.shifts.find(s => (s.staffId || '').toUpperCase() === this.session.staffId.toUpperCase() && !s.clockOutTime);
+    if (openShift) {
+      openShift.clockOutTime = now;
+      const ms = Math.max(0, now - (openShift.clockInTime || now));
+      openShift.durationMinutes = Math.max(1, Math.round(ms / 60000));
+    }
     this.session.shiftStartedAt = null;
     this.saveSession();
+    this.saveShiftHistory();
 
     if (supabase && supabase.isConfigured) {
       supabase.setDutyStatus(this.session.staffId, false, null);
+      if (openShift && typeof supabase.logShiftEnd === 'function') {
+        supabase.logShiftEnd(openShift);
+      }
     }
     try {
       bus.broadcast('STAFF_SHIFT_CHANGE', {
@@ -317,6 +469,31 @@ class StaffAuthManager {
     } catch (e) {}
 
     return true;
+  }
+
+  getStaffShiftHistory(staffId) {
+    if (!staffId) return [];
+    const target = staffId.trim().toUpperCase();
+    return this.shifts.filter(s => (s.staffId || '').toUpperCase() === target);
+  }
+
+  getAllShiftHistory() {
+    return [...this.shifts];
+  }
+
+  getTotalHoursWorked(staffId) {
+    const history = staffId ? this.getStaffShiftHistory(staffId) : this.shifts;
+    let totalMinutes = 0;
+    history.forEach(s => {
+      if (s.durationMinutes) {
+        totalMinutes += s.durationMinutes;
+      } else if (!s.clockOutTime && s.clockInTime) {
+        totalMinutes += Math.round((Date.now() - s.clockInTime) / 60000);
+      }
+    });
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return { totalMinutes, hours, mins, text: `${hours}h ${mins}m` };
   }
 
   logout() {

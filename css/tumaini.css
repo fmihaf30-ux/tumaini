@@ -1584,8 +1584,13 @@ button:disabled, .btn:disabled {
 }
 
 @media (max-width: 768px) {
-  .header-nav {
+  body:not(.staff-root) .header-nav {
     display: none !important;
+  }
+  .staff-root .header-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
   .mobile-header-actions {
     display: flex !important;
