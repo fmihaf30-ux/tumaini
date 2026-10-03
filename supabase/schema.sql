@@ -148,6 +148,9 @@ drop function if exists public.create_counselor_account(text, text, text, text);
 drop function if exists public.create_counselor_account(text, text, text, text, text);
 drop function if exists public.revoke_counselor_account(text, text);
 drop function if exists public.revoke_counselor_account(text, text, text);
+drop function if exists public.update_staff_profile(text, text);
+drop function if exists public.update_staff_profile(text, text, text);
+drop function if exists public.update_staff_profile(text, text, text, text);
 
 -- ----------------------------------------------------------------------------
 -- 4. HARDENED FUNCTIONS & RPCs
@@ -249,7 +252,7 @@ begin
 
   loop
     v_new_id := 'STF-' || (floor(random() * 9000 + 1000)::int)::text;
-    select exists(select 1 from public.counselors where upper(staff_id) = v_new_id) into v_exists;
+    select exists(select 1 from public.counselors c where upper(c.staff_id) = v_new_id) into v_exists;
     if not v_exists then
       exit;
     end if;
@@ -362,39 +365,60 @@ $$;
 revoke all on function public.get_counselor_duty_status(text) from public, authenticated;
 grant execute on function public.get_counselor_duty_status(text) to anon, service_role;
 
--- 4F. Staff Self-Service Profile Update
+-- 4F. Staff Self-Service Profile Update (Current Password Verification Required)
 create or replace function public.update_staff_profile(
   p_staff_id text,
   p_name text,
-  p_password text default null
+  p_password text default null,
+  p_current_password text default null
 ) returns boolean language plpgsql security definer
 set search_path = public, extensions, pg_temp
 as $$
 declare
   v_staff_id text := upper(trim(p_staff_id));
   v_name text := trim(p_name);
+  v_counselor public.counselors%rowtype;
 begin
   if v_name is null or v_name = '' then
     raise exception 'Name cannot be empty';
   end if;
 
+  select * into v_counselor
+  from public.counselors c
+  where upper(c.staff_id) = v_staff_id and c.is_active = true;
+
+  if not found then
+    return false;
+  end if;
+
+  -- Require current password verification whenever changing password or updating supervisor profile
+  if (p_password is not null and length(trim(p_password)) >= 4) or v_staff_id = 'SUPERVISOR' then
+    if p_current_password is null or trim(p_current_password) = '' then
+      raise exception 'Current password is required to update profile or credentials';
+    end if;
+
+    if v_counselor.password_hash != extensions.crypt(trim(p_current_password), v_counselor.password_hash) then
+      raise exception 'Unauthorized: Invalid current password';
+    end if;
+  end if;
+
   if p_password is not null and length(trim(p_password)) >= 4 then
-    update public.counselors
+    update public.counselors c
     set name = v_name,
         password_hash = extensions.crypt(trim(p_password), extensions.gen_salt('bf', 10))
-    where upper(staff_id) = v_staff_id and is_active = true;
+    where upper(c.staff_id) = v_staff_id and c.is_active = true;
   else
-    update public.counselors
+    update public.counselors c
     set name = v_name
-    where upper(staff_id) = v_staff_id and is_active = true;
+    where upper(c.staff_id) = v_staff_id and c.is_active = true;
   end if;
 
   return found;
 end;
 $$;
 
-revoke all on function public.update_staff_profile(text, text, text) from public, authenticated;
-grant execute on function public.update_staff_profile(text, text, text) to anon, service_role;
+revoke all on function public.update_staff_profile(text, text, text, text) from public, authenticated;
+grant execute on function public.update_staff_profile(text, text, text, text) to anon, service_role;
 
 -- 4G. Supervisor Reset Counselor Password RPC
 create or replace function public.reset_counselor_password(
@@ -409,22 +433,26 @@ declare
   v_supervisor_valid boolean;
   v_target_id text := upper(trim(p_target_staff_id));
 begin
-  select (password_hash = extensions.crypt(p_supervisor_password, password_hash))
+  select (c.password_hash = extensions.crypt(p_supervisor_password, c.password_hash))
   into v_supervisor_valid
-  from public.counselors
-  where upper(staff_id) = upper(trim(p_supervisor_id)) and is_supervisor = true and is_active = true;
+  from public.counselors c
+  where upper(c.staff_id) = upper(trim(p_supervisor_id)) and c.is_supervisor = true and c.is_active = true;
 
   if v_supervisor_valid is not true and p_supervisor_password != 'tumaini2026' then
     raise exception 'Unauthorized: Valid supervisor credentials required to reset passwords.';
+  end if;
+
+  if v_target_id = 'SUPERVISOR' then
+    raise exception 'Unauthorized: Cannot reset master supervisor password through counselor reset.';
   end if;
 
   if p_new_password is null or length(trim(p_new_password)) < 4 then
     raise exception 'New password must be at least 4 characters.';
   end if;
 
-  update public.counselors
+  update public.counselors c
   set password_hash = extensions.crypt(trim(p_new_password), extensions.gen_salt('bf', 10))
-  where upper(staff_id) = v_target_id and is_active = true;
+  where upper(c.staff_id) = v_target_id and c.is_active = true;
 
   return found;
 end;
@@ -447,10 +475,10 @@ returns table (
 ) language sql security definer
 set search_path = public, pg_temp
 as $$
-  select staff_id, name, role, is_supervisor, is_active, is_on_duty, created_at, last_login_at
-  from public.counselors
-  where is_active = true and upper(staff_id) != 'SUPERVISOR'
-  order by created_at desc;
+  select c.staff_id, c.name, c.role, c.is_supervisor, c.is_active, c.is_on_duty, c.created_at, c.last_login_at
+  from public.counselors c
+  where c.is_active = true and upper(c.staff_id) != 'SUPERVISOR'
+  order by c.created_at desc;
 $$;
 
 revoke all on function public.get_active_counselors_roster() from public, authenticated;

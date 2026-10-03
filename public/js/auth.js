@@ -306,15 +306,30 @@ class StaffAuthManager {
   }
 
   // Self-service profile update (Name and optional Password)
-  async updateProfile({ name, password }) {
+  async updateProfile({ name, password, currentPassword }) {
     if (!this.session) return { success: false, error: 'No active session.' };
     const cleanName = (name || '').trim();
     if (!cleanName) return { success: false, error: 'Display name cannot be empty.' };
 
-    this.session.name = cleanName;
+    const effectiveCurrentPass = (currentPassword || '').trim() || this.session.authSecret || '';
+
     const cleanPass = (password || '').trim();
     const hasNewPass = cleanPass.length >= 4;
 
+    // Update in remote Supabase if connected
+    if (supabase && supabase.isConfigured && typeof supabase.updateStaffProfile === 'function') {
+      const ok = await supabase.updateStaffProfile({
+        staffId: this.session.staffId,
+        name: cleanName,
+        password: hasNewPass ? cleanPass : null,
+        currentPassword: effectiveCurrentPass
+      });
+      if (!ok && hasNewPass) {
+        return { success: false, error: 'Failed to update credentials. Please verify your current password.' };
+      }
+    }
+
+    this.session.name = cleanName;
     if (hasNewPass) {
       this.session.authSecret = cleanPass;
     }
@@ -327,15 +342,6 @@ class StaffAuthManager {
         acc.password = cleanPass;
       }
       this.saveAccounts();
-    }
-
-    // Update in remote Supabase if connected
-    if (supabase && supabase.isConfigured && typeof supabase.updateStaffProfile === 'function') {
-      await supabase.updateStaffProfile({
-        staffId: this.session.staffId,
-        name: cleanName,
-        password: hasNewPass ? cleanPass : null
-      });
     }
 
     this.saveSession();

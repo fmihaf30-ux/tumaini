@@ -49,6 +49,7 @@ class TumainiStaff {
     this.formEditSelfProfile = document.getElementById('formEditSelfProfile');
     this.inputSelfName = document.getElementById('inputSelfName');
     this.inputSelfPassword = document.getElementById('inputSelfPassword');
+    this.inputSelfCurrentPassword = document.getElementById('inputSelfCurrentPassword');
     this.selfProfileStatusMsg = document.getElementById('selfProfileStatusMsg');
     this.selfShiftHistoryList = document.getElementById('selfShiftHistoryList');
     this.totalHoursWorkedBadge = document.getElementById('totalHoursWorkedBadge');
@@ -567,6 +568,9 @@ class TumainiStaff {
     if (this.inputSelfPassword) {
       this.inputSelfPassword.value = '';
     }
+    if (this.inputSelfCurrentPassword) {
+      this.inputSelfCurrentPassword.value = session.authSecret || '';
+    }
     if (this.selfProfileStatusMsg) {
       this.selfProfileStatusMsg.style.display = 'none';
       this.selfProfileStatusMsg.textContent = '';
@@ -599,6 +603,7 @@ class TumainiStaff {
 
     const newName = this.inputSelfName ? this.inputSelfName.value.trim() : '';
     const newPass = this.inputSelfPassword ? this.inputSelfPassword.value.trim() : '';
+    const currentPass = this.inputSelfCurrentPassword ? this.inputSelfCurrentPassword.value.trim() : (session.authSecret || '');
 
     if (!newName) {
       if (this.selfProfileStatusMsg) {
@@ -618,17 +623,27 @@ class TumainiStaff {
       return;
     }
 
+    if (!currentPass) {
+      if (this.selfProfileStatusMsg) {
+        this.selfProfileStatusMsg.textContent = 'Current password is required to save profile changes.';
+        this.selfProfileStatusMsg.style.color = '#ef4444';
+        this.selfProfileStatusMsg.style.display = 'block';
+      }
+      return;
+    }
+
     if (this.selfProfileStatusMsg) {
       this.selfProfileStatusMsg.textContent = 'Saving changes...';
       this.selfProfileStatusMsg.style.color = 'var(--text-muted)';
       this.selfProfileStatusMsg.style.display = 'block';
     }
 
-    const res = await auth.updateProfile({ name: newName, password: newPass });
+    const res = await auth.updateProfile({ name: newName, password: newPass, currentPassword: currentPass });
     if (res.success) {
       if (this.profileNameDisplay) this.profileNameDisplay.textContent = newName;
       if (this.staffNameDisplay) this.staffNameDisplay.textContent = newName;
       if (this.inputSelfPassword) this.inputSelfPassword.value = '';
+      if (this.inputSelfCurrentPassword) this.inputSelfCurrentPassword.value = newPass || currentPass;
       if (this.selfProfileStatusMsg) {
         this.selfProfileStatusMsg.textContent = 'Profile updated successfully!';
         this.selfProfileStatusMsg.style.color = '#10b981';

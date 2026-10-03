@@ -382,26 +382,22 @@ class TumainiSupabaseService {
   }
 
   // --- Profile Management ---
-  async updateStaffProfile({ staffId, name, password }) {
+  async updateStaffProfile({ staffId, name, password, currentPassword }) {
     if (!this.isConfigured || !this.client || !staffId) return false;
     try {
       if (!this.profileRpcDisabled) {
         const { data, error } = await this.client.rpc('update_staff_profile', {
           p_staff_id: staffId.trim(),
           p_name: (name || '').trim(),
-          p_new_password: password ? password.trim() : null
+          p_password: password ? password.trim() : null,
+          p_current_password: currentPassword ? currentPassword.trim() : null
         });
         if (!error && data) return true;
         if (error && (error.code === 'PGRST202' || error.status === 404)) {
           this.profileRpcDisabled = true;
         }
       }
-      const payload = { name: (name || '').trim() };
-      const { error: updErr } = await this.client
-        .from('counselors')
-        .update(payload)
-        .ilike('staff_id', staffId.trim());
-      return !updErr;
+      return false;
     } catch (e) {
       return false;
     }
