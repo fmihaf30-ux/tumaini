@@ -479,8 +479,14 @@ class TumainiStaff {
     }
   }
 
-  handleResetLocalData() {
-    if (confirm('Clear local queue and session cache? This will wipe cached intakes and re-sync fresh from Supabase.')) {
+  async handleResetLocalData() {
+    const ok = await this.showConfirm(
+      'Clear Local Cache',
+      'Clear local queue and session cache? This will wipe cached intakes and re-sync fresh from Supabase.',
+      'Clear & Re-sync',
+      false
+    );
+    if (ok) {
       try {
         localStorage.removeItem('tumaini_intakes_clean_v3');
         localStorage.removeItem('tumaini_intake_messages_clean_v3');
@@ -914,7 +920,13 @@ class TumainiStaff {
 
       item.querySelector('.btn-revoke-counselor').addEventListener('click', async (e) => {
         const id = e.currentTarget.dataset.staffId;
-        if (confirm(`Revoke access for counselor ${c.name} (${id})? This will immediately log them out across all devices and terminate their access.`)) {
+        const ok = await this.showConfirm(
+          'Revoke Counselor Access',
+          `Revoke access for counselor ${c.name} (${id})? This will immediately log them out across all devices and terminate their access.`,
+          'Revoke Access',
+          true
+        );
+        if (ok) {
           await auth.deleteCounselor(id);
           await this.renderCounselorsRoster();
           this.renderAllStaffShifts();
@@ -974,6 +986,49 @@ class TumainiStaff {
     }
   }
 
+  showConfirm(title, message, confirmText = 'Confirm', isDanger = false) {
+    return new Promise((resolve) => {
+      let modal = document.getElementById('tumainiConfirmModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'tumainiConfirmModal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '9999';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="modal-card" style="max-width: 440px; padding: 24px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid var(--border-default); background: #ffffff;">
+          <h3 style="margin: 0 0 10px; font-size: 17px; font-weight: 700; color: var(--text-primary); font-family: var(--font-heading, inherit);">${this.escapeHtml(title)}</h3>
+          <p style="margin: 0 0 20px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary);">${this.escapeHtml(message)}</p>
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="confirmModalCancelBtn" class="btn btn-outline" style="padding: 7px 16px; font-size: 13px; border-radius: 6px; cursor: pointer;">
+              Cancel
+            </button>
+            <button type="button" id="confirmModalOkBtn" class="btn" style="padding: 7px 18px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: 600; ${isDanger ? 'background: #ef4444; border-color: #ef4444; color: #fff;' : 'background: var(--brand-eucalyptus, #2c4e43); border-color: var(--brand-eucalyptus, #2c4e43); color: #fff;'}">
+              ${this.escapeHtml(confirmText)}
+            </button>
+          </div>
+        </div>
+      `;
+
+      modal.classList.add('open', 'active');
+      modal.style.display = 'flex';
+
+      const cleanup = (result) => {
+        modal.classList.remove('open', 'active');
+        modal.style.display = 'none';
+        resolve(result);
+      };
+
+      modal.querySelector('#confirmModalCancelBtn').addEventListener('click', () => cleanup(false), { once: true });
+      modal.querySelector('#confirmModalOkBtn').addEventListener('click', () => cleanup(true), { once: true });
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) cleanup(false);
+      }, { once: true });
+    });
+  }
+
   handleClockIn() {
     const session = auth.getSession();
     if (!session) {
@@ -989,16 +1044,28 @@ class TumainiStaff {
     this.syncDutyStrip();
   }
 
-  handleClockOut() {
-    if (confirm('Clock out of your shift? Active cases will need handover.')) {
+  async handleClockOut() {
+    const ok = await this.showConfirm(
+      'Clock Out of Shift',
+      'Clock out of your shift? Active cases will need handover.',
+      'Clock Out',
+      false
+    );
+    if (ok) {
       auth.clockOut();
       this.syncDutyStrip();
     }
   }
 
-  handleLogout() {
-    if (auth.isOnDuty() && !confirm('You are clocked in. Logging out will end your shift. Continue?')) {
-      return;
+  async handleLogout() {
+    if (auth.isOnDuty()) {
+      const ok = await this.showConfirm(
+        'Clock Out & Sign Out',
+        'You are clocked in. Logging out will end your shift. Continue?',
+        'End Shift & Sign Out',
+        true
+      );
+      if (!ok) return;
     }
     auth.logout();
     this.stopShiftTimer();

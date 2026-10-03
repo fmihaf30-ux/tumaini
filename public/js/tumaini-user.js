@@ -174,12 +174,16 @@ class TumainiUser {
 
     // End consultation
     if (this.btnEndConsultation) {
-      this.btnEndConsultation.addEventListener('click', () => {
-        setTimeout(() => {
-          if (confirm('End this consultation session? Your chat will be safely closed.')) {
-            this.endConsultation();
-          }
-        }, 10);
+      this.btnEndConsultation.addEventListener('click', async () => {
+        const ok = await this.showConfirm(
+          'End Consultation',
+          'End this consultation session? Your chat will be safely closed.',
+          'End Session',
+          true
+        );
+        if (ok) {
+          this.endConsultation();
+        }
       });
     }
 
@@ -545,6 +549,49 @@ class TumainiUser {
 
     this.chatInput.value = '';
     this.renderMessages();
+  }
+
+  showConfirm(title, message, confirmText = 'Confirm', isDanger = false) {
+    return new Promise((resolve) => {
+      let modal = document.getElementById('tumainiUserConfirmModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'tumainiUserConfirmModal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '9999';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="modal-card" style="max-width: 440px; padding: 24px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid var(--border-default); background: #ffffff;">
+          <h3 style="margin: 0 0 10px; font-size: 17px; font-weight: 700; color: var(--text-primary); font-family: var(--font-heading, inherit);">${this.escapeHtml(title)}</h3>
+          <p style="margin: 0 0 20px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary);">${this.escapeHtml(message)}</p>
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="userConfirmCancelBtn" class="btn btn-outline" style="padding: 7px 16px; font-size: 13px; border-radius: 6px; cursor: pointer;">
+              Cancel
+            </button>
+            <button type="button" id="userConfirmOkBtn" class="btn" style="padding: 7px 18px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: 600; ${isDanger ? 'background: #ef4444; border-color: #ef4444; color: #fff;' : 'background: var(--brand-eucalyptus, #2c4e43); border-color: var(--brand-eucalyptus, #2c4e43); color: #fff;'}">
+              ${this.escapeHtml(confirmText)}
+            </button>
+          </div>
+        </div>
+      `;
+
+      modal.classList.add('open', 'active');
+      modal.style.display = 'flex';
+
+      const cleanup = (result) => {
+        modal.classList.remove('open', 'active');
+        modal.style.display = 'none';
+        resolve(result);
+      };
+
+      modal.querySelector('#userConfirmCancelBtn').addEventListener('click', () => cleanup(false), { once: true });
+      modal.querySelector('#userConfirmOkBtn').addEventListener('click', () => cleanup(true), { once: true });
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) cleanup(false);
+      }, { once: true });
+    });
   }
 
   endConsultation() {

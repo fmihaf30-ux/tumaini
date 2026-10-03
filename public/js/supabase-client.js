@@ -281,11 +281,21 @@ class TumainiSupabaseService {
         this.channels['staff_broadcast'] = this.client.channel('tumaini_staff_channel');
         this.channels['staff_broadcast'].subscribe();
       }
-      await this.channels['staff_broadcast'].send({
-        type: 'broadcast',
-        event: 'STAFF_REVOKED',
-        payload: { staffId: staffId.toUpperCase(), timestamp: Date.now() }
-      });
+      const channel = this.channels['staff_broadcast'];
+      const payload = { staffId: staffId.toUpperCase(), timestamp: Date.now() };
+      if (typeof channel.httpSend === 'function') {
+        try {
+          await channel.httpSend('STAFF_REVOKED', payload);
+        } catch (e1) {
+          await channel.httpSend({ type: 'broadcast', event: 'STAFF_REVOKED', payload });
+        }
+      } else {
+        await channel.send({
+          type: 'broadcast',
+          event: 'STAFF_REVOKED',
+          payload
+        });
+      }
     } catch (e) {}
   }
 
@@ -425,11 +435,21 @@ class TumainiSupabaseService {
           this.channels['staff_broadcast'] = this.client.channel('tumaini_staff_channel');
           this.channels['staff_broadcast'].subscribe();
         }
-        await this.channels['staff_broadcast'].send({
-          type: 'broadcast',
-          event: 'STAFF_PASSWORD_RESET',
-          payload: { staffId: targetStaffId.toUpperCase(), password: newPassword.trim(), timestamp: Date.now() }
-        });
+        const channel = this.channels['staff_broadcast'];
+        const payload = { staffId: targetStaffId.toUpperCase(), password: newPassword.trim(), timestamp: Date.now() };
+        if (typeof channel.httpSend === 'function') {
+          try {
+            await channel.httpSend('STAFF_PASSWORD_RESET', payload);
+          } catch (e1) {
+            await channel.httpSend({ type: 'broadcast', event: 'STAFF_PASSWORD_RESET', payload });
+          }
+        } else {
+          await channel.send({
+            type: 'broadcast',
+            event: 'STAFF_PASSWORD_RESET',
+            payload
+          });
+        }
       } catch (bcErr) {}
 
       return !error && !!data;

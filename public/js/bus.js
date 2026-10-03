@@ -42,18 +42,14 @@ class TumainiBus {
 
     const unlock = () => {
       this.audioUnlocked = true;
-      if (!this.audioCtx) {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) this.audioCtx = new AudioCtx();
-      }
       if (this.audioCtx && this.audioCtx.state === 'suspended') {
         this.audioCtx.resume().catch(() => {});
       }
     };
     if (typeof window !== 'undefined') {
-      window.addEventListener('click', unlock, { once: true, passive: true });
-      window.addEventListener('keydown', unlock, { once: true, passive: true });
-      window.addEventListener('touchstart', unlock, { once: true, passive: true });
+      window.addEventListener('click', unlock, { passive: true });
+      window.addEventListener('keydown', unlock, { passive: true });
+      window.addEventListener('touchstart', unlock, { passive: true });
     }
 
     this.initCryptoKey();
