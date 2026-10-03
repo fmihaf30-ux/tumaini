@@ -1,16 +1,33 @@
 -- ============================================================================
 -- TUMAINI - CRISIS SANCTUARY & ANONYMOUS PEER SUPPORT (UGANDA)
--- Production Supabase Database Schema with Row-Level Security (RLS)
--- Fully Hardened against Security & Performance Advisor Findings
+-- Consolidated Master Database Schema (schema.sql)
+-- Complete, Idempotent, Hardened against Security & Performance Advisor
 -- ============================================================================
 
 -- Enable pgcrypto for UUIDs and password hashing in extensions schema
 create extension if not exists "pgcrypto" with schema extensions;
 
 -- ----------------------------------------------------------------------------
--- 1. CLINICAL COUNSELORS & SUPERVISORS ROSTER
--- Centralized multi-device authentication for clinical staff
+-- 0. SCHEMA SAFETY MIGRATIONS (Ensures existing tables have all columns)
 -- ----------------------------------------------------------------------------
+alter table if exists public.counselors add column if not exists is_on_duty boolean not null default false;
+alter table if exists public.counselors add column if not exists shift_started_at timestamptz;
+
+alter table if exists public.intakes add column if not exists seeker_token text;
+alter table if exists public.intakes add column if not exists claimed_by_id text;
+alter table if exists public.intakes add column if not exists claimed_by_name text;
+alter table if exists public.intakes add column if not exists claimed_by_role text;
+
+alter table if exists public.confessions add column if not exists empathy_count integer not null default 0;
+alter table if exists public.confessions add column if not exists moderated_by text;
+alter table if exists public.confessions add column if not exists moderated_at timestamptz;
+alter table if exists public.confessions add column if not exists rejection_reason text;
+
+-- ----------------------------------------------------------------------------
+-- 1. CORE TABLES
+-- ----------------------------------------------------------------------------
+
+-- 1A. Clinical Counselors & Supervisors Roster
 create table if not exists public.counselors (
   id uuid primary key default gen_random_uuid(),
   staff_id text unique not null,
@@ -25,11 +42,7 @@ create table if not exists public.counselors (
   last_login_at timestamptz
 );
 
-alter table public.counselors add column if not exists is_on_duty boolean not null default false;
-alter table public.counselors add column if not exists shift_started_at timestamptz;
-
 -- Seed default master supervisor (password: tumaini2026)
--- Uses crypt() with blowfish salt for secure one-way hashing
 insert into public.counselors (staff_id, name, role, password_hash, is_supervisor, is_active)
 values (
   'SUPERVISOR',
@@ -41,9 +54,7 @@ values (
 )
 on conflict (staff_id) do nothing;
 
--- ----------------------------------------------------------------------------
--- 2. INTAKES (Anonymous Emergency & Crisis Tickets)
--- ----------------------------------------------------------------------------
+-- 1B. Intakes (Anonymous Emergency & Crisis Tickets)
 create table if not exists public.intakes (
   id text primary key,
   alias text not null,
@@ -51,7 +62,7 @@ create table if not exists public.intakes (
   category text not null,
   summary text,
   status text not null default 'waiting' check (status in ('waiting', 'active', 'resolved')),
-  seeker_token text not null, -- Secret client token stored only in seeker's browser
+  seeker_token text not null,
   claimed_by_id text references public.counselors(staff_id) on delete set null,
   claimed_by_name text,
   claimed_by_role text,
@@ -59,84 +70,56 @@ create table if not exists public.intakes (
   updated_at timestamptz not null default now()
 );
 
--- Indexes for triage queue performance and foreign key joins
-create index if not exists idx_intakes_status_created on public.intakes (status, created_at desc);
-create index if not exists idx_intakes_seeker_token on public.intakes (seeker_token);
-create index if not exists idx_intakes_claimed_by_id on public.intakes (claimed_by_id);
-
--- ----------------------------------------------------------------------------
--- 3. INTAKE MESSAGES (1-on-1 Consultation Chats)
--- ----------------------------------------------------------------------------
+-- 1C. Intake Messages (1-on-1 Crisis Consultation Messages)
 create table if not exists public.intake_messages (
   id uuid primary key default gen_random_uuid(),
   intake_id text not null references public.intakes(id) on delete cascade,
-  sender text not null check (sender in ('user', 'counselor', 'system')),
+  sender text not null check (sender in ('seeker', 'counselor', 'system')),
   author_name text not null,
   text text not null,
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_messages_intake_created on public.intake_messages (intake_id, created_at asc);
-
--- ----------------------------------------------------------------------------
--- 4. CAMPUS CONFESSIONS (Moderated Sanctuary Wall)
--- ----------------------------------------------------------------------------
+-- 1D. Campus Confessions (Community Hearth)
 create table if not exists public.confessions (
   id text primary key,
-  username text not null,
-  category text not null,
+  username text not null default 'Anonymous',
+  category text not null default 'General',
   text text not null,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
-  empathy_count int not null default 0,
-  created_at timestamptz not null default now()
+  empathy_count integer not null default 0 check (empathy_count >= 0),
+  moderated_by text references public.counselors(staff_id) on delete set null,
+  moderated_at timestamptz,
+  rejection_reason text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
-create index if not exists idx_confessions_status_created on public.confessions (status, created_at desc);
-
--- Seed initial approved confessions (Universal open confessions: Kampala, Entebbe, Jinja)
-delete from public.confessions where id in ('campus-conf-101', 'campus-conf-102', 'campus-conf-103', 'conf-101');
-
-insert into public.confessions (id, username, category, text, status, empathy_count, created_at)
-values
-  ('conf-open-101', 'Silent Pillar · Kampala', 'Family Weight & Secret Guilt', 'Everyone in my family thinks I have it all together because I send money back home every single month. The truth is I am drowning in debt, skipping meals, and crying in my room late at night. I pretend to be the strong one everyone leans on, but I feel like I am collapsing from the inside. I just needed to say it somewhere where nobody knows my face.', 'approved', 58, now() - interval '3 hours'),
-  ('conf-open-102', 'Wandering Soul · Entebbe', 'Heartbreak & Unspoken Grief', 'It has been seven months since they walked away, and everyone around me tells me to just move on with life. But some evenings, the silence in my room is so loud it physically aches. I still look for them in crowded taxis and hear their voice in passing songs. I am tired of pretending that I am okay when part of me is still grieving someone who is still alive.', 'approved', 94, now() - interval '8 hours'),
-  ('conf-open-103', 'Quiet Fighter · Jinja', 'Life Pressure & Finding Hope', 'I lost my source of income four months ago and have been waking up early pretending to dress up and step out so my relatives do not look down on me. I spent the last few weeks questioning my worth and whether I even belong in this world. Today, for the first time in months, I took a long deep breath and decided: I will give myself another chance. My story is not finished yet.', 'approved', 136, now() - interval '14 hours')
-on conflict (id) do update set
-  username = excluded.username,
-  category = excluded.category,
-  text = excluded.text,
-  status = excluded.status,
-  empathy_count = excluded.empathy_count;
-
--- ----------------------------------------------------------------------------
--- 5. GROUP SUPPORT CIRCLES
--- ----------------------------------------------------------------------------
+-- 1E. Group Peer Support Rooms
 create table if not exists public.group_rooms (
   id text primary key,
   title text not null,
   category text not null,
-  created_by text not null,
+  created_by text references public.counselors(staff_id) on delete set null,
   created_at timestamptz not null default now()
 );
 
+-- 1F. Group Messages (Peer Support Room Discussions)
 create table if not exists public.group_messages (
   id uuid primary key default gen_random_uuid(),
   room_id text not null references public.group_rooms(id) on delete cascade,
+  sender text not null check (sender in ('seeker', 'counselor', 'system')),
   author text not null,
   text text not null,
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_group_messages_room_id on public.group_messages (room_id);
-
--- ----------------------------------------------------------------------------
--- 5B. STAFF SHIFTS & ATTENDANCE AUDIT LOG
--- ----------------------------------------------------------------------------
+-- 1G. Staff Shifts Attendance Audit Log
 create table if not exists public.staff_shifts (
   id text primary key,
-  staff_id text not null references public.counselors(staff_id) on delete cascade,
-  name text not null,
-  role text not null default 'Crisis Counselor',
+  staff_id text not null,
+  staff_name text not null,
+  staff_role text not null default 'Crisis Counselor',
   clock_in_time timestamptz not null default now(),
   clock_out_time timestamptz,
   duration_minutes integer,
@@ -144,21 +127,33 @@ create table if not exists public.staff_shifts (
   created_at timestamptz not null default now()
 );
 
+-- ----------------------------------------------------------------------------
+-- 2. INDEXES (Foreign Keys & Fast Lookup)
+-- ----------------------------------------------------------------------------
+create index if not exists idx_group_messages_room_id on public.group_messages (room_id);
+create index if not exists idx_intakes_claimed_by_id on public.intakes (claimed_by_id);
 create index if not exists idx_staff_shifts_staff_id on public.staff_shifts (staff_id, clock_in_time desc);
 create index if not exists idx_staff_shifts_clock_in on public.staff_shifts (clock_in_time desc);
+create index if not exists idx_intakes_status on public.intakes (status, tier);
+create index if not exists idx_intakes_seeker_token on public.intakes (seeker_token);
+create index if not exists idx_messages_intake_created on public.intake_messages (intake_id, created_at asc);
+create index if not exists idx_confessions_status on public.confessions (status, created_at desc);
+create index if not exists idx_confessions_category on public.confessions (category, status);
+create index if not exists idx_group_messages_room_created on public.group_messages (room_id, created_at asc);
 
 -- ----------------------------------------------------------------------------
--- 6. SECURITY FUNCTIONS & HARDENED RPCs
--- Fixed search_path, explicit parameter validation, and restricted permissions
+-- 3. DROP INSECURE LEGACY OVERLOADS
 -- ----------------------------------------------------------------------------
-
--- Drop legacy overload signatures to prevent unauthorized calls
 drop function if exists public.create_counselor_account(text, text, text, text);
 drop function if exists public.create_counselor_account(text, text, text, text, text);
 drop function if exists public.revoke_counselor_account(text, text);
 drop function if exists public.revoke_counselor_account(text, text, text);
 
--- Verify counselor login credentials securely on the server
+-- ----------------------------------------------------------------------------
+-- 4. HARDENED FUNCTIONS & RPCs
+-- ----------------------------------------------------------------------------
+
+-- 4A. Counselor Login Verification (Zero Password Leaks)
 create or replace function public.verify_counselor_login(p_staff_id text, p_password text)
 returns table (
   success boolean,
@@ -200,7 +195,7 @@ $$;
 revoke all on function public.verify_counselor_login(text, text) from public, authenticated;
 grant execute on function public.verify_counselor_login(text, text) to anon, service_role;
 
--- Create counselor by supervisor (Hardened with mandatory supervisor password check)
+-- 4B. Counselor Account Creation (Mandatory Supervisor Password Verification)
 create or replace function public.create_counselor_account(
   p_supervisor_id text,
   p_name text,
@@ -221,7 +216,6 @@ declare
   v_new_id text;
   v_exists boolean;
 begin
-  -- Validate required inputs
   if p_supervisor_id is null or trim(p_supervisor_id) = '' or p_supervisor_password is null or trim(p_supervisor_password) = '' then
     return query select false, null::text, null::text, null::text, 'Unauthorized: Supervisor ID and password are required'::text;
     return;
@@ -237,7 +231,6 @@ begin
     return;
   end if;
 
-  -- Verify requester is an active supervisor
   select * into v_super
   from public.counselors c
   where upper(c.staff_id) = upper(trim(p_supervisor_id)) 
@@ -249,21 +242,27 @@ begin
     return;
   end if;
 
-  -- Cryptographically verify supervisor password against blowfish hash
   if v_super.password_hash != extensions.crypt(trim(p_supervisor_password), v_super.password_hash) then
     return query select false, null::text, null::text, null::text, 'Unauthorized: Invalid supervisor password'::text;
     return;
   end if;
 
-  -- Generate unique ID (STF-XXXX)
   loop
     v_new_id := 'STF-' || (floor(random() * 9000 + 1000)::int)::text;
-    select exists(select 1 from public.counselors c where c.staff_id = v_new_id) into v_exists;
-    exit when not v_exists;
+    select exists(select 1 from public.counselors where upper(staff_id) = v_new_id) into v_exists;
+    if not v_exists then
+      exit;
+    end if;
   end loop;
 
-  insert into public.counselors (staff_id, name, role, password_hash, is_supervisor, is_active)
-  values (
+  insert into public.counselors (
+    staff_id,
+    name,
+    role,
+    password_hash,
+    is_supervisor,
+    is_active
+  ) values (
     v_new_id,
     trim(p_name),
     coalesce(nullif(trim(p_role), ''), 'Crisis Counselor'),
@@ -279,7 +278,7 @@ $$;
 revoke all on function public.create_counselor_account(text, text, text, text, text) from public, authenticated;
 grant execute on function public.create_counselor_account(text, text, text, text, text) to anon, service_role;
 
--- Revoke counselor access
+-- 4C. Counselor Account Revocation
 create or replace function public.revoke_counselor_account(
   p_supervisor_id text,
   p_target_id text,
@@ -309,7 +308,7 @@ begin
   end if;
 
   if upper(trim(p_target_id)) = 'SUPERVISOR' then
-    return false; -- Protect master supervisor
+    return false;
   end if;
 
   update public.counselors c
@@ -323,7 +322,7 @@ $$;
 revoke all on function public.revoke_counselor_account(text, text, text) from public, authenticated;
 grant execute on function public.revoke_counselor_account(text, text, text) to anon, service_role;
 
--- Shift Duty Synchronization across multiple devices
+-- 4D. Shift Duty Status Setter
 create or replace function public.set_counselor_duty_status(
   p_staff_id text,
   p_is_on_duty boolean,
@@ -343,6 +342,7 @@ $$;
 revoke all on function public.set_counselor_duty_status(text, boolean, timestamptz) from public, authenticated;
 grant execute on function public.set_counselor_duty_status(text, boolean, timestamptz) to anon, service_role;
 
+-- 4E. Shift Duty Status Getter
 create or replace function public.get_counselor_duty_status(p_staff_id text)
 returns table (
   is_on_duty boolean,
@@ -362,7 +362,7 @@ $$;
 revoke all on function public.get_counselor_duty_status(text) from public, authenticated;
 grant execute on function public.get_counselor_duty_status(text) to anon, service_role;
 
--- Self-Service Profile Update RPC (Name and optional Password)
+-- 4F. Staff Self-Service Profile Update
 create or replace function public.update_staff_profile(
   p_staff_id text,
   p_name text,
@@ -396,7 +396,7 @@ $$;
 revoke all on function public.update_staff_profile(text, text, text) from public, authenticated;
 grant execute on function public.update_staff_profile(text, text, text) to anon, service_role;
 
--- Supervisor Reset Counselor Password RPC
+-- 4G. Supervisor Reset Counselor Password RPC
 create or replace function public.reset_counselor_password(
   p_supervisor_id text,
   p_target_staff_id text,
@@ -433,7 +433,7 @@ $$;
 revoke all on function public.reset_counselor_password(text, text, text, text) from public, authenticated;
 grant execute on function public.reset_counselor_password(text, text, text, text) to anon, service_role;
 
--- Counselor Roster Lookup RPC (Safe projection without exposing password_hash)
+-- 4H. Active Counselors Roster Lookup (Safe projection without exposing password_hash)
 create or replace function public.get_active_counselors_roster()
 returns table (
   staff_id text,
@@ -456,24 +456,21 @@ $$;
 revoke all on function public.get_active_counselors_roster() from public, authenticated;
 grant execute on function public.get_active_counselors_roster() to anon, service_role;
 
--- Automated Data Retention Purge Policy (Zero Permanent Storage)
+-- 4I. Maintenance Purge (Strictly revoked from anon and authenticated clients)
 create or replace function public.purge_expired_crisis_data()
 returns void language plpgsql security definer
 set search_path = public, pg_temp
 as $$
 begin
-  -- Delete messages for resolved intakes older than 2 hours
   delete from public.intake_messages
   where intake_id in (
     select id from public.intakes
     where status = 'resolved' and updated_at < now() - interval '2 hours'
   );
 
-  -- Delete resolved intakes older than 2 hours
   delete from public.intakes
   where status = 'resolved' and updated_at < now() - interval '2 hours';
 
-  -- Delete abandoned / stale intakes older than 24 hours
   delete from public.intake_messages
   where intake_id in (
     select id from public.intakes
@@ -485,11 +482,10 @@ begin
 end;
 $$;
 
--- Revoke public API access: maintenance operation run only by cron or service_role
 revoke all on function public.purge_expired_crisis_data() from public, anon, authenticated;
 grant execute on function public.purge_expired_crisis_data() to service_role;
 
--- Public increment for empathy counter on approved confessions (SECURITY INVOKER)
+-- 4J. Empathy Counter Increment (SECURITY INVOKER: Runs with caller RLS permissions)
 create or replace function public.increment_empathy(confession_id text)
 returns void language sql security invoker
 set search_path = public, pg_temp
@@ -502,7 +498,7 @@ $$;
 revoke all on function public.increment_empathy(text) from public, authenticated;
 grant execute on function public.increment_empathy(text) to anon, service_role;
 
--- Secure Confession Submission RPC (SECURITY INVOKER)
+-- 4K. Secure Confession Submission (SECURITY INVOKER: Runs with caller RLS permissions)
 create or replace function public.submit_confession_secure(
   p_id text,
   p_username text,
@@ -536,7 +532,7 @@ revoke all on function public.submit_confession_secure(text, text, text, text) f
 grant execute on function public.submit_confession_secure(text, text, text, text) to anon, service_role;
 
 -- ----------------------------------------------------------------------------
--- 7. ROW-LEVEL SECURITY (RLS) POLICIES
+-- 5. ROW-LEVEL SECURITY (RLS) POLICIES
 -- ----------------------------------------------------------------------------
 alter table public.counselors enable row level security;
 alter table public.intakes enable row level security;
@@ -546,7 +542,7 @@ alter table public.group_rooms enable row level security;
 alter table public.group_messages enable row level security;
 alter table public.staff_shifts enable row level security;
 
--- A. Counselors RLS (Keep direct table SELECT restricted from public API to protect password_hash)
+-- 5A. Counselors: Password hashes strictly hidden from public API
 drop policy if exists "Counselors roster is readable" on public.counselors;
 drop policy if exists "Counselors self update" on public.counselors;
 drop policy if exists "Service role counselor access" on public.counselors;
@@ -556,7 +552,7 @@ create policy "Service role counselor access"
   using (true)
   with check (true);
 
--- B. Group Rooms RLS (Resolves 'RLS enabled, but no policies')
+-- 5B. Group Rooms
 drop policy if exists "Anyone can read group rooms" on public.group_rooms;
 create policy "Anyone can read group rooms"
   on public.group_rooms for select
@@ -569,7 +565,7 @@ create policy "Staff can create group rooms"
   to anon, authenticated
   with check (char_length(trim(title)) >= 2 and char_length(trim(category)) >= 2);
 
--- C. Group Messages RLS (Resolves 'RLS enabled, but no policies')
+-- 5C. Group Messages
 drop policy if exists "Anyone can read group messages" on public.group_messages;
 create policy "Anyone can read group messages"
   on public.group_messages for select
@@ -582,7 +578,7 @@ create policy "Anyone can post group messages"
   to anon, authenticated
   with check (char_length(trim(text)) > 0 and char_length(trim(author)) > 0);
 
--- D. Intakes RLS (Resolves 'RLS Policy Always True')
+-- 5D. Intakes (Crisis Tickets)
 drop policy if exists "Seekers can create intakes" on public.intakes;
 create policy "Seekers can create intakes"
   on public.intakes for insert
@@ -608,7 +604,7 @@ create policy "Seekers and staff can delete intakes"
   to anon, authenticated
   using (id is not null);
 
--- E. Messages RLS (Resolves 'RLS Policy Always True')
+-- 5E. Intake Messages
 drop policy if exists "Messages are readable" on public.intake_messages;
 create policy "Messages are readable"
   on public.intake_messages for select
@@ -627,7 +623,7 @@ create policy "Messages can be deleted"
   to anon, authenticated
   using (intake_id is not null);
 
--- F. Confessions RLS (Resolves 'RLS Policy Always True')
+-- 5F. Confessions
 drop policy if exists "Anyone can read approved confessions" on public.confessions;
 drop policy if exists "Anyone can read confessions" on public.confessions;
 create policy "Anyone can read confessions"
@@ -653,7 +649,7 @@ create policy "Staff can delete confessions"
   to anon, authenticated
   using (id is not null);
 
--- G. Staff Shifts Attendance RLS
+-- 5G. Staff Shifts Attendance
 drop policy if exists "Staff shifts are readable" on public.staff_shifts;
 create policy "Staff shifts are readable"
   on public.staff_shifts for select
@@ -673,8 +669,7 @@ create policy "Staff shifts can be updated"
   using (id is not null);
 
 -- ----------------------------------------------------------------------------
--- 8. REALTIME REPLICATION SETUP (Safe Idempotent Block)
--- Enables live Supabase WebSocket subscriptions for chat and queue
+-- 6. REALTIME SUBSCRIPTION PUBLICATIONS
 -- ----------------------------------------------------------------------------
 do $$
 begin
@@ -686,6 +681,9 @@ begin
   end if;
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'confessions') then
     alter publication supabase_realtime add table public.confessions;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'group_rooms') then
+    alter publication supabase_realtime add table public.group_rooms;
   end if;
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'group_messages') then
     alter publication supabase_realtime add table public.group_messages;
