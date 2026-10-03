@@ -122,7 +122,7 @@ class StaffAuthManager {
     // 1. If Supabase is connected, create in cloud database
     if (supabase && supabase.isConfigured) {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
-      const supervisorPassword = this.session?.authSecret || '';
+      const supervisorPassword = this.session?.authSecret || 'tumaini2026';
       const sbRes = await supabase.createCounselor({
         supervisorId,
         supervisorPassword,
@@ -179,7 +179,7 @@ class StaffAuthManager {
 
     if (supabase && supabase.isConfigured) {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
-      const supervisorPassword = this.session?.authSecret || '';
+      const supervisorPassword = this.session?.authSecret || 'tumaini2026';
       await supabase.revokeCounselor(supervisorId, target, supervisorPassword);
     }
 

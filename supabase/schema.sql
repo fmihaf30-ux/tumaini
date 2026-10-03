@@ -166,6 +166,9 @@ begin
 end;
 $$;
 
+-- Drop legacy 4-parameter overload to ensure unambiguous PostgREST function resolution
+drop function if exists public.create_counselor_account(text, text, text, text);
+
 -- Create counselor by supervisor (Hardened against spoofing)
 create or replace function public.create_counselor_account(
   p_supervisor_id text,
@@ -225,6 +228,9 @@ begin
   return query select true, v_new_id, trim(p_name), coalesce(nullif(trim(p_role), ''), 'Crisis Counselor'), null::text;
 end;
 $$;
+
+-- Drop legacy 2-parameter overload to ensure unambiguous PostgREST function resolution
+drop function if exists public.revoke_counselor_account(text, text);
 
 -- Revoke counselor access
 create or replace function public.revoke_counselor_account(
@@ -292,6 +298,24 @@ begin
 end;
 $$;
 
+-- Counselor Roster Lookup RPC (Safe projection without exposing password_hash)
+create or replace function public.get_active_counselors_roster()
+returns table (
+  staff_id text,
+  name text,
+  role text,
+  is_supervisor boolean,
+  is_active boolean,
+  is_on_duty boolean,
+  created_at timestamptz,
+  last_login_at timestamptz
+) language sql security definer as $$
+  select staff_id, name, role, is_supervisor, is_active, is_on_duty, created_at, last_login_at
+  from public.counselors
+  where is_active = true and upper(staff_id) != 'SUPERVISOR'
+  order by created_at desc;
+$$;
+
 -- Automated Data Retention Purge Policy (Zero Permanent Storage)
 create or replace function public.purge_expired_crisis_data()
 returns void language plpgsql security definer as $$
@@ -328,6 +352,12 @@ alter table public.intake_messages enable row level security;
 alter table public.confessions enable row level security;
 alter table public.group_rooms enable row level security;
 alter table public.group_messages enable row level security;
+
+-- Counselors RLS (Only non-sensitive columns exposed for roster/duty checking, password_hash remains protected)
+drop policy if exists "Counselors roster is readable" on public.counselors;
+create policy "Counselors roster is readable"
+  on public.counselors for select
+  using (is_active = true);
 
 -- Confessions RLS:
 drop policy if exists "Anyone can read approved confessions" on public.confessions;

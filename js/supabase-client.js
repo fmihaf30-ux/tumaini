@@ -169,11 +169,9 @@ class TumainiSupabaseService {
         p_supervisor_id: supervisorId,
         p_name: name,
         p_role: role || 'Crisis Counselor',
-        p_password: password
+        p_password: password,
+        p_supervisor_password: supervisorPassword || ''
       };
-      if (supervisorPassword) {
-        payload.p_supervisor_password = supervisorPassword;
-      }
 
       const { data, error } = await this.client.rpc('create_counselor_account', payload);
 
@@ -196,6 +194,13 @@ class TumainiSupabaseService {
   async getCounselors(supervisorId) {
     if (!this.isConfigured || !this.client) return [];
     try {
+      // 1. Try secure RPC first
+      const { data: rpcData, error: rpcErr } = await this.client.rpc('get_active_counselors_roster');
+      if (!rpcErr && rpcData && Array.isArray(rpcData)) {
+        return rpcData;
+      }
+
+      // 2. Direct table select fallback
       const { data, error } = await this.client
         .from('counselors')
         .select('staff_id, name, role, is_supervisor, is_active, created_at, last_login_at')
@@ -218,11 +223,9 @@ class TumainiSupabaseService {
     try {
       const payload = {
         p_supervisor_id: supervisorId,
-        p_target_id: targetStaffId
+        p_target_id: targetStaffId,
+        p_supervisor_password: supervisorPassword || ''
       };
-      if (supervisorPassword) {
-        payload.p_supervisor_password = supervisorPassword;
-      }
       const { data, error } = await this.client.rpc('revoke_counselor_account', payload);
       return !error && !!data;
     } catch (e) {
