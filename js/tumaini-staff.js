@@ -38,7 +38,6 @@ class TumainiStaff {
 
     // Profile & Supervisor Desk Elements
     this.btnStaffProfile = document.getElementById('btnStaffProfile');
-    this.btnDutyProfile = document.getElementById('btnDutyProfile');
     this.staffProfileModal = document.getElementById('staffProfileModal');
     this.btnCloseStaffProfile = document.getElementById('btnCloseStaffProfile');
     this.btnProfileLogout = document.getElementById('btnProfileLogout');
@@ -92,8 +91,10 @@ class TumainiStaff {
     // Desk Navigation
     this.btnDeskTriage = document.getElementById('btnDeskTriage');
     this.btnDeskConfessions = document.getElementById('btnDeskConfessions');
+    this.btnDeskSupervisor = document.getElementById('btnDeskSupervisor');
     this.deskTriagePane = document.getElementById('deskTriagePane');
     this.deskConfessionsPane = document.getElementById('deskConfessionsPane');
+    this.deskSupervisorPane = document.getElementById('deskSupervisorPane');
     this.badgePendingConfessions = document.getElementById('badgePendingConfessions');
 
     // Triage Queue Elements
@@ -132,12 +133,9 @@ class TumainiStaff {
       });
     }
 
-    // Profile & Supervisor Desk Modal Events
+    // Profile Modal Events
     if (this.btnStaffProfile) {
       this.btnStaffProfile.addEventListener('click', () => this.openProfileModal());
-    }
-    if (this.btnDutyProfile) {
-      this.btnDutyProfile.addEventListener('click', () => this.openProfileModal());
     }
     if (this.btnCloseStaffProfile) {
       this.btnCloseStaffProfile.addEventListener('click', () => this.closeProfileModal());
@@ -232,6 +230,13 @@ class TumainiStaff {
       }
     });
 
+    // Password reset sync across tabs
+    window.addEventListener('tumaini:staff-password-reset', (e) => {
+      if (auth.isSupervisor()) {
+        this.renderCounselorsRoster();
+      }
+    });
+
     // Multi-Device Shift Synchronization
     window.addEventListener('tumaini:shift-sync', (e) => {
       const session = auth.getSession();
@@ -246,19 +251,6 @@ class TumainiStaff {
       }
     });
 
-    // Heartbeat safety check for revocation every 4 seconds
-    setInterval(() => {
-      const currentSession = auth.getSession();
-      if (currentSession && auth.isRevoked(currentSession.staffId)) {
-        auth.logout();
-        this.stopShiftTimer();
-        this.activeIntake = null;
-        this.closeProfileModal();
-        this.showAuth();
-        this.showAuthNotice('Your operator account has been deactivated by the supervisor.', true);
-      }
-    }, 4000);
-
     // Duty Strip
     if (this.btnClockIn) this.btnClockIn.addEventListener('click', () => this.handleClockIn());
     if (this.btnClockOut) this.btnClockOut.addEventListener('click', () => this.handleClockOut());
@@ -267,6 +259,7 @@ class TumainiStaff {
     // Desk Switching
     if (this.btnDeskTriage) this.btnDeskTriage.addEventListener('click', () => this.switchDesk('triage'));
     if (this.btnDeskConfessions) this.btnDeskConfessions.addEventListener('click', () => this.switchDesk('confessions'));
+    if (this.btnDeskSupervisor) this.btnDeskSupervisor.addEventListener('click', () => this.switchDesk('supervisor'));
 
     // Queue Item Clicks
     if (this.queueList) {
@@ -385,6 +378,10 @@ class TumainiStaff {
       this.renderQueue();
       this.renderRoomSelectDropdown();
       this.renderConfessionsDesk();
+      if (auth.isSupervisor()) {
+        this.renderCounselorsRoster();
+        this.renderAllStaffShifts();
+      }
 
       const active = store.getActiveStaffIntake();
       if (active && active.status !== 'resolved') {
@@ -426,28 +423,53 @@ class TumainiStaff {
     if (this.btnStaffProfile) {
       this.btnStaffProfile.style.display = 'inline-flex';
     }
+    if (this.btnDeskSupervisor) {
+      this.btnDeskSupervisor.style.display = auth.isSupervisor() ? 'inline-flex' : 'none';
+    }
   }
 
   switchDesk(desk) {
+    if (this.btnDeskTriage) this.btnDeskTriage.classList.remove('active');
+    if (this.btnDeskConfessions) this.btnDeskConfessions.classList.remove('active');
+    if (this.btnDeskSupervisor) this.btnDeskSupervisor.classList.remove('active');
+
+    if (this.deskTriagePane) {
+      this.deskTriagePane.classList.remove('active');
+      this.deskTriagePane.style.display = 'none';
+    }
+    if (this.deskConfessionsPane) {
+      this.deskConfessionsPane.classList.remove('active');
+      this.deskConfessionsPane.style.display = 'none';
+    }
+    if (this.deskSupervisorPane) {
+      this.deskSupervisorPane.classList.remove('active');
+      this.deskSupervisorPane.style.display = 'none';
+    }
+
     if (desk === 'confessions') {
-      if (this.btnDeskTriage) this.btnDeskTriage.classList.remove('active');
       if (this.btnDeskConfessions) this.btnDeskConfessions.classList.add('active');
-      if (this.deskTriagePane) {
-        this.deskTriagePane.classList.remove('active');
-        this.deskTriagePane.style.display = 'none';
-      }
       if (this.deskConfessionsPane) {
         this.deskConfessionsPane.classList.add('active');
         this.deskConfessionsPane.style.display = 'block';
       }
       this.renderConfessionsDesk();
-    } else {
-      if (this.btnDeskConfessions) this.btnDeskConfessions.classList.remove('active');
-      if (this.btnDeskTriage) this.btnDeskTriage.classList.add('active');
-      if (this.deskConfessionsPane) {
-        this.deskConfessionsPane.classList.remove('active');
-        this.deskConfessionsPane.style.display = 'none';
+    } else if (desk === 'supervisor') {
+      if (!auth.isSupervisor()) {
+        this.switchDesk('triage');
+        return;
       }
+      if (this.btnDeskSupervisor) this.btnDeskSupervisor.classList.add('active');
+      if (this.deskSupervisorPane) {
+        this.deskSupervisorPane.classList.add('active');
+        this.deskSupervisorPane.style.display = 'block';
+      }
+      if (this.genCounselorPassword && !this.genCounselorPassword.value) {
+        this.genCounselorPassword.value = auth.generateRandomPassword();
+      }
+      this.renderCounselorsRoster();
+      this.renderAllStaffShifts();
+    } else {
+      if (this.btnDeskTriage) this.btnDeskTriage.classList.add('active');
       if (this.deskTriagePane) {
         this.deskTriagePane.classList.add('active');
         this.deskTriagePane.style.display = 'block';
@@ -489,6 +511,10 @@ class TumainiStaff {
       this.renderQueue();
       this.renderRoomSelectDropdown();
       this.renderConfessionsDesk();
+      if (auth.isSupervisor()) {
+        this.renderCounselorsRoster();
+        this.renderAllStaffShifts();
+      }
 
       const queue = store.getTriageQueue();
       if (queue.length > 0 && !this.activeIntake) {
@@ -542,18 +568,6 @@ class TumainiStaff {
 
     // Render self shift attendance history
     this.renderSelfShiftHistory();
-
-    // Supervisor Desk Visibility
-    if (auth.isSupervisor()) {
-      if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'block';
-      if (this.genCounselorPassword && !this.genCounselorPassword.value) {
-        this.genCounselorPassword.value = auth.generateRandomPassword();
-      }
-      await this.renderCounselorsRoster();
-      this.renderAllStaffShifts();
-    } else {
-      if (this.supervisorDeskSection) this.supervisorDeskSection.style.display = 'none';
-    }
 
     this.staffProfileModal.classList.add('open');
     this.staffProfileModal.classList.add('active');

@@ -12,7 +12,8 @@ import { bus } from './bus.js';
 const STORAGE_KEYS = {
   STAFF_ACCOUNTS: 'haven_staff_accounts_v5',
   ACTIVE_SESSION: 'haven_active_staff_session_v5',
-  SHIFT_HISTORY: 'tumaini_shift_history_v1'
+  SHIFT_HISTORY: 'tumaini_shift_history_v1',
+  REVOKED_STAFF: 'tumaini_revoked_staff_v2'
 };
 
 const CLINICAL_SUPERVISOR_KEY = 'TUMAINI-CLINICAL-2026';
@@ -22,7 +23,67 @@ class StaffAuthManager {
     this.accounts = this.loadAccounts();
     this.session = this.loadSession();
     this.shifts = this.loadShiftHistory();
+    this.revokedStaffIds = this.loadRevokedStaff();
     this.subscribers = new Set();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('tumaini:staff-password-reset', (e) => {
+        const staffId = e.detail?.staffId;
+        const password = e.detail?.password;
+        if (staffId && password) {
+          this.upsertLocalAccount({ staffId }, password);
+        }
+      });
+      window.addEventListener('tumaini:staff-revoked', (e) => {
+        const staffId = (e.detail?.staffId || '').toUpperCase();
+        if (staffId && !this.revokedStaffIds.includes(staffId)) {
+          this.revokedStaffIds.push(staffId);
+          this.saveRevokedStaff();
+        }
+      });
+    }
+  }
+
+  loadRevokedStaff() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.REVOKED_STAFF);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  saveRevokedStaff() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.REVOKED_STAFF, JSON.stringify(this.revokedStaffIds));
+    } catch (e) {}
+  }
+
+  upsertLocalAccount(staff, password) {
+    if (!staff || !staff.staffId) return;
+    const target = staff.staffId.toUpperCase();
+    const existing = this.accounts.find(a => a.staffId.toUpperCase() === target);
+    if (existing) {
+      existing.name = staff.name || existing.name;
+      existing.role = staff.role || existing.role;
+      if (password) existing.password = password;
+      if (staff.isSupervisor !== undefined) existing.isSupervisor = !!staff.isSupervisor;
+    } else {
+      this.accounts.push({
+        staffId: staff.staffId,
+        name: staff.name || 'Crisis Counselor',
+        role: staff.role || 'Crisis Counselor',
+        password: password || '',
+        isSupervisor: !!staff.isSupervisor,
+        registeredAt: Date.now()
+      });
+    }
+    // Clean from revoked set if valid login occurred
+    if (this.revokedStaffIds.includes(target)) {
+      this.revokedStaffIds = this.revokedStaffIds.filter(id => id !== target);
+      this.saveRevokedStaff();
+    }
+    this.saveAccounts();
   }
 
   loadAccounts() {
@@ -196,6 +257,11 @@ class StaffAuthManager {
       return { success: false, error: 'Cannot delete the master Supervisor account.' };
     }
 
+    if (!this.revokedStaffIds.includes(target)) {
+      this.revokedStaffIds.push(target);
+      this.saveRevokedStaff();
+    }
+
     if (supabase && supabase.isConfigured) {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
       const supervisorPassword = this.session?.authSecret || 'tumaini2026';
@@ -233,11 +299,10 @@ class StaffAuthManager {
   }
 
   isRevoked(staffId) {
-    if (!staffId) return true;
+    if (!staffId) return false;
     const target = staffId.trim().toUpperCase();
     if (target === 'SUPERVISOR') return false;
-    const exists = this.accounts.some(a => a.staffId.toUpperCase() === target);
-    return !exists;
+    return this.revokedStaffIds.includes(target);
   }
 
   // Self-service profile update (Name and optional Password)
@@ -292,11 +357,30 @@ class StaffAuthManager {
     const cleanPass = (newPassword || '').trim();
     if (cleanPass.length < 4) return { success: false, error: 'Password must be at least 4 characters.' };
 
-    const acc = this.accounts.find(a => a.staffId.toUpperCase() === target);
+    let acc = this.accounts.find(a => a.staffId.toUpperCase() === target);
     if (acc) {
       acc.password = cleanPass;
-      this.saveAccounts();
+    } else {
+      acc = {
+        staffId: target,
+        name: 'Crisis Counselor',
+        role: 'Crisis Counselor',
+        password: cleanPass,
+        isSupervisor: false,
+        registeredAt: Date.now()
+      };
+      this.accounts.push(acc);
     }
+    this.saveAccounts();
+
+    // Broadcast updated password across devices via bus and cloud relay
+    try {
+      bus.broadcast('STAFF_PASSWORD_RESET', {
+        staffId: target,
+        password: cleanPass,
+        timestamp: Date.now()
+      });
+    } catch (e) {}
 
     if (supabase && supabase.isConfigured && typeof supabase.resetCounselorPassword === 'function') {
       const supervisorId = this.session?.staffId || 'SUPERVISOR';
@@ -327,7 +411,7 @@ class StaffAuthManager {
         }));
       }
     }
-    return this.accounts.filter(acc => acc.staffId !== 'SUPERVISOR');
+    return this.accounts.filter(acc => acc.staffId !== 'SUPERVISOR' && !this.isRevoked(acc.staffId));
   }
 
   // Login handler
@@ -336,21 +420,24 @@ class StaffAuthManager {
     const trimmedId = rawId.toUpperCase();
     const trimmedPass = (password || '').trim();
 
+    // Check if explicitly revoked
+    if (this.isRevoked(trimmedId)) {
+      return { success: false, error: 'Your operator account has been deactivated by the supervisor.' };
+    }
+
     // 1. Try Supabase verification if configured
     if (supabase && supabase.isConfigured) {
       const res = await supabase.verifyLogin(trimmedId, trimmedPass);
       if (res.success && res.staff) {
         this.session = res.staff;
         this.session.authSecret = trimmedPass;
+        this.upsertLocalAccount(this.session, trimmedPass);
         this.saveSession();
         return { success: true, staff: this.session };
       }
-      if (!res.fallback) {
-        return { success: false, error: res.error || 'Invalid Operator ID or Password.' };
-      }
     }
 
-    // 2. Local fallback verification
+    // 2. Local fallback verification (checks synchronized / reset accounts)
     let account = null;
     if (trimmedId === 'SUPERVISOR' || trimmedId === 'ADMIN' || trimmedId === 'STF-ADMIN' || trimmedId === 'STF-7700') {
       account = this.accounts.find(acc => acc.staffId === 'SUPERVISOR' || acc.isSupervisor);
@@ -375,7 +462,7 @@ class StaffAuthManager {
         account = null;
       }
     } else {
-      account = this.accounts.find(acc => acc.staffId === trimmedId && (acc.password === trimmedPass || trimmedPass === CLINICAL_SUPERVISOR_KEY));
+      account = this.accounts.find(acc => acc.staffId.toUpperCase() === trimmedId && (acc.password === trimmedPass || trimmedPass === CLINICAL_SUPERVISOR_KEY));
     }
 
     if (!account) {
@@ -393,7 +480,8 @@ class StaffAuthManager {
       role: account.role,
       isSupervisor: !!account.isSupervisor,
       isOnDuty: remoteDuty ? !!remoteDuty.isOnDuty : false,
-      shiftStartedAt: remoteDuty ? remoteDuty.shiftStartedAt : null
+      shiftStartedAt: remoteDuty ? remoteDuty.shiftStartedAt : null,
+      authSecret: trimmedPass
     };
 
     this.saveSession();

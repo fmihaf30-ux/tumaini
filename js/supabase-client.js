@@ -199,9 +199,14 @@ class TumainiSupabaseService {
     if (!this.isConfigured || !this.client) return [];
     try {
       // 1. Try secure RPC first
-      const { data: rpcData, error: rpcErr } = await this.client.rpc('get_active_counselors_roster');
-      if (!rpcErr && rpcData && Array.isArray(rpcData)) {
-        return rpcData;
+      if (!this.counselorsRosterRpcDisabled) {
+        const { data: rpcData, error: rpcErr } = await this.client.rpc('get_active_counselors_roster');
+        if (!rpcErr && rpcData && Array.isArray(rpcData)) {
+          return rpcData;
+        }
+        if (rpcErr && (rpcErr.code === 'PGRST202' || rpcErr.status === 404)) {
+          this.counselorsRosterRpcDisabled = true;
+        }
       }
 
       // 2. Direct table select fallback
@@ -213,7 +218,6 @@ class TumainiSupabaseService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching counselors:', error);
         return [];
       }
       return data || [];
@@ -363,12 +367,38 @@ class TumainiSupabaseService {
   async resetCounselorPassword({ supervisorId, targetStaffId, newPassword, supervisorPassword }) {
     if (!this.isConfigured || !this.client || !targetStaffId || !newPassword) return false;
     try {
-      const { data, error } = await this.client.rpc('reset_counselor_password', {
+      // 1. Try RPC with matching parameter names (p_target_staff_id as defined in schema.sql)
+      let res = await this.client.rpc('reset_counselor_password', {
         p_supervisor_id: supervisorId || 'SUPERVISOR',
-        p_target_id: targetStaffId.trim(),
+        p_target_staff_id: targetStaffId.trim(),
         p_new_password: newPassword.trim(),
         p_supervisor_password: supervisorPassword || ''
       });
+      // Fallback if schema was deployed with p_target_id parameter name
+      if (res.error && (res.error.code === 'PGRST202' || res.error.status === 404 || res.error.message?.includes('schema cache'))) {
+        res = await this.client.rpc('reset_counselor_password', {
+          p_supervisor_id: supervisorId || 'SUPERVISOR',
+          p_target_id: targetStaffId.trim(),
+          p_new_password: newPassword.trim(),
+          p_supervisor_password: supervisorPassword || ''
+        });
+      }
+      const data = res.data;
+      const error = res.error;
+
+      // 2. Broadcast via Supabase Realtime channel so all devices update cache instantly
+      try {
+        if (!this.channels['staff_broadcast']) {
+          this.channels['staff_broadcast'] = this.client.channel('tumaini_staff_channel');
+          this.channels['staff_broadcast'].subscribe();
+        }
+        await this.channels['staff_broadcast'].send({
+          type: 'broadcast',
+          event: 'STAFF_PASSWORD_RESET',
+          payload: { staffId: targetStaffId.toUpperCase(), password: newPassword.trim(), timestamp: Date.now() }
+        });
+      } catch (bcErr) {}
+
       return !error && !!data;
     } catch (e) {
       return false;

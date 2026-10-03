@@ -359,7 +359,7 @@ class TumainiBus {
     }
 
     // 2. Transmit over cloud relay for cross-device synchronization
-    const isCriticalStaffEvent = type === 'STAFF_REVOKED' || type === 'STAFF_SHIFT_CHANGE' || type === 'STAFF_PROFILE_UPDATED';
+    const isCriticalStaffEvent = type === 'STAFF_REVOKED' || type === 'STAFF_SHIFT_CHANGE' || type === 'STAFF_PROFILE_UPDATED' || type === 'STAFF_PASSWORD_RESET';
     if (!supabase || !supabase.isConfigured || isCriticalStaffEvent) {
       try {
         const encryptedBody = await this.encryptEnvelope(envelope);
@@ -448,16 +448,48 @@ class TumainiBus {
     } else if (type === 'STAFF_REVOKED') {
       if (payload && payload.staffId) {
         try {
+          const target = payload.staffId.toUpperCase();
+          const rawRev = localStorage.getItem('tumaini_revoked_staff_v2');
+          let revList = rawRev ? JSON.parse(rawRev) : [];
+          if (!revList.includes(target)) {
+            revList.push(target);
+            localStorage.setItem('tumaini_revoked_staff_v2', JSON.stringify(revList));
+          }
           const raw = localStorage.getItem('haven_active_staff_session_v5');
           if (raw) {
             const sess = JSON.parse(raw);
-            if (sess && sess.staffId && sess.staffId.toUpperCase() === payload.staffId.toUpperCase()) {
+            if (sess && sess.staffId && sess.staffId.toUpperCase() === target) {
               localStorage.removeItem('haven_active_staff_session_v5');
             }
           }
         } catch (e) {}
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('tumaini:staff-revoked', { detail: payload }));
+        }
+      }
+    } else if (type === 'STAFF_PASSWORD_RESET') {
+      if (payload && payload.staffId && payload.password) {
+        try {
+          const raw = localStorage.getItem('haven_staff_accounts_v5');
+          let accounts = raw ? JSON.parse(raw) : [];
+          const target = payload.staffId.toUpperCase();
+          const acc = accounts.find(a => a.staffId.toUpperCase() === target);
+          if (acc) {
+            acc.password = payload.password;
+          } else {
+            accounts.push({
+              staffId: target,
+              name: 'Crisis Counselor',
+              role: 'Crisis Counselor',
+              password: payload.password,
+              isSupervisor: false,
+              registeredAt: Date.now()
+            });
+          }
+          localStorage.setItem('haven_staff_accounts_v5', JSON.stringify(accounts));
+        } catch (e) {}
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('tumaini:staff-password-reset', { detail: payload }));
         }
       }
     } else if (type === 'STAFF_PROFILE_UPDATED') {

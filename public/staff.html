@@ -228,14 +228,14 @@ button:disabled, .btn:disabled {
   border-color: #f87171;
 }
 
-#btnStaffProfile, #btnDutyProfile {
+#btnStaffProfile {
   background: var(--brand-eucalyptus-soft);
   color: var(--brand-eucalyptus-dark);
   border: 1px solid var(--brand-eucalyptus-border);
   font-weight: 700;
 }
 
-#btnStaffProfile:hover, #btnDutyProfile:hover {
+#btnStaffProfile:hover {
   background: #dbeef7;
   border-color: var(--brand-eucalyptus);
 }
@@ -2636,18 +2636,12 @@ button:disabled, .btn:disabled {
       <div class="staff-duty-controls">
         <span class="shift-timer-display" id="shiftTimerDisplay">Shift: 00:00:00</span>
         <button class="btn-clock-in" id="btnClockIn" type="button">Clock In for Shift</button>
-        <button class="nav-btn" id="btnDutyProfile" type="button" style="display: inline-flex; align-items: center; gap: 5px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <span>My Profile</span>
-        </button>
+        <button class="btn-clock-out" id="btnClockOut" type="button" style="display: none;">Clock Out</button>
         <button class="nav-btn btn-danger" id="btnLogout" type="button">Sign Out</button>
       </div>
     </div>
 
-    <!-- Dual Desk Switcher -->
+    <!-- Desk Switcher Navigation -->
     <div class="desk-nav-bar">
       <button class="desk-tab-btn active" id="btnDeskTriage" type="button">
         <span>Emergency Triage & 1-on-1 Consultations</span>
@@ -2655,6 +2649,10 @@ button:disabled, .btn:disabled {
       <button class="desk-tab-btn" id="btnDeskConfessions" type="button">
         <span>Confession Moderation Desk</span>
         <span class="desk-badge-count" id="badgePendingConfessions">0</span>
+      </button>
+      <button class="desk-tab-btn" id="btnDeskSupervisor" type="button" style="display: none;">
+        <span>Supervisor & Clinical Desk</span>
+        <span class="badge" style="background: var(--brand-ochre-soft); color: var(--brand-ochre-dark); border: 1px solid var(--brand-ochre-border); font-size: 10px; margin-left: 6px; padding: 2px 6px;">ADMIN</span>
       </button>
     </div>
 
@@ -2809,13 +2807,122 @@ button:disabled, .btn:disabled {
       </div>
     </div>
 
+    <!-- Desk 3: Supervisor & Clinical Operations Desk -->
+    <div class="desk-pane" id="deskSupervisorPane" style="display: none;">
+      <div class="moderation-desk-wrap" style="max-width: 1280px; margin: 0 auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h2 style="font-size: 22px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Supervisor & Clinical Operations Desk</h2>
+              <span class="badge" style="background: var(--brand-ochre-soft); color: var(--brand-ochre-dark); border: 1px solid var(--brand-ochre-border);">CLINICAL LEAD</span>
+            </div>
+            <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px;">
+              Provision counselor accounts, reset passwords, manage authorized clinical rosters, and audit real-time shift attendance logs.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="nav-btn" id="btnResetLocalData" style="font-size: 12px; padding: 7px 14px; color: #b45309; border-color: #fde68a; background: #fffbeb;">
+              Clear Local Cache & Re-sync
+            </button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; align-items: start;">
+          <!-- Left Column: Issue Counselor Credentials -->
+          <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-card);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <h3 style="color: var(--brand-eucalyptus-dark); font-size: 16px; font-weight: 700;">Issue New Counselor Credentials</h3>
+              <span class="badge" style="background: var(--brand-eucalyptus-soft); color: var(--brand-eucalyptus-dark);">Onboarding</span>
+            </div>
+            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Generate and provision verified credentials for crisis counselors. One-click copy formats credentials ready for WhatsApp or SMS handover.
+            </p>
+
+            <form id="formGenerateCounselor" style="display: flex; flex-direction: column; gap: 14px;">
+              <div>
+                <label class="form-label" style="font-size: 12px;" for="genCounselorName">Counselor Full Name</label>
+                <input type="text" id="genCounselorName" class="form-input" placeholder="e.g. Brian Kigozi" required>
+              </div>
+
+              <div>
+                <label class="form-label" style="font-size: 12px;" for="genCounselorRole">Clinical Role</label>
+                <select id="genCounselorRole" class="form-input" style="cursor: pointer;">
+                  <option value="Crisis Counselor">Crisis Counselor</option>
+                  <option value="Peer Support Specialist">Peer Support Specialist</option>
+                  <option value="Triage Lead">Triage Lead</option>
+                  <option value="Clinical Psychologist">Clinical Psychologist</option>
+                </select>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <label class="form-label" style="font-size: 12px; margin: 0;" for="genCounselorPassword">Temporary Password</label>
+                  <button type="button" id="btnShufflePassword" style="background: none; border: none; font-size: 11.5px; color: var(--brand-eucalyptus-dark); cursor: pointer; text-decoration: underline; font-weight: 600;">Shuffle Password</button>
+                </div>
+                <input type="text" id="genCounselorPassword" class="form-input" placeholder="Enter custom or click Shuffle">
+              </div>
+
+              <button type="submit" class="btn-submit-intake" style="padding: 11px 18px; font-size: 13.5px; width: 100%;">
+                Generate & Provision Credentials
+              </button>
+            </form>
+
+            <!-- Result Card for Sharing -->
+            <div id="genResultCard" style="display: none; margin-top: 16px; background: #ffffff; border: 1px solid var(--brand-eucalyptus-border); border-radius: 8px; padding: 14px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--brand-eucalyptus-dark); text-transform: uppercase;">Credentials Ready to Send</span>
+                <button type="button" id="btnCopyCredentials" style="background: #25d366; color: #ffffff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                  <span>Copy for WhatsApp / SMS</span>
+                </button>
+              </div>
+              <pre id="genResultPre" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #1e293b; background: #f8fafc; padding: 10px; border-radius: 6px; white-space: pre-wrap; margin: 0;"></pre>
+              <div id="copyToastMessage" style="display: none; color: #15803d; font-size: 11.5px; font-weight: 600; margin-top: 6px;">
+                Copied to clipboard! Send this message to your counselor.
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Active Counselors Roster & Audit Log -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Active Counselors Roster -->
+            <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-card);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <h3 style="color: var(--brand-eucalyptus-dark); font-size: 16px; font-weight: 700;">Authorized Clinical Counselors Roster</h3>
+                <span style="font-size: 11px; color: var(--text-muted);">Active Personnel</span>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Manage counselors, reset forgotten credentials, or immediately revoke access across all devices.
+              </p>
+              <div id="counselorsRosterList" class="counselors-roster-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- All Staff Shift History Section (Supervisor Audit) -->
+            <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-card);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <h3 style="color: var(--brand-eucalyptus-dark); font-size: 16px; font-weight: 700;">All Staff Attendance & Shifts Log</h3>
+                <span class="badge" style="background: var(--brand-eucalyptus-soft); color: var(--brand-eucalyptus-dark);">Live Audit</span>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Comprehensive record of counselor clock-in timestamps, duty duration, and clock-out completions.
+              </p>
+              <div id="allStaffShiftsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Staff Profile & Supervisor Credential Desk Modal -->
+  <!-- Staff Operator Profile Modal (Dedicated & Professional) -->
   <div class="modal-overlay" id="staffProfileModal">
-    <div class="modal-card" style="max-width: 650px;">
+    <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 id="modalProfileHeading">Operator Profile</h3>
+        <h3 id="modalProfileHeading">Clinical Operator Profile</h3>
         <button class="modal-close-btn" id="btnCloseStaffProfile" type="button">×</button>
       </div>
       <div class="modal-body">
@@ -2836,7 +2943,7 @@ button:disabled, .btn:disabled {
         <!-- 1. Self Profile Edit (Name and Password) -->
         <div class="profile-edit-box" style="margin-bottom: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Edit My Profile & Credentials</strong>
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">Edit My Name & Password</strong>
             <span style="font-size: 11px; color: var(--text-muted);">Self-Service</span>
           </div>
           <form id="formEditSelfProfile" style="display: flex; flex-direction: column; gap: 10px;">
@@ -2860,108 +2967,25 @@ button:disabled, .btn:disabled {
         <!-- 2. Shift Attendance History -->
         <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 16px; margin-bottom: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">My Shift Attendance History</strong>
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">My Shift Attendance History</strong>
             <span id="totalHoursWorkedBadge" class="badge" style="background: var(--brand-eucalyptus-soft); color: var(--brand-eucalyptus-dark);">0h 0m worked</span>
           </div>
           <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
-            Logs clock-in time, clock-out time, and total hours on duty.
+            Your personal record of clock-in time, clock-out time, and total clinical hours.
           </p>
-          <div id="selfShiftHistoryList" style="display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto;">
+          <div id="selfShiftHistoryList" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
             <!-- Dynamically populated -->
           </div>
         </div>
 
-        <!-- Supervisor Desk: Issue New Counselor Credentials -->
-        <div class="supervisor-credential-box" id="supervisorDeskSection" style="display: none;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <strong style="color: var(--brand-eucalyptus-dark); font-size: 15px;">Supervisor Desk: Issue Counselor Credentials</strong>
-            <span class="badge" style="background: var(--brand-ochre-soft); color: var(--brand-ochre-dark); border: 1px solid var(--brand-ochre-border);">SUPERVISOR ONLY</span>
-          </div>
-          <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
-            Generate login credentials for authorized counselors. Credentials can be copied with one click to send directly to the counselor via WhatsApp or SMS.
-          </p>
-
-          <form id="formGenerateCounselor" style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div>
-                <label class="form-label" style="font-size: 12px;">Counselor Full Name</label>
-                <input type="text" id="genCounselorName" class="form-input" placeholder="e.g. Brian Kigozi" required>
-              </div>
-              <div>
-                <label class="form-label" style="font-size: 12px;">Clinical Role</label>
-                <select id="genCounselorRole" class="form-input" style="cursor: pointer;">
-                  <option value="Crisis Counselor">Crisis Counselor</option>
-                  <option value="Peer Support Specialist">Peer Support Specialist</option>
-                  <option value="Triage Lead">Triage Lead</option>
-                  <option value="Clinical Psychologist">Clinical Psychologist</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <label class="form-label" style="font-size: 12px; margin: 0;">Temporary Password</label>
-                <button type="button" id="btnShufflePassword" style="background: none; border: none; font-size: 11.5px; color: var(--brand-eucalyptus-dark); cursor: pointer; text-decoration: underline;">Shuffle Password</button>
-              </div>
-              <input type="text" id="genCounselorPassword" class="form-input" placeholder="Enter custom or click Shuffle">
-            </div>
-
-            <button type="submit" class="btn-submit-intake" style="padding: 10px 16px; font-size: 13px;">
-              Generate & Save Credentials
-            </button>
-          </form>
-
-          <!-- Result Card for Sharing -->
-          <div id="genResultCard" style="display: none; margin-top: 14px; background: #ffffff; border: 1px solid var(--brand-eucalyptus-border); border-radius: 8px; padding: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-              <span style="font-size: 11px; font-weight: 700; color: var(--brand-eucalyptus-dark); text-transform: uppercase;">Credentials Ready to Send</span>
-              <button type="button" id="btnCopyCredentials" style="background: #25d366; color: #ffffff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                <span>Copy for WhatsApp / SMS</span>
-              </button>
-            </div>
-            <pre id="genResultPre" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #1e293b; background: #f8fafc; padding: 10px; border-radius: 6px; white-space: pre-wrap; margin: 0;"></pre>
-            <div id="copyToastMessage" style="display: none; color: #15803d; font-size: 11.5px; font-weight: 600; margin-top: 6px;">
-              Copied to clipboard! Send this message to your counselor.
-            </div>
-          </div>
-
-          <!-- Active Counselors Roster -->
-          <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
-            <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 8px;">
-              Authorized Counselors Roster
-            </span>
-            <div id="counselorsRosterList" class="counselors-roster-list">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-
-          <!-- All Staff Shift History Section (Supervisor Audit) -->
-          <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">
-                All Staff Attendance & Shifts Log
-              </span>
-              <span style="font-size: 11px; color: var(--text-muted);">Real-Time Audit</span>
-            </div>
-            <div id="allStaffShiftsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions & Session Switch -->
+        <!-- Quick Actions & Sign Out -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 8px;">
           <a href="index.html" style="font-size: 12.5px; color: var(--text-muted); text-decoration: underline;">
             View Public Sanctuary
           </a>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <button type="button" class="nav-btn" id="btnResetLocalData" style="font-size: 11.5px; padding: 6px 12px; color: #b45309; border-color: #fde68a; background: #fffbeb;">
-              Clear Local Cache & Re-sync
-            </button>
-            <button type="button" class="nav-btn btn-danger" id="btnProfileLogout" style="font-size: 12px; padding: 6px 14px;">
-              Sign Out
-            </button>
-          </div>
+          <button type="button" class="nav-btn btn-danger" id="btnProfileLogout" style="font-size: 12px; padding: 6px 16px;">
+            Sign Out
+          </button>
         </div>
 
       </div>
