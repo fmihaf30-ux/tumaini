@@ -2583,7 +2583,7 @@ button:disabled, .btn:disabled {
       </div>
 
       <!-- Login Form (Single secure sign-in; no public registration) -->
-      <form class="auth-form" id="staffLoginForm" autocomplete="off">
+      <form class="auth-form" id="staffLoginForm" autocomplete="on">
         <div class="form-group">
           <label class="form-label" for="loginStaffId">Operator Staff ID</label>
           <input 
@@ -2591,7 +2591,7 @@ button:disabled, .btn:disabled {
             id="loginStaffId" 
             class="form-input" 
             placeholder="e.g. STF-4821" 
-            autocomplete="off"
+            autocomplete="username"
             required
           >
         </div>
@@ -2603,7 +2603,7 @@ button:disabled, .btn:disabled {
             id="loginPassword" 
             class="form-input" 
             placeholder="••••••••" 
-            autocomplete="new-password"
+            autocomplete="current-password"
             required
           >
         </div>
@@ -2841,7 +2841,7 @@ button:disabled, .btn:disabled {
             <form id="formGenerateCounselor" style="display: flex; flex-direction: column; gap: 14px;">
               <div>
                 <label class="form-label" style="font-size: 12px;" for="genCounselorName">Counselor Full Name</label>
-                <input type="text" id="genCounselorName" class="form-input" placeholder="e.g. Brian Kigozi" required>
+                <input type="text" id="genCounselorName" class="form-input" placeholder="e.g. Brian Kigozi" autocomplete="name" required>
               </div>
 
               <div>
@@ -2859,7 +2859,7 @@ button:disabled, .btn:disabled {
                   <label class="form-label" style="font-size: 12px; margin: 0;" for="genCounselorPassword">Temporary Password</label>
                   <button type="button" id="btnShufflePassword" style="background: none; border: none; font-size: 11.5px; color: var(--brand-eucalyptus-dark); cursor: pointer; text-decoration: underline; font-weight: 600;">Shuffle Password</button>
                 </div>
-                <input type="text" id="genCounselorPassword" class="form-input" placeholder="Enter custom or click Shuffle">
+                <input type="text" id="genCounselorPassword" class="form-input" placeholder="Enter custom or click Shuffle" autocomplete="new-password">
               </div>
 
               <button type="submit" class="btn-submit-intake" style="padding: 11px 18px; font-size: 13.5px; width: 100%;">
@@ -2949,7 +2949,7 @@ button:disabled, .btn:disabled {
           <form id="formEditSelfProfile" style="display: flex; flex-direction: column; gap: 10px;">
             <div>
               <label class="form-label" style="font-size: 12px;" for="inputSelfName">Full Name</label>
-              <input type="text" id="inputSelfName" class="form-input" style="padding: 8px 12px; font-size: 13px;" required>
+              <input type="text" id="inputSelfName" class="form-input" style="padding: 8px 12px; font-size: 13px;" autocomplete="name" required>
             </div>
             <div>
               <label class="form-label" style="font-size: 12px;" for="inputSelfPassword">New Password (leave blank to keep current)</label>
@@ -3010,7 +3010,7 @@ button:disabled, .btn:disabled {
               <label class="form-label" style="font-size: 12px; margin: 0;">New Temporary Password</label>
               <button type="button" id="btnShuffleResetPassword" style="background: none; border: none; font-size: 11.5px; color: var(--brand-eucalyptus-dark); cursor: pointer; text-decoration: underline;">Shuffle Password</button>
             </div>
-            <input type="text" id="inputResetNewPassword" class="form-input" placeholder="e.g. Tumaini582#" required>
+            <input type="text" id="inputResetNewPassword" class="form-input" placeholder="e.g. Tumaini582#" autocomplete="new-password" required>
           </div>
           <button type="submit" class="btn-submit-intake" style="padding: 10px 16px; font-size: 13px;">
             Update Password & Generate Credentials

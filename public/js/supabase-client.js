@@ -60,34 +60,63 @@ class TumainiSupabaseService {
         console.log('[Tumaini] Supabase Client Initialized:', this.url);
 
         if (typeof window !== 'undefined') {
-          window.addEventListener('pageshow', (event) => {
-            if (event.persisted && this.client && this.client.realtime) {
-              try {
-                this.client.realtime.disconnect();
-                setTimeout(() => {
-                  if (this.client && this.client.realtime) this.client.realtime.connect();
-                }, 300);
-              } catch (e) {}
-            }
-          });
+          let isSuspended = false;
 
-          window.addEventListener('pagehide', (event) => {
-            if (event.persisted && this.client && this.client.realtime) {
-              try {
+          const handleSuspend = () => {
+            if (isSuspended) return;
+            isSuspended = true;
+            try {
+              if (this.client && this.client.realtime) {
                 this.client.realtime.disconnect();
-              } catch (e) {}
-            }
-          });
+              }
+            } catch (e) {}
+          };
 
-          window.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && this.client && this.client.realtime) {
-              try {
+          const handleResume = () => {
+            if (!isSuspended) return;
+            isSuspended = false;
+            try {
+              if (this.client && this.client.realtime) {
                 if (!this.client.realtime.isConnected()) {
                   this.client.realtime.connect();
                 }
-              } catch (e) {}
+              }
+            } catch (e) {}
+          };
+
+          // Clean teardown before bfcache transition
+          window.addEventListener('pagehide', handleSuspend);
+          document.addEventListener('freeze', handleSuspend);
+
+          // Clean reconnect on return
+          window.addEventListener('pageshow', (event) => {
+            if (event.persisted || isSuspended) {
+              handleResume();
             }
           });
+          document.addEventListener('resume', handleResume);
+
+          window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              handleResume();
+            } else if (document.visibilityState === 'hidden') {
+              // Gracefully handle app backgrounding
+            }
+          });
+
+          // Intercept clicks on external protocol links (tel:0800..., mailto:, sms:)
+          // so WebSocket disconnects cleanly before OS opens external dialer
+          document.addEventListener('click', (e) => {
+            const externalLink = e.target?.closest?.('a[href^="tel:"], a[href^="mailto:"], a[href^="sms:"]');
+            if (externalLink) {
+              handleSuspend();
+              setTimeout(() => {
+                if (document.visibilityState === 'visible') {
+                  handleResume();
+                }
+              }, 1500);
+            }
+          }, { capture: true, passive: true });
         }
       } catch (err) {
         console.error('[Tumaini] Error initializing Supabase client', err);
@@ -200,11 +229,15 @@ class TumainiSupabaseService {
     try {
       // 1. Try secure RPC first
       if (!this.counselorsRosterRpcDisabled) {
-        const { data: rpcData, error: rpcErr } = await this.client.rpc('get_active_counselors_roster');
-        if (!rpcErr && rpcData && Array.isArray(rpcData)) {
-          return rpcData;
-        }
-        if (rpcErr && (rpcErr.code === 'PGRST202' || rpcErr.status === 404)) {
+        try {
+          const { data: rpcData, error: rpcErr } = await this.client.rpc('get_active_counselors_roster');
+          if (!rpcErr && rpcData && Array.isArray(rpcData)) {
+            return rpcData;
+          }
+          if (rpcErr && (rpcErr.code === 'PGRST202' || rpcErr.code === '42883' || rpcErr.status === 404)) {
+            this.counselorsRosterRpcDisabled = true;
+          }
+        } catch (rpcEx) {
           this.counselorsRosterRpcDisabled = true;
         }
       }

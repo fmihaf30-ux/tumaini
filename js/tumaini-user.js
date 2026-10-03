@@ -175,9 +175,11 @@ class TumainiUser {
     // End consultation
     if (this.btnEndConsultation) {
       this.btnEndConsultation.addEventListener('click', () => {
-        if (confirm('End this consultation session? Your chat will be safely closed.')) {
-          this.endConsultation();
-        }
+        setTimeout(() => {
+          if (confirm('End this consultation session? Your chat will be safely closed.')) {
+            this.endConsultation();
+          }
+        }, 10);
       });
     }
 
