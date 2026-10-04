@@ -11,6 +11,7 @@ import { auth } from './auth.js';
 import { store, EMERGENCY_TIERS } from './store.js';
 import { bus } from './bus.js';
 import { supabase } from './supabase-client.js';
+import { renderHelplineCards } from './helplines.js';
 
 class TumainiStaff {
   constructor() {
@@ -152,6 +153,12 @@ class TumainiStaff {
 
     // Reviews Moderation Desk
     this.pendingReviewsList = document.getElementById('pendingReviewsList');
+
+    // Crisis Helplines Modal (Staff Console)
+    this.btnStaffHelplines = document.getElementById('btnStaffHelplines');
+    this.helplinesModal = document.getElementById('helplinesModal');
+    this.btnCloseHelplines = document.getElementById('btnCloseHelplines');
+    this.helplinesModalContainer = document.getElementById('helplinesModalContainer');
   }
 
   bindEvents() {
@@ -391,6 +398,31 @@ class TumainiStaff {
     if (this.followUpModal) {
       this.followUpModal.addEventListener('click', (e) => {
         if (e.target === this.followUpModal) this.closeFollowUpModal();
+      });
+    }
+
+    // Helplines Modal Events (Staff Console)
+    if (this.btnStaffHelplines && this.helplinesModal) {
+      this.btnStaffHelplines.addEventListener('click', () => {
+        if (this.helplinesModalContainer) {
+          renderHelplineCards(this.helplinesModalContainer);
+        }
+        this.helplinesModal.classList.add('open', 'active');
+        this.helplinesModal.style.display = 'flex';
+      });
+    }
+    if (this.btnCloseHelplines && this.helplinesModal) {
+      this.btnCloseHelplines.addEventListener('click', () => {
+        this.helplinesModal.classList.remove('open', 'active');
+        this.helplinesModal.style.display = 'none';
+      });
+    }
+    if (this.helplinesModal) {
+      this.helplinesModal.addEventListener('click', (e) => {
+        if (e.target === this.helplinesModal) {
+          this.helplinesModal.classList.remove('open', 'active');
+          this.helplinesModal.style.display = 'none';
+        }
       });
     }
 
@@ -1660,12 +1692,45 @@ class TumainiStaff {
     if (!this.pendingReviewsList) return;
     this.pendingReviewsList.innerHTML = '';
 
+    const syncStatus = (supabase && !supabase.reviewsTableDisabled)
+      ? '<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: #e8f2ee; color: #2c4e43; border: 1px solid #bcd5cb; padding: 2px 8px; border-radius: 999px;">● Cloud Sync Active</span>'
+      : '<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: #f4f6f3; color: var(--text-secondary); border: 1px solid var(--border-subtle); padding: 2px 8px; border-radius: 999px;">○ Local Storage Mode</span>';
+
+    const headerBar = document.createElement('div');
+    headerBar.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 12px;';
+    headerBar.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Reviews Storage:</span>
+        ${syncStatus}
+      </div>
+      <button type="button" id="btnTestCloudReviews" class="btn-secondary" style="font-size: 11px; padding: 4px 10px;">
+        ${(supabase && !supabase.reviewsTableDisabled) ? 'Test Connection' : 'Enable Cloud Sync'}
+      </button>
+    `;
+    this.pendingReviewsList.appendChild(headerBar);
+
+    const btnTest = headerBar.querySelector('#btnTestCloudReviews');
+    if (btnTest) {
+      btnTest.addEventListener('click', async () => {
+        btnTest.disabled = true;
+        btnTest.textContent = 'Testing...';
+        const res = await supabase.checkOrEnableReviewsCloudSync();
+        btnTest.disabled = false;
+        if (res.success) {
+          alert('Success! Supabase public.reviews table verified and cloud sync is now enabled.');
+          this.renderReviewsDesk();
+        } else {
+          alert('Could not connect to cloud reviews: ' + res.error + '\n\nNote: If you have not created the reviews table yet, paste supabase/migrations/002_case_continuity_and_reviews.sql into your Supabase SQL editor.');
+          this.renderReviewsDesk();
+        }
+      });
+    }
+
     if (pending.length === 0) {
-      this.pendingReviewsList.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;">
-          All clear. Zero pending seeker reviews awaiting moderation.
-        </div>
-      `;
+      const emptyCard = document.createElement('div');
+      emptyCard.style.cssText = 'text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;';
+      emptyCard.textContent = 'All clear. Zero pending seeker reviews awaiting moderation.';
+      this.pendingReviewsList.appendChild(emptyCard);
       return;
     }
 

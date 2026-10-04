@@ -43,6 +43,8 @@ class TumainiSupabaseService {
     this.dutyColumnsDisabled = false;
     this.shiftsTableDisabled = false;
     this.profileRpcDisabled = false;
+    // Guard against 404 schema cache errors if migration 002 has not been executed yet
+    this.reviewsTableDisabled = localStorage.getItem('tumaini_reviews_cloud_enabled') !== 'true';
 
     if (this.isConfigured) {
       try {
@@ -844,7 +846,7 @@ class TumainiSupabaseService {
 
   // --- 5. Community Reviews ---
   async fetchApprovedReviews() {
-    if (!this.isConfigured || !this.client) return [];
+    if (!this.isConfigured || !this.client || this.reviewsTableDisabled) return [];
     try {
       const { data, error } = await this.client
         .from('reviews')
@@ -852,7 +854,13 @@ class TumainiSupabaseService {
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
-      if (error) return [];
+      if (error) {
+        if (error.code === 'PGRST205' || error.code === '42P01' || error.status === 404) {
+          this.reviewsTableDisabled = true;
+          localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
+        }
+        return [];
+      }
       return (data || []).map(r => ({
         id: r.id,
         alias: r.alias || 'Anonymous',
@@ -862,12 +870,14 @@ class TumainiSupabaseService {
         createdAt: new Date(r.created_at).getTime()
       }));
     } catch (e) {
+      this.reviewsTableDisabled = true;
+      localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
       return [];
     }
   }
 
   async fetchPendingReviews(staffId) {
-    if (!this.isConfigured || !this.client || !staffId) return [];
+    if (!this.isConfigured || !this.client || !staffId || this.reviewsTableDisabled) return [];
     try {
       // 1. Try secure RPC
       const { data: rpcData, error: rpcErr } = await this.client.rpc('get_pending_reviews', {
@@ -891,7 +901,13 @@ class TumainiSupabaseService {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) return [];
+      if (error) {
+        if (error.code === 'PGRST205' || error.code === '42P01' || error.status === 404) {
+          this.reviewsTableDisabled = true;
+          localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
+        }
+        return [];
+      }
       return (data || []).map(r => ({
         id: r.id,
         alias: r.alias || 'Anonymous',
@@ -901,12 +917,14 @@ class TumainiSupabaseService {
         createdAt: new Date(r.created_at).getTime()
       }));
     } catch (e) {
+      this.reviewsTableDisabled = true;
+      localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
       return [];
     }
   }
 
   async submitReview({ alias, rating, text }) {
-    if (!this.isConfigured || !this.client || !text || !rating) return null;
+    if (!this.isConfigured || !this.client || !text || !rating || this.reviewsTableDisabled) return null;
     try {
       const cleanAlias = (alias || 'Anonymous').trim().slice(0, 40) || 'Anonymous';
       const cleanRating = Math.max(1, Math.min(5, parseInt(rating, 10) || 5));
@@ -923,7 +941,10 @@ class TumainiSupabaseService {
         .select();
 
       if (error) {
-        console.error('[Tumaini] Error submitting review:', error);
+        if (error.code === 'PGRST205' || error.code === '42P01' || error.status === 404) {
+          this.reviewsTableDisabled = true;
+          localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
+        }
         return null;
       }
       return data?.[0] || null;
@@ -933,7 +954,7 @@ class TumainiSupabaseService {
   }
 
   async moderateReview({ staffId, reviewId, status }) {
-    if (!this.isConfigured || !this.client || !reviewId || !status) return false;
+    if (!this.isConfigured || !this.client || !reviewId || !status || this.reviewsTableDisabled) return false;
     try {
       if (staffId) {
         const { data, error } = await this.client.rpc('moderate_review', {
@@ -956,6 +977,35 @@ class TumainiSupabaseService {
       return !updErr;
     } catch (e) {
       return false;
+    }
+  }
+
+  async checkOrEnableReviewsCloudSync() {
+    if (!this.isConfigured || !this.client) {
+      return { success: false, error: 'Supabase client not configured.' };
+    }
+    try {
+      const { data, error } = await this.client
+        .from('reviews')
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        this.reviewsTableDisabled = true;
+        localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
+        return {
+          success: false,
+          error: error.message || 'Table public.reviews not found in schema cache. Run migration 002 in Supabase SQL editor.'
+        };
+      }
+
+      this.reviewsTableDisabled = false;
+      localStorage.setItem('tumaini_reviews_cloud_enabled', 'true');
+      return { success: true };
+    } catch (e) {
+      this.reviewsTableDisabled = true;
+      localStorage.setItem('tumaini_reviews_cloud_enabled', 'false');
+      return { success: false, error: e.message };
     }
   }
 
@@ -1086,7 +1136,7 @@ class TumainiSupabaseService {
   }
 
   subscribeToReviews(onInsert, onUpdate) {
-    if (!this.isConfigured || !this.client) return () => {};
+    if (!this.isConfigured || !this.client || this.reviewsTableDisabled) return () => {};
 
     const channel = this.client
       .channel('public:reviews')

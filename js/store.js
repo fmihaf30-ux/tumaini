@@ -319,7 +319,7 @@ class TumainiStore {
         intakeId: newIntake.id,
         sender: 'system',
         senderName: 'Emergency Safety Alert',
-        text: 'If you are in immediate danger of self-harm, please contact Mental Health Uganda toll-free at 0800 21 21 21 or Butabika at 0800 211 306 immediately.',
+        text: 'If you are in immediate danger, please dial 999 or 112. For free 24/7 crisis support, reach Sauti at 116, or Butabika Hospital toll-free at 0800 211 306.',
         skipRemoteSync: true
       });
     }
