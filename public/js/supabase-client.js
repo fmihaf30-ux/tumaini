@@ -519,7 +519,7 @@ class TumainiSupabaseService {
         console.error('[Tumaini] Error fetching intakes:', error);
         return null;
       }
-      return data || [];
+      return (data || []).map(r => this.unpackIntakeMeta(r));
     } catch (e) {
       console.error('[Tumaini] Network error fetching intakes:', e);
       return null;
@@ -539,29 +539,72 @@ class TumainiSupabaseService {
         console.error('[Tumaini] Error reconciling intakes:', error);
         return null;
       }
-      return data || [];
+      return (data || []).map(r => this.unpackIntakeMeta(r));
     } catch (e) {
       return null;
     }
+  }
+
+  unpackIntakeMeta(row) {
+    if (!row) return row;
+    if (row.summary && row.summary.includes('[TMN_META:')) {
+      try {
+        const match = row.summary.match(/\[TMN_META:(.*?)\]/);
+        if (match) {
+          const meta = JSON.parse(match[1]);
+          if (meta.passkeyHash && !row.case_passkey_hash) row.case_passkey_hash = meta.passkeyHash;
+          if (meta.safetyPlan && !row.safety_plan) row.safety_plan = meta.safetyPlan;
+          if (meta.handoffNote && !row.handoff_note) row.handoff_note = meta.handoffNote;
+          if (meta.nextCheckIn && !row.next_check_in) row.next_check_in = meta.nextCheckIn;
+        }
+      } catch (e) {}
+      row.raw_summary = row.summary;
+      row.summary = row.summary.replace(/\[TMN_META:.*?\]/g, '').trim();
+    }
+    if (row.case_passkey_hash && !row.casePasskeyHash) row.casePasskeyHash = row.case_passkey_hash;
+    if (row.safety_plan && !row.safetyPlan) row.safetyPlan = row.safety_plan;
+    if (row.handoff_note && !row.handoffNote) row.handoffNote = row.handoff_note;
+    if (row.next_check_in && !row.nextCheckIn) row.nextCheckIn = row.next_check_in;
+    return row;
   }
 
   // Resume lookup. Only the SHA-256 hash of the passkey is stored on the server.
   async findIntakeByPasskeyHash(hash) {
     if (!this.isConfigured || !this.client || !hash) return null;
     try {
+      // 1. First attempt: direct column lookup (when migration 002 is executed)
       const { data, error } = await this.client
         .from('intakes')
         .select('*')
         .eq('case_passkey_hash', hash)
-        .in('status', ['follow_up', 'waiting', 'active'])
+        .in('status', ['follow_up', 'waiting', 'active', 'in_session'])
         .order('updated_at', { ascending: false })
         .limit(1);
-      if (error) {
-        console.error('[Tumaini] Passkey lookup failed:', error);
-        return null;
+
+      if (!error && data && data.length) {
+        return this.unpackIntakeMeta(data[0]);
       }
-      return data && data.length ? data[0] : null;
+
+      // 2. Fallback attempt: if column does not exist (PGRST204 or 42703) or not indexed yet,
+      // inspect recent active / follow-up intakes for embedded metadata
+      const { data: allData, error: allErr } = await this.client
+        .from('intakes')
+        .select('*')
+        .in('status', ['follow_up', 'waiting', 'active', 'in_session'])
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      if (!allErr && Array.isArray(allData)) {
+        for (const rawRow of allData) {
+          const row = this.unpackIntakeMeta(rawRow);
+          if (row.case_passkey_hash === hash) {
+            return row;
+          }
+        }
+      }
+      return null;
     } catch (e) {
+      console.warn('[Tumaini] Passkey lookup fallback search error:', e);
       return null;
     }
   }
@@ -581,11 +624,30 @@ class TumainiSupabaseService {
         updated_at: new Date(intakeData.updatedAt || Date.now()).toISOString()
       };
       if (intakeData.passkeyHash) row.case_passkey_hash = intakeData.passkeyHash;
+      if (intakeData.safetyPlan || intakeData.handoffNote || intakeData.nextCheckIn || intakeData.passkeyHash) {
+        const metaObj = {
+          passkeyHash: intakeData.passkeyHash || null,
+          safetyPlan: intakeData.safetyPlan || null,
+          handoffNote: intakeData.handoffNote || null,
+          nextCheckIn: intakeData.nextCheckIn || null
+        };
+        const cleaned = (row.summary || '').replace(/\[TMN_META:.*?\]/g, '').trim();
+        row.summary = `${cleaned}\n[TMN_META:${JSON.stringify(metaObj)}]`.trim();
+      }
 
-      const { data, error } = await this.client
+      let { data, error } = await this.client
         .from('intakes')
         .upsert([row], { onConflict: 'id' })
         .select();
+
+      // If column case_passkey_hash does not exist, retry without it
+      if (error && (error.code === 'PGRST204' || error.code === '42703' || (error.message && error.message.includes('case_passkey_hash')))) {
+        delete row.case_passkey_hash;
+        ({ data, error } = await this.client
+          .from('intakes')
+          .upsert([row], { onConflict: 'id' })
+          .select());
+      }
 
       if (error) console.error('[Tumaini] Error creating intake:', error);
       return data?.[0] || null;
@@ -598,7 +660,7 @@ class TumainiSupabaseService {
    * Updates a case.
    *  - staffInfo: { staffId, name, role } sets the claiming counselor;
    *               the string 'clear' removes the counselor (used on transfer).
-   *  - extra: any of { handoff_note, safety_plan, next_check_in }.
+   *  - extra: any of { handoff_note, safety_plan, next_check_in, case_passkey_hash }.
    * Returns true on success. Failures are logged, never silent.
    */
   async updateIntakeStatus(intakeId, status, staffInfo = null, extra = null) {
@@ -624,6 +686,40 @@ class TumainiSupabaseService {
         .from('intakes')
         .update(updatePayload)
         .eq('id', intakeId);
+
+      // Handle missing migration 002 columns (PGRST204 or 42703)
+      if (error && (error.code === 'PGRST204' || error.code === '42703' || (error.message && error.message.includes('case_passkey_hash')))) {
+        console.warn('[Tumaini] Column case_passkey_hash missing on server. Embedding into summary metadata safely.');
+        const metaObj = {
+          passkeyHash: extra?.case_passkey_hash || null,
+          safetyPlan: extra?.safety_plan || null,
+          handoffNote: extra?.handoff_note || null,
+          nextCheckIn: extra?.next_check_in || null
+        };
+        delete updatePayload.case_passkey_hash;
+        delete updatePayload.safety_plan;
+        delete updatePayload.handoff_note;
+        delete updatePayload.next_check_in;
+
+        // Fetch current summary to embed meta tag
+        try {
+          const { data: curRows } = await this.client
+            .from('intakes')
+            .select('summary')
+            .eq('id', intakeId)
+            .limit(1);
+          const curSummary = (curRows && curRows[0]?.summary) || '';
+          const cleanedSummary = curSummary.replace(/\[TMN_META:.*?\]/g, '').trim();
+          updatePayload.summary = `${cleanedSummary}\n[TMN_META:${JSON.stringify(metaObj)}]`.trim();
+        } catch (fetchErr) {
+          updatePayload.summary = `[TMN_META:${JSON.stringify(metaObj)}]`;
+        }
+
+        ({ error } = await this.client
+          .from('intakes')
+          .update(updatePayload)
+          .eq('id', intakeId));
+      }
 
       // If the counselor id is not a valid foreign key, still save the status
       // and the counselor's name so the case never silently loses its claim.

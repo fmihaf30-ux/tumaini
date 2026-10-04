@@ -140,6 +140,13 @@ class TumainiStaff {
     this.followUpResultCard = document.getElementById('followUpResultCard');
     this.followUpPasskeyDisplay = document.getElementById('followUpPasskeyDisplay');
     this.btnCopyFollowUpPasskey = document.getElementById('btnCopyFollowUpPasskey');
+    this.btnDoneFollowUpModal = document.getElementById('btnDoneFollowUpModal');
+
+    // Case Continuity & Clinical Handoff Card
+    this.cardCaseContinuityHandoff = document.getElementById('cardCaseContinuityHandoff');
+    this.badgeContinuityStatus = document.getElementById('badgeContinuityStatus');
+    this.continuityHandoffBody = document.getElementById('continuityHandoffBody');
+    this.btnEditFollowUpPlan = document.getElementById('btnEditFollowUpPlan');
 
     // Group Room Assignment Controls
     this.selectGroupRoom = document.getElementById('selectGroupRoom');
@@ -394,6 +401,12 @@ class TumainiStaff {
     }
     if (this.btnCopyFollowUpPasskey) {
       this.btnCopyFollowUpPasskey.addEventListener('click', () => this.handleCopyFollowUpPasskey());
+    }
+    if (this.btnDoneFollowUpModal) {
+      this.btnDoneFollowUpModal.addEventListener('click', () => this.closeFollowUpModal());
+    }
+    if (this.btnEditFollowUpPlan) {
+      this.btnEditFollowUpPlan.addEventListener('click', () => this.openFollowUpModal());
     }
     if (this.followUpModal) {
       this.followUpModal.addEventListener('click', (e) => {
@@ -1429,6 +1442,7 @@ class TumainiStaff {
 
     this.syncWorkspaceHeader();
     this.renderMessages();
+    this.renderContinuityHandoffCard();
   }
 
   syncWorkspaceHeader() {
@@ -1881,6 +1895,83 @@ class TumainiStaff {
 
     this.renderMessages();
     this.renderQueue();
+    this.renderContinuityHandoffCard();
+  }
+
+  renderContinuityHandoffCard() {
+    if (!this.cardCaseContinuityHandoff || !this.continuityHandoffBody) return;
+    if (!this.activeIntake) {
+      this.cardCaseContinuityHandoff.style.display = 'none';
+      return;
+    }
+
+    this.cardCaseContinuityHandoff.style.display = 'flex';
+    const intake = this.activeIntake;
+    const isFollowUp = intake.status === 'follow_up' || Boolean(intake.safetyPlan) || Boolean(intake.handoffNote) || Boolean(intake.nextCheckIn);
+
+    if (this.badgeContinuityStatus) {
+      if (isFollowUp) {
+        this.badgeContinuityStatus.textContent = 'Follow-Up Active';
+        this.badgeContinuityStatus.style.background = '#eef7f4';
+        this.badgeContinuityStatus.style.color = '#1b634c';
+        this.badgeContinuityStatus.style.borderColor = 'var(--brand-eucalyptus-border)';
+      } else {
+        this.badgeContinuityStatus.textContent = 'Standard Session';
+        this.badgeContinuityStatus.style.background = '#f3f4f6';
+        this.badgeContinuityStatus.style.color = '#4b5563';
+        this.badgeContinuityStatus.style.borderColor = '#e5e7eb';
+      }
+    }
+
+    if (this.btnEditFollowUpPlan) {
+      this.btnEditFollowUpPlan.textContent = isFollowUp ? 'Update Follow-Up Plan / Passkey' : 'Schedule Follow-Up & Passkey';
+    }
+
+    if (!isFollowUp) {
+      this.continuityHandoffBody.innerHTML = `
+        <p style="font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+          No multi-session follow-up scheduled yet. Click below if the seeker needs to return later across shifts.
+        </p>
+      `;
+      return;
+    }
+
+    let html = '';
+
+    if (intake.nextCheckIn) {
+      html += `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 7px 10px;">
+          <span style="font-size: 10px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Agreed Check-In Time</span>
+          <strong style="font-size: 12px; color: #14532d;">${this.escapeHtml(intake.nextCheckIn)}</strong>
+        </div>
+      `;
+    }
+
+    if (intake.handoffNote) {
+      html += `
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+            <span style="font-size: 10px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Confidential Handoff Note</span>
+            <span style="font-size: 9.5px; font-weight: 700; background: #fef3c7; color: #78350f; padding: 1px 5px; border-radius: 3px;">STAFF ONLY</span>
+          </div>
+          <p style="font-size: 12px; color: #451a03; line-height: 1.4; margin: 0; white-space: pre-wrap;">${this.escapeHtml(intake.handoffNote)}</p>
+        </div>
+      `;
+    }
+
+    if (intake.safetyPlan) {
+      html += `
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+            <span style="font-size: 10px; font-weight: 700; color: #065f46; text-transform: uppercase; letter-spacing: 0.5px;">Take-Home Safety Plan</span>
+            <span style="font-size: 9.5px; font-weight: 700; background: #d1fae5; color: #064e3b; padding: 1px 5px; border-radius: 3px;">SEEKER COPY</span>
+          </div>
+          <p style="font-size: 12px; color: #064e3b; line-height: 1.4; margin: 0; white-space: pre-wrap;">${this.escapeHtml(intake.safetyPlan)}</p>
+        </div>
+      `;
+    }
+
+    this.continuityHandoffBody.innerHTML = html;
   }
 
   handleCopyFollowUpPasskey() {

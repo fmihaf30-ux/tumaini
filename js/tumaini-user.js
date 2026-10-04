@@ -88,6 +88,8 @@ class TumainiUser {
     // Case Continuity & Safety Plan
     this.safetyPlanBanner = document.getElementById('safetyPlanBanner');
     this.safetyPlanBannerText = document.getElementById('safetyPlanBannerText');
+    this.safetyPlanCheckInPill = document.getElementById('safetyPlanCheckInPill');
+    this.btnCopySafetyPlan = document.getElementById('btnCopySafetyPlan');
     this.btnCloseSafetyPlanBanner = document.getElementById('btnCloseSafetyPlanBanner');
     this.btnOpenResumeCase = document.getElementById('btnOpenResumeCase');
     this.resumeCaseModal = document.getElementById('resumeCaseModal');
@@ -330,6 +332,18 @@ class TumainiUser {
     if (this.btnCloseSafetyPlanBanner && this.safetyPlanBanner) {
       this.btnCloseSafetyPlanBanner.addEventListener('click', () => {
         this.safetyPlanBanner.style.display = 'none';
+      });
+    }
+    if (this.btnCopySafetyPlan) {
+      this.btnCopySafetyPlan.addEventListener('click', () => {
+        const text = this.currentIntake?.safetyPlan || (this.safetyPlanBannerText && this.safetyPlanBannerText.textContent) || '';
+        if (text) {
+          navigator.clipboard.writeText(text).then(() => {
+            alert('Take-Home Safety Plan copied to clipboard!');
+          }).catch(() => {
+            alert('Take-Home Safety Plan:\n\n' + text);
+          });
+        }
       });
     }
 
@@ -639,6 +653,13 @@ class TumainiUser {
         this.safetyPlanBanner.style.display = 'block';
         if (this.safetyPlanBannerText) {
           this.safetyPlanBannerText.textContent = this.currentIntake.safetyPlan;
+        }
+        if (this.safetyPlanCheckInPill) {
+          if (this.currentIntake.nextCheckIn) {
+            this.safetyPlanCheckInPill.textContent = `Next Check-In: ${this.currentIntake.nextCheckIn}`;
+          } else {
+            this.safetyPlanCheckInPill.textContent = 'Co-Authored with Counselor';
+          }
         }
       } else {
         this.safetyPlanBanner.style.display = 'none';
@@ -962,12 +983,13 @@ class TumainiUser {
             summary: row.summary || '',
             status: (row.status === 'active' || row.status === 'in_session') ? 'in_session' : row.status,
             createdAt: new Date(row.created_at).getTime(),
-            counselorId: row.claimed_by_staff_id || null,
+            counselorId: row.claimed_by_id || row.claimed_by_staff_id || null,
             counselorName: row.claimed_by_name || null,
-            passkeyHash: row.case_passkey_hash || hash,
-            safetyPlan: row.safety_plan || null,
-            handoffNote: row.handoff_note || null,
-            nextCheckIn: row.next_check_in || null
+            counselorRole: row.claimed_by_role || null,
+            passkeyHash: row.case_passkey_hash || row.casePasskeyHash || hash,
+            safetyPlan: row.safety_plan || row.safetyPlan || null,
+            handoffNote: row.handoff_note || row.handoffNote || null,
+            nextCheckIn: row.next_check_in || row.nextCheckIn || null
           };
           store.applyRemoteIntake(intake, remoteMsgs || []);
         }
@@ -985,6 +1007,8 @@ class TumainiUser {
 
         this.switchSanctuaryTab('intake');
         this.showConsultationView();
+        this.syncConsultationView();
+        this.renderMessages();
 
         store.addIntakeMessage({
           intakeId: intake.id,

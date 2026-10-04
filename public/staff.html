@@ -2785,8 +2785,28 @@ button:disabled, .btn:disabled {
                 </div>
               </div>
 
-              <!-- Right Tools: Group Room Assignment -->
+              <!-- Right Tools: Group Room Assignment & Case Continuity -->
               <aside class="workspace-tools-pane">
+                <!-- Case Continuity & Clinical Handoff Card -->
+                <div class="clinical-tool-card" id="cardCaseContinuityHandoff" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--brand-eucalyptus-dark); display: flex; align-items: center; gap: 6px;">
+                      <span>📋</span> Clinical Continuity & Handoff
+                    </h4>
+                    <span id="badgeContinuityStatus" class="badge" style="font-size: 10px; font-weight: 700; background: #eef7f4; color: var(--brand-eucalyptus-dark); border: 1px solid var(--brand-eucalyptus-border); padding: 2px 7px; border-radius: 4px;">Standard Session</span>
+                  </div>
+
+                  <div id="continuityHandoffBody" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                    <p style="font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+                      No multi-session follow-up scheduled yet. Click below if the seeker needs to return later across shifts.
+                    </p>
+                  </div>
+
+                  <button type="button" id="btnEditFollowUpPlan" class="btn-secondary" style="padding: 7px 12px; font-size: 12px; width: 100%; justify-content: center; margin-top: 4px;">
+                    Schedule Follow-Up & Passkey
+                  </button>
+                </div>
+
                 <div class="clinical-tool-card">
                   <h4>Group Circle Assignment</h4>
                   <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45;">
@@ -3258,40 +3278,61 @@ button:disabled, .btn:disabled {
         <button class="modal-close-btn" id="btnCloseFollowUpModal" type="button">×</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-          For cases that cannot be resolved in a single session. This issues a private Case Passkey (e.g. TMN-XXXX) so the seeker can return anytime within 7 days and resume care without repeating their story.
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          For cases requiring multi-session care. Generating a private Case Passkey (e.g. <code>TMN-XXXX</code>) allows the seeker to return anytime within 7 days and resume consultation without repeating their story.
         </p>
 
         <form id="formScheduleFollowUp" style="display: flex; flex-direction: column; gap: 14px;">
           <div>
-            <label class="form-label" style="font-size: 12px;" for="followUpReturnTime">Agreed Check-In Time (Optional)</label>
-            <input type="text" id="followUpReturnTime" class="form-input" placeholder="e.g. Tomorrow 4:00 PM or Thursday evening">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label" style="font-size: 12px; margin: 0;" for="followUpReturnTime">Agreed Check-In Time (Optional)</label>
+              <span style="font-size: 10px; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 2px 6px; border-radius: 4px;">SCHEDULED RETURN</span>
+            </div>
+            <input type="text" id="followUpReturnTime" class="form-input" placeholder="e.g. Tomorrow 4:00 PM, Thursday evening, or Saturday 10:00 AM">
           </div>
 
           <div>
-            <label class="form-label" style="font-size: 12px;" for="followUpSafetyPlan">Take-Home Safety & Care Plan (Shared with Seeker)</label>
-            <textarea id="followUpSafetyPlan" class="form-input" style="min-height: 80px; resize: vertical;" placeholder="1. Practice 4-4-4 grounding breaths.&#10;2. Reach out to trusted friend or call Sauti 116 if panic spikes.&#10;3. Return here with your passkey."></textarea>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label" style="font-size: 12px; margin: 0;" for="followUpSafetyPlan">Take-Home Safety & Care Plan</label>
+              <span style="font-size: 10px; font-weight: 700; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px;">SHARED WITH SEEKER IN CHAT</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 6px 0; line-height: 1.4;">
+              This plan is automatically posted to the seeker's private chat and pinned at the top of their screen for quick offline access.
+            </p>
+            <textarea id="followUpSafetyPlan" class="form-input" style="min-height: 85px; resize: vertical; font-size: 13px; line-height: 1.45;" placeholder="1. Practice 4-4-4 grounding breaths.&#10;2. Reach out to trusted friend or call Sauti 116 if distress spikes.&#10;3. Return here with your passkey at our agreed check-in time."></textarea>
           </div>
 
           <div>
-            <label class="form-label" style="font-size: 12px;" for="followUpHandoffNote">Confidential Counselor Handoff Note (Internal Only)</label>
-            <textarea id="followUpHandoffNote" class="form-input" style="min-height: 70px; resize: vertical;" placeholder="Key clinical triggers, rapport notes, and recommended continuity steps for the next counselor on duty."></textarea>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label" style="font-size: 12px; margin: 0;" for="followUpHandoffNote">Confidential Counselor Handoff Note</label>
+              <span style="font-size: 10px; font-weight: 700; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px;">INTERNAL ONLY (STAFF)</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 6px 0; line-height: 1.4;">
+              Confidential clinical triggers, rapport history, and continuity instructions for the next counselor on duty. Never visible to the seeker.
+            </p>
+            <textarea id="followUpHandoffNote" class="form-input" style="min-height: 75px; resize: vertical; font-size: 13px; line-height: 1.45;" placeholder="Seeker expressed acute academic burnout and family tension. Responded well to reflective listening. Advised grounding techniques. Follow up on exam schedule."></textarea>
           </div>
 
-          <button type="submit" class="btn-submit-intake" style="padding: 11px 18px; font-size: 13.5px; width: 100%;">
+          <button type="submit" class="btn-submit-intake" style="padding: 12px 18px; font-size: 13.5px; width: 100%; justify-content: center;">
             Issue Passkey & Save for Follow-Up
           </button>
         </form>
 
         <div id="followUpResultCard" style="display: none; margin-top: 16px; background: #eef7f4; border: 1px solid var(--brand-eucalyptus-border); border-radius: 8px; padding: 16px;">
-          <strong style="display: block; font-size: 12px; color: var(--brand-eucalyptus-dark); text-transform: uppercase;">Passkey Generated Successfully</strong>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin: 10px 0;">
-            <span id="followUpPasskeyDisplay" style="font-family: monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--brand-eucalyptus-dark);">TMN-0000</span>
-            <button type="button" id="btnCopyFollowUpPasskey" class="btn-secondary" style="padding: 6px 14px; font-size: 12px;">Copy Passkey</button>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <strong style="font-size: 12px; color: var(--brand-eucalyptus-dark); text-transform: uppercase; letter-spacing: 0.5px;">Passkey Generated Successfully</strong>
+            <span style="font-size: 10.5px; background: #d9f3ea; color: #1b634c; padding: 2px 6px; border-radius: 4px; font-weight: 700;">ACTIVE IN REGISTRY</span>
           </div>
-          <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
-            This passkey and take-home safety plan have been automatically sent to the seeker in the chat.
+          <div style="display: flex; align-items: center; justify-content: space-between; margin: 12px 0; gap: 10px; flex-wrap: wrap;">
+            <span id="followUpPasskeyDisplay" style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; letter-spacing: 2px; color: var(--brand-eucalyptus-dark);">TMN-0000</span>
+            <button type="button" id="btnCopyFollowUpPasskey" class="btn-secondary" style="padding: 7px 14px; font-size: 12px;">Copy Passkey</button>
+          </div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 12px 0; line-height: 1.45;">
+            The passkey and take-home care plan have been automatically sent to the seeker's private chat. The seeker can return anytime to resume.
           </p>
+          <button type="button" id="btnDoneFollowUpModal" class="btn-submit-intake" style="padding: 8px 16px; font-size: 12.5px; width: 100%; justify-content: center;">
+            Done & Return to Workspace
+          </button>
         </div>
       </div>
     </div>

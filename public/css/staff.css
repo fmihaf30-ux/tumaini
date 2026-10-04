@@ -1425,4 +1425,35 @@
   }
 }
 
+/* ==========================================================================
+   Clinical Continuity & Follow-Up Modal (Responsive Small Screens)
+   ========================================================================== */
+#cardCaseContinuityHandoff {
+  transition: all var(--transition-normal);
+}
+
+#cardCaseContinuityHandoff h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-eucalyptus-dark);
+}
+
+@media (max-width: 600px) {
+  #followUpModal .modal-card {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+    margin: 10px auto !important;
+  }
+  #followUpModal .form-input {
+    font-size: 14px !important;
+  }
+  #followUpPasskeyDisplay {
+    font-size: 20px !important;
+  }
+}
+
+
 

@@ -1998,13 +1998,24 @@ button:disabled, .btn:disabled {
       </div>
 
       <!-- Take-Home Safety Plan / Continuity Banner (for follow-up cases) -->
-      <div id="safetyPlanBanner" style="display: none; background: #fbf5eb; border-bottom: 1px solid #edd8be; padding: 10px 16px; font-size: 13px; color: #7c4a15;">
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
-          <div>
-            <strong>Take-Home Safety Plan (Co-Authored with Counselor):</strong>
-            <p id="safetyPlanBannerText" style="margin: 4px 0 0; color: #4b5d55; line-height: 1.4; white-space: pre-wrap;"></p>
+      <div id="safetyPlanBanner" class="safety-plan-banner" style="display: none; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; padding: 12px 16px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 240px;">
+            <span style="font-size: 20px; line-height: 1; margin-top: 2px;">🛡️</span>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                <strong style="font-size: 13px; color: #14532d;">Take-Home Safety & Care Plan</strong>
+                <span id="safetyPlanCheckInPill" style="font-size: 10.5px; font-weight: 700; background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 1px 7px; border-radius: 4px;">Co-Authored with Counselor</span>
+              </div>
+              <p id="safetyPlanBannerText" style="margin: 0; color: #166534; font-size: 12.5px; line-height: 1.45; white-space: pre-wrap; word-break: break-word;"></p>
+            </div>
           </div>
-          <button type="button" id="btnCloseSafetyPlanBanner" style="background: none; border: none; font-size: 16px; color: #9e6522; cursor: pointer;">&times;</button>
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <button type="button" id="btnCopySafetyPlan" class="btn-secondary" style="padding: 5px 10px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; background: #ffffff; border-color: #86efac; color: #166534;">
+              <span>📋</span> Copy Plan
+            </button>
+            <button type="button" id="btnCloseSafetyPlanBanner" style="background: none; border: none; font-size: 18px; color: #15803d; cursor: pointer; padding: 2px 6px; line-height: 1;" aria-label="Dismiss">&times;</button>
+          </div>
         </div>
       </div>
 
@@ -2369,32 +2380,49 @@ button:disabled, .btn:disabled {
   <div class="modal-overlay" id="resumeCaseModal">
     <div class="modal-card" style="max-width: 480px;">
       <div class="modal-header">
-        <h3>Resume Ongoing Case</h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">🔑</span>
+          <h3 style="margin: 0; font-size: 17px;">Resume Ongoing Case</h3>
+        </div>
         <button class="modal-close-btn" id="btnCloseResumeCase" type="button">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">
-          Enter the confidential Case Passkey provided by your counselor (e.g. <code style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--brand-eucalyptus-dark); background: rgba(92,151,132,0.1); padding: 2px 6px; border-radius: 4px;">TMN-8291</code>) to reconnect to your existing session or view your Take-Home Safety Plan.
-        </p>
+        <div style="background: #f4fbf9; border: 1px solid var(--brand-eucalyptus-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+          <span style="font-size: 10.5px; font-weight: 700; color: var(--brand-eucalyptus-dark); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Private Case Continuity</span>
+          <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; margin: 0;">
+            If your counselor gave you a Case Passkey (such as <code>TMN-XXXX</code>), enter it below. Your previous consultation notes, messages, and Take-Home Safety Plan will be safely restored without repeating your story.
+          </p>
+        </div>
+
         <form id="formResumeCase" style="display: flex; flex-direction: column; gap: 14px;">
           <div>
-            <label class="form-label" for="inputResumePasskey">Case Passkey</label>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <label class="form-label" style="margin: 0; font-size: 12.5px;" for="inputResumePasskey">Case Passkey</label>
+              <span style="font-size: 11px; color: var(--text-muted);">Format: TMN-XXXX</span>
+            </div>
             <input 
               type="text" 
               id="inputResumePasskey" 
               class="form-input" 
-              placeholder="TMN-XXXX" 
+              placeholder="e.g. TMN-7K2M" 
               autocomplete="off" 
               spellcheck="false" 
-              style="text-transform: uppercase; font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: 1.5px; font-weight: 700; text-align: center;"
+              style="text-transform: uppercase; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 2px; font-weight: 800; text-align: center; padding: 12px;"
               required
             >
           </div>
-          <div id="resumeCaseError" style="display: none; background: #fdf2f2; border: 1px solid #f8b4b4; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; color: #9b1c1c;"></div>
-          <button type="submit" class="btn-submit-intake" style="width: 100%; justify-content: center; padding: 12px;">
-            Verify & Reconnect
+
+          <div id="resumeCaseError" style="display: none; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; line-height: 1.45;"></div>
+
+          <button type="submit" class="btn-submit-intake" style="width: 100%; justify-content: center; padding: 12px 16px; font-size: 13.5px; font-weight: 700;">
+            Verify Passkey & Reconnect
           </button>
         </form>
+
+        <div style="margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 12px; font-size: 11.5px; color: var(--text-muted); line-height: 1.45;">
+          <strong>Where do I find my passkey?</strong>
+          Your counselor issued this code to you during your previous consultation. If you do not have a passkey, you can start a fresh consultation anytime.
+        </div>
       </div>
     </div>
   </div>

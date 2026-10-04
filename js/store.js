@@ -248,7 +248,14 @@ class TumainiStore {
                 remoteIntake.counselorName = remoteIntake.counselorName || local.counselorName;
                 remoteIntake.counselorRole = remoteIntake.counselorRole || local.counselorRole;
               }
-              merged.push({ ...local, ...remoteIntake });
+              merged.push({
+                ...local,
+                ...remoteIntake,
+                safetyPlan: remoteIntake.safetyPlan || local.safetyPlan || null,
+                handoffNote: remoteIntake.handoffNote || local.handoffNote || null,
+                nextCheckIn: remoteIntake.nextCheckIn || local.nextCheckIn || null,
+                passkeyHash: remoteIntake.passkeyHash || local.passkeyHash || null
+              });
             } else {
               merged.push(remoteIntake);
             }
@@ -827,7 +834,7 @@ class TumainiStore {
 
   findIntakeByPasskeyHash(hash) {
     if (!hash) return null;
-    return this.intakes.find(i => (i.passkeyHash === hash || i.case_passkey_hash === hash) && i.status !== 'resolved') || null;
+    return this.intakes.find(i => (i.passkeyHash === hash || i.case_passkey_hash === hash || i.casePasskeyHash === hash) && i.status !== 'resolved') || null;
   }
 
   // --- 8. Remote Multi-Device Cloud Synchronization Handlers ---
