@@ -70,6 +70,7 @@ export const STORAGE_KEYS = {
   GROUP_ROOMS: 'tumaini_group_rooms_clean_v3',
   GROUP_MESSAGES: 'tumaini_group_messages_clean_v3',
   CONFESSIONS: 'tumaini_confessions_clean_v3',
+  REVIEWS: 'tumaini_reviews_clean_v1',
   ACTIVE_USER_INTAKE: 'tumaini_active_user_intake_clean_v3',
   ACTIVE_STAFF_INTAKE: 'tumaini_active_staff_intake_clean_v3'
 };
@@ -82,6 +83,7 @@ class TumainiStore {
     this.groupRooms = this.load(STORAGE_KEYS.GROUP_ROOMS, []);
     this.groupMessages = this.load(STORAGE_KEYS.GROUP_MESSAGES, {});
     this.confessions = this.load(STORAGE_KEYS.CONFESSIONS, []);
+    this.reviews = this.load(STORAGE_KEYS.REVIEWS, []);
 
     this.activeUserIntakeId = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER_INTAKE) || null;
     this.activeStaffIntakeId = localStorage.getItem(STORAGE_KEYS.ACTIVE_STAFF_INTAKE) || null;
@@ -123,6 +125,36 @@ class TumainiStore {
       ];
       try { localStorage.setItem('tumaini_open_confessions_v6', 'true'); } catch (e) {}
       this.save(STORAGE_KEYS.CONFESSIONS, this.confessions);
+    }
+
+    if (this.reviews.length === 0) {
+      this.reviews = [
+        {
+          id: 'rev-seed-1',
+          alias: 'Anonymous Student · Makerere',
+          rating: 5,
+          text: 'I was in a very dark place at 2 AM with panic attacks over exams and fees. Having someone listen to me without judgment or telling me to just pray it away gave me the ground beneath my feet again.',
+          status: 'approved',
+          createdAt: Date.now() - 3600000 * 24 * 3
+        },
+        {
+          id: 'rev-seed-2',
+          alias: 'Quiet Soul · Gulu',
+          rating: 5,
+          text: 'Tumaini gave me a safe, anonymous room when I could not talk to anyone at home. The counselor stayed with me through my tears and helped me make a safety plan. Truly grateful.',
+          status: 'approved',
+          createdAt: Date.now() - 3600000 * 24 * 5
+        },
+        {
+          id: 'rev-seed-3',
+          alias: 'Youth · Kampala',
+          rating: 5,
+          text: 'No airtime required, no apps to download, and complete anonymity. This is what Uganda needed. Thank you Tumaini team.',
+          status: 'approved',
+          createdAt: Date.now() - 3600000 * 24 * 7
+        }
+      ];
+      this.save(STORAGE_KEYS.REVIEWS, this.reviews);
     }
 
     // Group circles start empty until created by counselors during triage
@@ -174,24 +206,76 @@ class TumainiStore {
           }
         }
 
+        // 1. Fetch remote intakes and merge resiliently
         const remoteIntakes = await supabase.fetchActiveIntakes();
         if (Array.isArray(remoteIntakes)) {
-          const mapped = remoteIntakes.map(r => ({
-            id: r.id,
-            username: r.alias,
-            category: r.category,
-            emergencyTier: r.tier,
-            isEmergency: r.tier === 'tier-1' || r.tier === 'tier-2',
-            createdAt: new Date(r.created_at).getTime(),
-            status: r.status,
-            counselorId: r.claimed_by_id,
-            counselorName: r.claimed_by_name,
-            seekerToken: r.seeker_token,
-            notes: r.summary || ''
-          }));
-          this.intakes = mapped;
+          const remoteMap = new Map();
+          remoteIntakes.forEach(r => {
+            // Normalize status: Supabase schema uses 'active', local client uses 'in_session'
+            const normalizedStatus = (r.status === 'active' || r.status === 'in_session') ? 'in_session' : r.status;
+            remoteMap.set(r.id, {
+              id: r.id,
+              username: r.alias,
+              category: r.category,
+              emergencyTier: r.tier,
+              isEmergency: r.tier === 'tier-1' || r.tier === 'tier-2',
+              createdAt: new Date(r.created_at).getTime(),
+              status: normalizedStatus,
+              counselorId: r.claimed_by_id,
+              counselorName: r.claimed_by_name,
+              counselorRole: r.claimed_by_role,
+              seekerToken: r.seeker_token,
+              notes: r.summary || '',
+              safetyPlan: r.safety_plan || null,
+              handoffNote: r.handoff_note || null,
+              nextCheckIn: r.next_check_in || null,
+              passkeyHash: r.case_passkey_hash || null
+            });
+          });
+
+          // Intelligent non-clobbering merge
+          const merged = [];
+          const seenIds = new Set();
+
+          // Incorporate remote intakes while preserving active local session states
+          remoteMap.forEach((remoteIntake, id) => {
+            seenIds.add(id);
+            const local = this.intakes.find(i => i.id === id);
+            if (local) {
+              if (local.status === 'in_session' && remoteIntake.status === 'waiting') {
+                remoteIntake.status = 'in_session';
+                remoteIntake.counselorId = remoteIntake.counselorId || local.counselorId;
+                remoteIntake.counselorName = remoteIntake.counselorName || local.counselorName;
+                remoteIntake.counselorRole = remoteIntake.counselorRole || local.counselorRole;
+              }
+              merged.push({ ...local, ...remoteIntake });
+            } else {
+              merged.push(remoteIntake);
+            }
+          });
+
+          // Retain local active intakes that may not have completed remote round-trip yet
+          this.intakes.forEach(local => {
+            if (!seenIds.has(local.id) && local.status !== 'resolved') {
+              merged.push(local);
+            }
+          });
+
+          this.intakes = merged;
           this.save(STORAGE_KEYS.INTAKES, this.intakes);
         }
+
+        // 2. Fetch approved community reviews
+        if (typeof supabase.fetchApprovedReviews === 'function') {
+          const remoteReviews = await supabase.fetchApprovedReviews();
+          if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+            const remoteIds = new Set(remoteReviews.map(r => r.id));
+            const pendingLocal = this.reviews.filter(r => r.status === 'pending' && !remoteIds.has(r.id));
+            this.reviews = [...remoteReviews, ...pendingLocal];
+            this.save(STORAGE_KEYS.REVIEWS, this.reviews);
+          }
+        }
+
         this.notify();
       } catch (e) {
         console.warn('[Tumaini Store] Supabase sync fallback:', e);
@@ -356,15 +440,32 @@ class TumainiStore {
       text: `${staffSession.name} (${staffSession.role}) has joined this confidential consultation.`
     });
 
+    // Trauma-informed welcoming greeting from counselor
+    this.addIntakeMessage({
+      intakeId,
+      sender: 'counselor',
+      senderName: staffSession.name,
+      text: `Hello, I am here with you now in this private and safe space. You are not alone. Please take a deep breath and take all the time you need to describe what you are going through or what feels heaviest right now. Whenever you are ready, I am here to listen without judgment.`
+    });
+
     this.notify();
   }
 
-  updateIntakeStatus(intakeId, status) {
-    this.intakes = this.intakes.map(i => i.id === intakeId ? { ...i, status } : i);
+  updateIntakeStatus(intakeId, status, extra = null) {
+    const localStatus = (status === 'active') ? 'in_session' : status;
+    this.intakes = this.intakes.map(i => {
+      if (i.id === intakeId) {
+        const upd = { ...i, status: localStatus };
+        if (extra) Object.assign(upd, extra);
+        return upd;
+      }
+      return i;
+    });
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
 
     if (supabase && supabase.isConfigured) {
-      supabase.updateIntakeStatus(intakeId, status);
+      const remoteStatus = (status === 'in_session') ? 'active' : status;
+      supabase.updateIntakeStatus(intakeId, remoteStatus, null, extra);
     }
 
     this.notify();
@@ -616,7 +717,120 @@ class TumainiStore {
     this.notify();
   }
 
-  // --- 6. Remote Multi-Device Cloud Synchronization Handlers ---
+  // --- 6. Community Reviews Board ---
+  submitReview({ alias, rating, text }) {
+    if (!text || !text.trim()) return null;
+
+    const newRev = {
+      id: 'rev-' + Math.floor(100000 + Math.random() * 900000),
+      alias: (alias || 'Anonymous').trim().slice(0, 40) || 'Anonymous',
+      rating: Math.max(1, Math.min(5, parseInt(rating, 10) || 5)),
+      text: text.trim().slice(0, 600),
+      createdAt: Date.now(),
+      status: 'pending' // 'pending' | 'approved' | 'rejected'
+    };
+
+    this.reviews = [newRev, ...this.reviews];
+    this.save(STORAGE_KEYS.REVIEWS, this.reviews);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.submitReview({
+        alias: newRev.alias,
+        rating: newRev.rating,
+        text: newRev.text
+      });
+    }
+
+    this.notify();
+    return newRev;
+  }
+
+  getApprovedReviews() {
+    return this.reviews.filter(r => r.status === 'approved');
+  }
+
+  getPendingReviews() {
+    return this.reviews.filter(r => r.status === 'pending');
+  }
+
+  approveReview(reviewId, staffId = null) {
+    this.reviews = this.reviews.map(r => {
+      if (r.id === reviewId) {
+        return { ...r, status: 'approved' };
+      }
+      return r;
+    });
+    this.save(STORAGE_KEYS.REVIEWS, this.reviews);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.moderateReview({
+        staffId,
+        reviewId,
+        status: 'approved'
+      });
+    }
+
+    this.notify();
+  }
+
+  rejectReview(reviewId, staffId = null) {
+    this.reviews = this.reviews.map(r => {
+      if (r.id === reviewId) {
+        return { ...r, status: 'rejected' };
+      }
+      return r;
+    });
+    this.save(STORAGE_KEYS.REVIEWS, this.reviews);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.moderateReview({
+        staffId,
+        reviewId,
+        status: 'rejected'
+      });
+    }
+
+    this.notify();
+  }
+
+  // --- 7. Follow-Up & Case Continuity (Passkey & Safety Plan) ---
+  setCaseFollowUp({ intakeId, passkeyHash, safetyPlan, handoffNote, nextCheckIn }) {
+    if (!intakeId) return false;
+    this.intakes = this.intakes.map(i => {
+      if (i.id === intakeId) {
+        return {
+          ...i,
+          status: 'follow_up',
+          passkeyHash: passkeyHash || i.passkeyHash,
+          safetyPlan: safetyPlan || i.safetyPlan,
+          handoffNote: handoffNote || i.handoffNote,
+          nextCheckIn: nextCheckIn || i.nextCheckIn,
+          updatedAt: Date.now()
+        };
+      }
+      return i;
+    });
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+
+    if (supabase && supabase.isConfigured) {
+      supabase.updateIntakeStatus(intakeId, 'follow_up', null, {
+        case_passkey_hash: passkeyHash,
+        safety_plan: safetyPlan,
+        handoff_note: handoffNote,
+        next_check_in: nextCheckIn
+      });
+    }
+
+    this.notify();
+    return true;
+  }
+
+  findIntakeByPasskeyHash(hash) {
+    if (!hash) return null;
+    return this.intakes.find(i => (i.passkeyHash === hash || i.case_passkey_hash === hash) && i.status !== 'resolved') || null;
+  }
+
+  // --- 8. Remote Multi-Device Cloud Synchronization Handlers ---
   applyRemoteIntake(intake, initialMessages = []) {
     if (!intake || !intake.id) return;
     const existingIndex = this.intakes.findIndex(i => i.id === intake.id);
@@ -769,15 +983,22 @@ class TumainiStore {
     this.notify();
   }
 
-  // --- 7. Data Retention & Auto-Purge Lifecycle (Data Minimization) ---
+  // --- 9. Data Retention & Auto-Purge Lifecycle (Data Minimization) ---
   purgeOldSessions() {
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
     const now = Date.now();
 
     const initialCount = this.intakes.length;
     this.intakes = this.intakes.filter(i => {
-      // Purge resolved cases older than 2 hours or any cases older than 24 hours
+      // 1. Resolved cases: purge after 2 hours
       if (i.status === 'resolved' && (now - i.createdAt > 2 * 3600000)) return false;
+      // 2. Follow-up cases: retain for 7 days
+      if (i.status === 'follow_up') {
+        const refTime = i.updatedAt || i.createdAt;
+        return (now - refTime) <= SEVEN_DAYS_MS;
+      }
+      // 3. Waiting or in-session cases: purge after 24 hours
       if (now - i.createdAt > ONE_DAY_MS) return false;
       return true;
     });

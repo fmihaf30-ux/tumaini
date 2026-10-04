@@ -9,6 +9,8 @@
 
 import { store, EMERGENCY_TIERS, PRESET_CATEGORIES } from './store.js';
 import { bus } from './bus.js';
+import { supabase } from './supabase-client.js';
+import { renderHelplineCards, renderHelplineDrawer } from './helplines.js';
 
 const CALM_ADJECTIVES = [
   'Quiet', 'Steady', 'Patient', 'Gentle',
@@ -27,9 +29,20 @@ class TumainiUser {
     this.currentIntake = null;
     this.initElements();
     this.bindEvents();
+    this.initHelplines();
     this.checkExistingSession();
     this.renderConfessions();
+    this.renderReviews();
     this.initSubscriptions();
+  }
+
+  initHelplines() {
+    if (this.helplinesModalContainer) {
+      renderHelplineCards(this.helplinesModalContainer);
+    }
+    if (this.drawerHelplinesContainer) {
+      renderHelplineDrawer(this.drawerHelplinesContainer);
+    }
   }
 
   generateWildlifeHandle() {
@@ -43,8 +56,10 @@ class TumainiUser {
     // Navigation Tabs
     this.tabIntake = document.getElementById('tabIntake');
     this.tabConfessions = document.getElementById('tabConfessions');
+    this.tabReviews = document.getElementById('tabReviews');
     this.intakeSection = document.getElementById('intakeSection');
     this.confessionsSection = document.getElementById('confessionsSection');
+    this.reviewsSection = document.getElementById('reviewsSection');
     this.consultationView = document.getElementById('consultationView');
 
     // Intake Form Elements
@@ -70,6 +85,17 @@ class TumainiUser {
     this.btnSendChat = document.getElementById('btnSendConsultation');
     this.btnEndConsultation = document.getElementById('btnEndConsultation');
 
+    // Case Continuity & Safety Plan
+    this.safetyPlanBanner = document.getElementById('safetyPlanBanner');
+    this.safetyPlanBannerText = document.getElementById('safetyPlanBannerText');
+    this.btnCloseSafetyPlanBanner = document.getElementById('btnCloseSafetyPlanBanner');
+    this.btnOpenResumeCase = document.getElementById('btnOpenResumeCase');
+    this.resumeCaseModal = document.getElementById('resumeCaseModal');
+    this.btnCloseResumeCase = document.getElementById('btnCloseResumeCase');
+    this.formResumeCase = document.getElementById('formResumeCase');
+    this.inputResumePasskey = document.getElementById('inputResumePasskey');
+    this.resumeCaseError = document.getElementById('resumeCaseError');
+
     // Confessions Elements
     this.confessionsFeed = document.getElementById('confessionsFeed');
     this.confessionForm = document.getElementById('submitConfessionForm');
@@ -77,16 +103,29 @@ class TumainiUser {
     this.confessionCategory = document.getElementById('confessionCategory');
     this.confessionNotice = document.getElementById('confessionSubmittedNotice');
 
-    // Mobile Sidebar Drawer
+    // Community Reviews Elements
+    this.reviewsFeed = document.getElementById('reviewsFeed');
+    this.submitReviewForm = document.getElementById('submitReviewForm');
+    this.reviewAlias = document.getElementById('reviewAlias');
+    this.reviewRating = document.getElementById('reviewRating');
+    this.reviewFeedback = document.getElementById('reviewFeedback');
+    this.reviewSubmittedNotice = document.getElementById('reviewSubmittedNotice');
+
+    // Mobile Sidebar Drawer & Helplines
     this.btnOpenDrawer = document.getElementById('btnOpenDrawer');
     this.btnCloseDrawer = document.getElementById('btnCloseDrawer');
     this.mobileDrawer = document.getElementById('mobileDrawer');
     this.mobileDrawerOverlay = document.getElementById('mobileDrawerOverlay');
     this.drawerLinkChat = document.getElementById('drawerLinkChat');
     this.drawerLinkConfessions = document.getElementById('drawerLinkConfessions');
+    this.drawerLinkReviews = document.getElementById('drawerLinkReviews');
     this.drawerLinkAbout = document.getElementById('drawerLinkAbout');
     this.drawerLinkPrivacy = document.getElementById('drawerLinkPrivacy');
     this.drawerQuickExit = document.getElementById('drawerQuickExit');
+
+    this.btnMobileHelplines = document.getElementById('btnMobileHelplines');
+    this.helplinesModalContainer = document.getElementById('helplinesModalContainer');
+    this.drawerHelplinesContainer = document.getElementById('drawerHelplinesContainer');
 
     // Modals
     this.aboutModal = document.getElementById('aboutModal');
@@ -111,12 +150,23 @@ class TumainiUser {
   }
 
   bindEvents() {
-    // Tab switching between Intake and Confessions
+    // Tab switching between Intake, Confessions, and Reviews
     if (this.tabIntake) {
       this.tabIntake.addEventListener('click', () => this.switchSanctuaryTab('intake'));
     }
     if (this.tabConfessions) {
       this.tabConfessions.addEventListener('click', () => this.switchSanctuaryTab('confessions'));
+    }
+    if (this.tabReviews) {
+      this.tabReviews.addEventListener('click', () => this.switchSanctuaryTab('reviews'));
+    }
+
+    // Review submission
+    if (this.submitReviewForm) {
+      this.submitReviewForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleReviewSubmit();
+      });
     }
 
     // Shuffle wildlife handle
@@ -243,12 +293,43 @@ class TumainiUser {
     if (this.btnOpenHelplines && this.helplinesModal) {
       this.btnOpenHelplines.addEventListener('click', () => openModal(this.helplinesModal));
     }
+    if (this.btnMobileHelplines && this.helplinesModal) {
+      this.btnMobileHelplines.addEventListener('click', () => openModal(this.helplinesModal));
+    }
     if (this.btnCloseHelplines && this.helplinesModal) {
       this.btnCloseHelplines.addEventListener('click', () => closeModal(this.helplinesModal));
     }
     if (this.helplinesModal) {
       this.helplinesModal.addEventListener('click', (e) => {
         if (e.target === this.helplinesModal) closeModal(this.helplinesModal);
+      });
+    }
+
+    // Resume Case Modal & Safety Plan Banner
+    if (this.btnOpenResumeCase && this.resumeCaseModal) {
+      this.btnOpenResumeCase.addEventListener('click', () => {
+        if (this.resumeCaseError) this.resumeCaseError.style.display = 'none';
+        if (this.inputResumePasskey) this.inputResumePasskey.value = '';
+        openModal(this.resumeCaseModal);
+      });
+    }
+    if (this.btnCloseResumeCase && this.resumeCaseModal) {
+      this.btnCloseResumeCase.addEventListener('click', () => closeModal(this.resumeCaseModal));
+    }
+    if (this.resumeCaseModal) {
+      this.resumeCaseModal.addEventListener('click', (e) => {
+        if (e.target === this.resumeCaseModal) closeModal(this.resumeCaseModal);
+      });
+    }
+    if (this.formResumeCase) {
+      this.formResumeCase.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleResumeCase();
+      });
+    }
+    if (this.btnCloseSafetyPlanBanner && this.safetyPlanBanner) {
+      this.btnCloseSafetyPlanBanner.addEventListener('click', () => {
+        this.safetyPlanBanner.style.display = 'none';
       });
     }
 
@@ -336,6 +417,12 @@ class TumainiUser {
         this.switchSanctuaryTab('confessions');
       });
     }
+    if (this.drawerLinkReviews) {
+      this.drawerLinkReviews.addEventListener('click', () => {
+        closeDrawer();
+        this.switchSanctuaryTab('reviews');
+      });
+    }
     if (this.drawerLinkAbout) {
       this.drawerLinkAbout.addEventListener('click', () => {
         closeDrawer();
@@ -375,6 +462,8 @@ class TumainiUser {
           closeModal(this.privacyModal);
         } else if (this.helplinesModal && (this.helplinesModal.classList.contains('open') || this.helplinesModal.classList.contains('active'))) {
           closeModal(this.helplinesModal);
+        } else if (this.resumeCaseModal && (this.resumeCaseModal.classList.contains('open') || this.resumeCaseModal.classList.contains('active'))) {
+          closeModal(this.resumeCaseModal);
         } else {
           this.quickExit();
         }
@@ -402,6 +491,7 @@ class TumainiUser {
         }
       }
       this.renderConfessions();
+      this.renderReviews();
     });
   }
 
@@ -422,7 +512,9 @@ class TumainiUser {
     if (tab === 'intake') {
       if (this.tabIntake) this.tabIntake.classList.add('active');
       if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+      if (this.tabReviews) this.tabReviews.classList.remove('active');
       if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+      if (this.reviewsSection) this.reviewsSection.style.display = 'none';
       if (this.currentIntake && this.currentIntake.status !== 'resolved') {
         if (this.consultationView) this.consultationView.style.display = 'block';
         if (this.intakeSection) this.intakeSection.style.display = 'none';
@@ -430,13 +522,24 @@ class TumainiUser {
         if (this.intakeSection) this.intakeSection.style.display = 'block';
         if (this.consultationView) this.consultationView.style.display = 'none';
       }
-    } else {
+    } else if (tab === 'confessions') {
       if (this.tabConfessions) this.tabConfessions.classList.add('active');
       if (this.tabIntake) this.tabIntake.classList.remove('active');
+      if (this.tabReviews) this.tabReviews.classList.remove('active');
       if (this.intakeSection) this.intakeSection.style.display = 'none';
       if (this.consultationView) this.consultationView.style.display = 'none';
+      if (this.reviewsSection) this.reviewsSection.style.display = 'none';
       if (this.confessionsSection) this.confessionsSection.style.display = 'block';
       this.renderConfessions();
+    } else if (tab === 'reviews') {
+      if (this.tabReviews) this.tabReviews.classList.add('active');
+      if (this.tabIntake) this.tabIntake.classList.remove('active');
+      if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+      if (this.intakeSection) this.intakeSection.style.display = 'none';
+      if (this.consultationView) this.consultationView.style.display = 'none';
+      if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+      if (this.reviewsSection) this.reviewsSection.style.display = 'block';
+      this.renderReviews();
     }
   }
 
@@ -444,16 +547,20 @@ class TumainiUser {
     if (this.intakeSection) this.intakeSection.style.display = 'block';
     if (this.consultationView) this.consultationView.style.display = 'none';
     if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+    if (this.reviewsSection) this.reviewsSection.style.display = 'none';
     if (this.tabIntake) this.tabIntake.classList.add('active');
     if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+    if (this.tabReviews) this.tabReviews.classList.remove('active');
   }
 
   showConsultationView() {
     if (this.intakeSection) this.intakeSection.style.display = 'none';
     if (this.confessionsSection) this.confessionsSection.style.display = 'none';
+    if (this.reviewsSection) this.reviewsSection.style.display = 'none';
     if (this.consultationView) this.consultationView.style.display = 'block';
     if (this.tabIntake) this.tabIntake.classList.add('active');
     if (this.tabConfessions) this.tabConfessions.classList.remove('active');
+    if (this.tabReviews) this.tabReviews.classList.remove('active');
     this.syncConsultationView();
     this.renderMessages();
   }
@@ -523,6 +630,18 @@ class TumainiUser {
         }
       } else {
         this.groupInviteBanner.style.display = 'none';
+      }
+    }
+
+    // Take-Home Safety Plan Banner (Co-Authored with Counselor)
+    if (this.safetyPlanBanner) {
+      if (this.currentIntake && this.currentIntake.safetyPlan) {
+        this.safetyPlanBanner.style.display = 'block';
+        if (this.safetyPlanBannerText) {
+          this.safetyPlanBannerText.textContent = this.currentIntake.safetyPlan;
+        }
+      } else {
+        this.safetyPlanBanner.style.display = 'none';
       }
     }
   }
@@ -725,6 +844,170 @@ class TumainiUser {
 
       this.confessionsFeed.appendChild(card);
     });
+  }
+
+  // --- Community Reviews Logic ---
+  handleReviewSubmit() {
+    const alias = this.reviewAlias ? this.reviewAlias.value.trim() : 'Anonymous';
+    const rating = this.reviewRating ? parseInt(this.reviewRating.value, 10) : 5;
+    const text = this.reviewFeedback ? this.reviewFeedback.value.trim() : '';
+
+    if (!text) return;
+
+    store.submitReview({
+      alias,
+      rating,
+      text
+    });
+
+    if (this.reviewFeedback) this.reviewFeedback.value = '';
+    if (this.reviewAlias) this.reviewAlias.value = '';
+    if (this.reviewSubmittedNotice) {
+      this.reviewSubmittedNotice.style.display = 'block';
+      setTimeout(() => {
+        this.reviewSubmittedNotice.style.display = 'none';
+      }, 6000);
+    }
+  }
+
+  renderReviews() {
+    if (!this.reviewsFeed) return;
+
+    const approved = store.getApprovedReviews();
+    this.reviewsFeed.innerHTML = '';
+
+    if (approved.length === 0) {
+      this.reviewsFeed.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13.5px;">
+          No approved community reflections yet. If a counselor helped you carry your burden, share your reflection above.
+        </div>
+      `;
+      return;
+    }
+
+    approved.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'confession-hearth-card';
+
+      const dateStr = new Date(item.createdAt).toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric'
+      });
+
+      const stars = '⭐'.repeat(Math.max(1, Math.min(5, item.rating || 5)));
+
+      card.innerHTML = `
+        <div class="confession-card-top">
+          <span class="confession-author-handle">${this.escapeHtml(item.alias || 'Anonymous')}</span>
+          <span style="font-size: 13px;" title="${item.rating || 5} out of 5 stars">${stars}</span>
+        </div>
+        <p class="confession-body-text">${this.escapeHtml(item.text || '')}</p>
+        <div class="confession-card-footer">
+          <span class="confession-time">${dateStr} · Verified Seeker</span>
+          <span style="font-size: 11.5px; color: var(--brand-eucalyptus-dark); font-weight: 600;">Peer Reflection</span>
+        </div>
+      `;
+
+      this.reviewsFeed.appendChild(card);
+    });
+  }
+
+  // --- Case Continuity & Passkey Reconnection ---
+  async hashPasskey(key) {
+    const enc = new TextEncoder().encode(key.trim().toUpperCase());
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async handleResumeCase() {
+    if (!this.inputResumePasskey) return;
+    const rawPasskey = this.inputResumePasskey.value.trim().toUpperCase();
+    if (!rawPasskey || rawPasskey.length < 5) {
+      if (this.resumeCaseError) {
+        this.resumeCaseError.textContent = 'Please enter a valid Case Passkey (e.g. TMN-XXXX).';
+        this.resumeCaseError.style.display = 'block';
+        this.resumeCaseError.style.color = '#9b1c1c';
+        this.resumeCaseError.style.borderColor = '#f8b4b4';
+        this.resumeCaseError.style.background = '#fdf2f2';
+      }
+      return;
+    }
+
+    if (this.resumeCaseError) this.resumeCaseError.style.display = 'none';
+
+    try {
+      const hash = await this.hashPasskey(rawPasskey);
+
+      // 1. Search local store
+      let intake = store.findIntakeByPasskeyHash(hash);
+
+      // 2. Fall back to remote Supabase lookup
+      if (!intake && supabase && supabase.isConfigured) {
+        if (this.resumeCaseError) {
+          this.resumeCaseError.textContent = 'Verifying passkey on secure server...';
+          this.resumeCaseError.style.display = 'block';
+          this.resumeCaseError.style.color = 'var(--brand-eucalyptus-dark)';
+          this.resumeCaseError.style.borderColor = 'var(--brand-eucalyptus)';
+          this.resumeCaseError.style.background = '#eef7f4';
+        }
+
+        const row = await supabase.findIntakeByPasskeyHash(hash);
+        if (row) {
+          const remoteMsgs = await supabase.fetchIntakeMessages(row.id);
+          intake = {
+            id: row.id,
+            username: row.alias || 'Seeker',
+            category: row.category || 'General Emotional Strain',
+            emergencyTier: row.tier || 'tier-4',
+            summary: row.summary || '',
+            status: (row.status === 'active' || row.status === 'in_session') ? 'in_session' : row.status,
+            createdAt: new Date(row.created_at).getTime(),
+            counselorId: row.claimed_by_staff_id || null,
+            counselorName: row.claimed_by_name || null,
+            passkeyHash: row.case_passkey_hash || hash,
+            safetyPlan: row.safety_plan || null,
+            handoffNote: row.handoff_note || null,
+            nextCheckIn: row.next_check_in || null
+          };
+          store.applyRemoteIntake(intake, remoteMsgs || []);
+        }
+      }
+
+      if (intake) {
+        store.setActiveUserIntake(intake.id);
+        this.currentIntake = intake;
+        if (this.resumeCaseModal) {
+          this.resumeCaseModal.classList.remove('open');
+          this.resumeCaseModal.classList.remove('active');
+        }
+        if (this.inputResumePasskey) this.inputResumePasskey.value = '';
+        if (this.resumeCaseError) this.resumeCaseError.style.display = 'none';
+
+        this.switchSanctuaryTab('intake');
+        this.showConsultationView();
+
+        store.addIntakeMessage({
+          intakeId: intake.id,
+          sender: 'system',
+          senderName: 'Session Resumed',
+          text: 'You have safely reconnected to your confidential session using your Case Passkey.'
+        });
+      } else {
+        if (this.resumeCaseError) {
+          this.resumeCaseError.textContent = 'No active or follow-up session found matching this Case Passkey. Please verify your code or start a fresh session.';
+          this.resumeCaseError.style.display = 'block';
+          this.resumeCaseError.style.color = '#9b1c1c';
+          this.resumeCaseError.style.borderColor = '#f8b4b4';
+          this.resumeCaseError.style.background = '#fdf2f2';
+        }
+      }
+    } catch (err) {
+      console.error('[Tumaini] Resume passkey error:', err);
+      if (this.resumeCaseError) {
+        this.resumeCaseError.textContent = 'Error verifying passkey. Please check connection and try again.';
+        this.resumeCaseError.style.display = 'block';
+      }
+    }
   }
 
   quickExit() {

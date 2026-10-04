@@ -103,11 +103,14 @@ class TumainiStaff {
     // Desk Navigation
     this.btnDeskTriage = document.getElementById('btnDeskTriage');
     this.btnDeskConfessions = document.getElementById('btnDeskConfessions');
+    this.btnDeskReviews = document.getElementById('btnDeskReviews');
     this.btnDeskSupervisor = document.getElementById('btnDeskSupervisor');
     this.deskTriagePane = document.getElementById('deskTriagePane');
     this.deskConfessionsPane = document.getElementById('deskConfessionsPane');
+    this.deskReviewsPane = document.getElementById('deskReviewsPane');
     this.deskSupervisorPane = document.getElementById('deskSupervisorPane');
     this.badgePendingConfessions = document.getElementById('badgePendingConfessions');
+    this.badgePendingReviews = document.getElementById('badgePendingReviews');
 
     // Triage Queue Elements
     this.queueList = document.getElementById('queueTicketsList');
@@ -121,9 +124,21 @@ class TumainiStaff {
     this.workspaceTierBadge = document.getElementById('workspaceTierBadge');
     this.workspaceCategoryTag = document.getElementById('workspaceCategoryTag');
     this.btnReleaseCase = document.getElementById('btnReleaseCase');
+    this.btnOpenFollowUpModal = document.getElementById('btnOpenFollowUpModal');
     this.counselorMessagesList = document.getElementById('counselorMessagesList');
     this.counselorInput = document.getElementById('counselorTextInput');
     this.btnCounselorSend = document.getElementById('btnCounselorSend');
+
+    // Follow-Up & Passkey Modal Elements
+    this.followUpModal = document.getElementById('followUpModal');
+    this.btnCloseFollowUpModal = document.getElementById('btnCloseFollowUpModal');
+    this.formScheduleFollowUp = document.getElementById('formScheduleFollowUp');
+    this.followUpReturnTime = document.getElementById('followUpReturnTime');
+    this.followUpSafetyPlan = document.getElementById('followUpSafetyPlan');
+    this.followUpHandoffNote = document.getElementById('followUpHandoffNote');
+    this.followUpResultCard = document.getElementById('followUpResultCard');
+    this.followUpPasskeyDisplay = document.getElementById('followUpPasskeyDisplay');
+    this.btnCopyFollowUpPasskey = document.getElementById('btnCopyFollowUpPasskey');
 
     // Group Room Assignment Controls
     this.selectGroupRoom = document.getElementById('selectGroupRoom');
@@ -134,6 +149,9 @@ class TumainiStaff {
     // Confession Moderation Desk
     this.pendingConfessionsList = document.getElementById('pendingConfessionsList');
     this.btnResetLocalData = document.getElementById('btnResetLocalData');
+
+    // Reviews Moderation Desk
+    this.pendingReviewsList = document.getElementById('pendingReviewsList');
   }
 
   bindEvents() {
@@ -341,7 +359,30 @@ class TumainiStaff {
     // Desk Switching
     if (this.btnDeskTriage) this.btnDeskTriage.addEventListener('click', () => this.switchDesk('triage'));
     if (this.btnDeskConfessions) this.btnDeskConfessions.addEventListener('click', () => this.switchDesk('confessions'));
+    if (this.btnDeskReviews) this.btnDeskReviews.addEventListener('click', () => this.switchDesk('reviews'));
     if (this.btnDeskSupervisor) this.btnDeskSupervisor.addEventListener('click', () => this.switchDesk('supervisor'));
+
+    // Follow-Up & Passkey Modal Events
+    if (this.btnOpenFollowUpModal) {
+      this.btnOpenFollowUpModal.addEventListener('click', () => this.openFollowUpModal());
+    }
+    if (this.btnCloseFollowUpModal) {
+      this.btnCloseFollowUpModal.addEventListener('click', () => this.closeFollowUpModal());
+    }
+    if (this.formScheduleFollowUp) {
+      this.formScheduleFollowUp.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleScheduleFollowUp();
+      });
+    }
+    if (this.btnCopyFollowUpPasskey) {
+      this.btnCopyFollowUpPasskey.addEventListener('click', () => this.handleCopyFollowUpPasskey());
+    }
+    if (this.followUpModal) {
+      this.followUpModal.addEventListener('click', (e) => {
+        if (e.target === this.followUpModal) this.closeFollowUpModal();
+      });
+    }
 
     // Queue Item Clicks
     if (this.queueList) {
@@ -426,6 +467,25 @@ class TumainiStaff {
         }
       });
     }
+
+    // Community Review Moderation Actions
+    if (this.pendingReviewsList) {
+      this.pendingReviewsList.addEventListener('click', (e) => {
+        const approveBtn = e.target.closest('.btn-approve-review');
+        const rejectBtn = e.target.closest('.btn-reject-review');
+        const session = auth.getSession();
+        const staffId = session?.staffId || 'STAFF';
+        if (approveBtn) {
+          const reviewId = approveBtn.dataset.reviewId;
+          store.approveReview(reviewId, staffId);
+          this.renderReviewsDesk();
+        } else if (rejectBtn) {
+          const reviewId = rejectBtn.dataset.reviewId;
+          store.rejectReview(reviewId, staffId);
+          this.renderReviewsDesk();
+        }
+      });
+    }
   }
 
   initSubscriptions() {
@@ -433,17 +493,26 @@ class TumainiStaff {
       this.renderQueue();
       this.renderRoomSelectDropdown();
       this.renderConfessionsDesk();
+      this.renderReviewsDesk();
 
       if (this.activeIntake) {
         const updated = store.intakes.find(i => i.id === this.activeIntake.id);
-        if (updated && updated.status !== 'resolved') {
-          this.activeIntake = updated;
-          this.renderMessages();
-          this.syncWorkspaceHeader();
-        } else {
-          this.activeIntake = null;
-          store.setActiveStaffIntake(null);
-          this.renderWorkspace();
+        if (updated) {
+          if (updated.status === 'resolved') {
+            this.activeIntake = null;
+            store.setActiveStaffIntake(null);
+            this.renderWorkspace();
+          } else {
+            this.activeIntake = updated;
+            this.renderMessages();
+            this.syncWorkspaceHeader();
+          }
+        }
+        // If not in memory during an async background sync, keep active intake
+      } else {
+        const saved = store.getActiveStaffIntake();
+        if (saved && saved.status !== 'resolved') {
+          this.selectCase(saved);
         }
       }
     });
@@ -451,6 +520,14 @@ class TumainiStaff {
     auth.subscribe(() => {
       this.syncDutyStrip();
     });
+
+    // Realtime Supabase Reviews Subscription
+    if (supabase && typeof supabase.subscribeToReviews === 'function') {
+      supabase.subscribeToReviews(
+        () => this.renderReviewsDesk(),
+        () => this.renderReviewsDesk()
+      );
+    }
   }
 
   checkSession() {
@@ -460,21 +537,18 @@ class TumainiStaff {
       this.renderQueue();
       this.renderRoomSelectDropdown();
       this.renderConfessionsDesk();
+      this.renderReviewsDesk();
       if (auth.isSupervisor()) {
         this.renderCounselorsRoster();
         this.renderAllStaffShifts();
       }
 
+      // Check persistent active intake
       const active = store.getActiveStaffIntake();
       if (active && active.status !== 'resolved') {
         this.selectCase(active);
       } else {
-        const queue = store.getTriageQueue();
-        if (queue.length > 0 && !this.activeIntake) {
-          this.selectCase(queue[0]);
-        } else {
-          this.renderWorkspace();
-        }
+        this.renderWorkspace();
       }
     } else {
       this.showAuth();
@@ -513,6 +587,7 @@ class TumainiStaff {
   switchDesk(desk) {
     if (this.btnDeskTriage) this.btnDeskTriage.classList.remove('active');
     if (this.btnDeskConfessions) this.btnDeskConfessions.classList.remove('active');
+    if (this.btnDeskReviews) this.btnDeskReviews.classList.remove('active');
     if (this.btnDeskSupervisor) this.btnDeskSupervisor.classList.remove('active');
 
     if (this.deskTriagePane) {
@@ -522,6 +597,10 @@ class TumainiStaff {
     if (this.deskConfessionsPane) {
       this.deskConfessionsPane.classList.remove('active');
       this.deskConfessionsPane.style.display = 'none';
+    }
+    if (this.deskReviewsPane) {
+      this.deskReviewsPane.classList.remove('active');
+      this.deskReviewsPane.style.display = 'none';
     }
     if (this.deskSupervisorPane) {
       this.deskSupervisorPane.classList.remove('active');
@@ -535,6 +614,13 @@ class TumainiStaff {
         this.deskConfessionsPane.style.display = 'block';
       }
       this.renderConfessionsDesk();
+    } else if (desk === 'reviews') {
+      if (this.btnDeskReviews) this.btnDeskReviews.classList.add('active');
+      if (this.deskReviewsPane) {
+        this.deskReviewsPane.classList.add('active');
+        this.deskReviewsPane.style.display = 'block';
+      }
+      this.renderReviewsDesk();
     } else if (desk === 'supervisor') {
       if (!auth.isSupervisor()) {
         this.switchDesk('triage');
@@ -1247,11 +1333,11 @@ class TumainiStaff {
           <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">${item.id}</span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px solid var(--border-subtle);">
-          <span style="font-size: 11px; color: ${item.status === 'in_session' ? '#52b788' : '#94a3b8'};">
-            ${item.status === 'in_session' ? `• In Session (${this.escapeHtml(item.counselorName || 'Assigned')})` : '• Waiting for Counselor'}
+          <span style="font-size: 11px; color: ${(item.status === 'in_session' || item.status === 'active') ? '#52b788' : (item.status === 'follow_up' ? '#3b82f6' : '#94a3b8')};">
+            ${(item.status === 'in_session' || item.status === 'active') ? `• In Session (${this.escapeHtml(item.counselorName || 'Assigned')})` : (item.status === 'follow_up' ? `• Follow-Up (${this.escapeHtml(item.nextCheckIn || 'Saved')})` : '• Waiting for Counselor')}
           </span>
           <button class="btn-claim-case" type="button">
-            ${item.status === 'in_session' ? 'Open Desk' : 'Accept Case'}
+            ${(item.status === 'in_session' || item.status === 'active' || item.status === 'follow_up') ? 'Open Desk' : 'Accept Case'}
           </button>
         </div>
       `;
@@ -1551,6 +1637,160 @@ class TumainiStaff {
       `;
 
       this.pendingConfessionsList.appendChild(card);
+    });
+  }
+
+  // --- Reviews Moderation Desk ---
+  renderReviewsDesk() {
+    const pending = store.getPendingReviews();
+    if (this.badgePendingReviews) {
+      this.badgePendingReviews.textContent = pending.length;
+    }
+
+    if (!this.pendingReviewsList) return;
+    this.pendingReviewsList.innerHTML = '';
+
+    if (pending.length === 0) {
+      this.pendingReviewsList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;">
+          All clear. Zero pending seeker reviews awaiting moderation.
+        </div>
+      `;
+      return;
+    }
+
+    pending.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'pending-confession-card';
+
+      const timeStr = new Date(item.createdAt).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const stars = '★'.repeat(item.rating || 5) + '☆'.repeat(5 - (item.rating || 5));
+
+      card.innerHTML = `
+        <div class="pending-confession-header">
+          <span style="font-weight: 700; color: var(--brand-eucalyptus-dark); font-size: 13.5px;">${this.escapeHtml(item.alias)}</span>
+          <span style="color: #f59e0b; font-size: 14px; letter-spacing: 2px;">${stars}</span>
+          <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">${timeStr}</span>
+        </div>
+        <div class="pending-confession-text" style="font-size: 13.5px; line-height: 1.5; color: var(--text-primary); margin: 8px 0;">
+          "${this.escapeHtml(item.text)}"
+        </div>
+        <div class="pending-confession-actions">
+          <button class="btn-reject btn-reject-review" type="button" data-review-id="${item.id}">
+            Decline
+          </button>
+          <button class="btn-approve btn-approve-review" type="button" data-review-id="${item.id}">
+            Approve & Publish to Community Reviews
+          </button>
+        </div>
+      `;
+
+      this.pendingReviewsList.appendChild(card);
+    });
+  }
+
+  // --- Follow-Up & Passkey Case Continuity ---
+  openFollowUpModal() {
+    if (!this.activeIntake) {
+      alert('Please select an active consultation first.');
+      return;
+    }
+    if (this.followUpModal) {
+      if (this.followUpReturnTime) this.followUpReturnTime.value = this.activeIntake.nextCheckIn || '';
+      if (this.followUpSafetyPlan) this.followUpSafetyPlan.value = this.activeIntake.safetyPlan || '';
+      if (this.followUpHandoffNote) this.followUpHandoffNote.value = this.activeIntake.handoffNote || '';
+      if (this.followUpResultCard) this.followUpResultCard.style.display = 'none';
+      this.followUpModal.classList.add('open');
+      this.followUpModal.style.display = 'flex';
+    }
+  }
+
+  closeFollowUpModal() {
+    if (this.followUpModal) {
+      this.followUpModal.classList.remove('open');
+      this.followUpModal.style.display = 'none';
+    }
+  }
+
+  async handleScheduleFollowUp() {
+    if (!this.activeIntake) return;
+    const session = auth.getSession();
+    if (!session || !session.isOnDuty) {
+      alert('You must be Clocked In on shift to schedule follow-up.');
+      return;
+    }
+
+    const returnTime = this.followUpReturnTime ? this.followUpReturnTime.value.trim() : '';
+    const safetyPlan = this.followUpSafetyPlan ? this.followUpSafetyPlan.value.trim() : '';
+    const handoffNote = this.followUpHandoffNote ? this.followUpHandoffNote.value.trim() : '';
+
+    // Generate memorable passkey: TMN- + 4 uppercase alphanumeric characters
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const passkey = `TMN-${code}`;
+
+    // Compute SHA-256 hash using Web Crypto API
+    let passkeyHash = null;
+    try {
+      const enc = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', enc.encode(passkey));
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      passkeyHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      console.warn('Web Crypto hash fallback', e);
+      passkeyHash = passkey;
+    }
+
+    // Save to store & Supabase
+    store.setCaseFollowUp({
+      intakeId: this.activeIntake.id,
+      passkeyHash,
+      safetyPlan,
+      handoffNote,
+      nextCheckIn: returnTime
+    });
+
+    // Post to chat stream for seeker
+    const planText = safetyPlan ? `\nTake-Home Care & Safety Plan: ${safetyPlan}` : '';
+    const returnText = returnTime ? `\nAgreed Return Time: ${returnTime}` : '';
+
+    store.addIntakeMessage({
+      intakeId: this.activeIntake.id,
+      sender: 'system',
+      senderName: 'Follow-Up Scheduled',
+      text: `Your consultation has been saved for follow-up support. Your confidential Case Passkey is: ${passkey}.${returnText}${planText}\nPlease copy and keep this passkey safe. Whenever you return to Tumaini, click 'Resume Case' and enter this passkey to continue where you left off.`
+    });
+
+    bus.broadcast('INTAKE_STATUS', { intakeId: this.activeIntake.id, status: 'follow_up' });
+
+    // Show result card
+    if (this.followUpPasskeyDisplay) {
+      this.followUpPasskeyDisplay.textContent = passkey;
+    }
+    if (this.followUpResultCard) {
+      this.followUpResultCard.style.display = 'block';
+    }
+
+    this.renderMessages();
+    this.renderQueue();
+  }
+
+  handleCopyFollowUpPasskey() {
+    if (!this.followUpPasskeyDisplay) return;
+    const text = this.followUpPasskeyDisplay.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`Passkey ${text} copied to clipboard!`);
+    }).catch(() => {
+      alert(`Case Passkey: ${text}`);
     });
   }
 

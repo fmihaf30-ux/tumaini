@@ -2667,6 +2667,10 @@ button:disabled, .btn:disabled {
         <span>Confession Moderation Desk</span>
         <span class="desk-badge-count" id="badgePendingConfessions">0</span>
       </button>
+      <button class="desk-tab-btn" id="btnDeskReviews" type="button">
+        <span>Community Reviews</span>
+        <span class="desk-badge-count" id="badgePendingReviews">0</span>
+      </button>
       <button class="desk-tab-btn" id="btnDeskSupervisor" type="button" style="display: none;">
         <span>Supervisor & Clinical Desk</span>
         <span class="badge" style="background: var(--brand-ochre-soft); color: var(--brand-ochre-dark); border: 1px solid var(--brand-ochre-border); font-size: 10px; margin-left: 6px; padding: 2px 6px;">ADMIN</span>
@@ -2723,9 +2727,14 @@ button:disabled, .btn:disabled {
                 <span class="badge" id="workspaceTierBadge">NORMAL</span>
                 <span style="font-size: 12px; color: var(--text-secondary); background: var(--bg-canvas); padding: 2px 10px; border-radius: 4px; border: 1px solid var(--border-subtle);" id="workspaceCategoryTag">Category</span>
               </div>
-              <button class="nav-btn btn-danger" id="btnReleaseCase" type="button">
-                Close & Resolve Case
-              </button>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="nav-btn" id="btnOpenFollowUpModal" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--brand-eucalyptus-dark); border-color: var(--brand-eucalyptus-border); background: var(--brand-eucalyptus-soft);">
+                  Schedule Follow-Up & Passkey
+                </button>
+                <button class="nav-btn btn-danger" id="btnReleaseCase" type="button">
+                  Close & Resolve Case
+                </button>
+              </div>
             </div>
 
             <!-- Body Split: Chat + Group Tools -->
@@ -2820,6 +2829,22 @@ button:disabled, .btn:disabled {
 
         <div id="pendingConfessionsList" style="display: flex; flex-direction: column; gap: 14px;">
           <!-- Dynamically populated with pending submissions -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Desk: Community Reviews Moderation Desk -->
+    <div class="desk-pane" id="deskReviewsPane" style="display: none;">
+      <div class="moderation-desk-wrap">
+        <div>
+          <h2 style="font-size: 22px; font-weight: 700; color: var(--brand-eucalyptus-dark);">Community Reviews Moderation Desk</h2>
+          <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px;">
+            Moderate public seeker feedback and reviews before they appear on the public Community Reviews board. Ensure reflections are respectful and protect privacy.
+          </p>
+        </div>
+
+        <div id="pendingReviewsList" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+          <!-- Dynamically populated with pending reviews -->
         </div>
       </div>
     </div>
@@ -3211,6 +3236,51 @@ button:disabled, .btn:disabled {
         <button type="button" class="btn-submit-intake" id="btnDismissPrivacyModal" style="padding: 8px 18px; font-size: 13px;">
           Close Charter
         </button>
+      </div>
+    </div>
+  <!-- Schedule Follow-Up & Issue Passkey Modal -->
+  <div class="modal-overlay" id="followUpModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>Schedule Follow-Up & Issue Passkey</h3>
+        <button class="modal-close-btn" id="btnCloseFollowUpModal" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+          For cases that cannot be resolved in a single session. This issues a private Case Passkey (e.g. TMN-XXXX) so the seeker can return anytime within 7 days and resume care without repeating their story.
+        </p>
+
+        <form id="formScheduleFollowUp" style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label class="form-label" style="font-size: 12px;" for="followUpReturnTime">Agreed Check-In Time (Optional)</label>
+            <input type="text" id="followUpReturnTime" class="form-input" placeholder="e.g. Tomorrow 4:00 PM or Thursday evening">
+          </div>
+
+          <div>
+            <label class="form-label" style="font-size: 12px;" for="followUpSafetyPlan">Take-Home Safety & Care Plan (Shared with Seeker)</label>
+            <textarea id="followUpSafetyPlan" class="form-input" style="min-height: 80px; resize: vertical;" placeholder="1. Practice 4-4-4 grounding breaths.&#10;2. Reach out to trusted friend or call Sauti 116 if panic spikes.&#10;3. Return here with your passkey."></textarea>
+          </div>
+
+          <div>
+            <label class="form-label" style="font-size: 12px;" for="followUpHandoffNote">Confidential Counselor Handoff Note (Internal Only)</label>
+            <textarea id="followUpHandoffNote" class="form-input" style="min-height: 70px; resize: vertical;" placeholder="Key clinical triggers, rapport notes, and recommended continuity steps for the next counselor on duty."></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit-intake" style="padding: 11px 18px; font-size: 13.5px; width: 100%;">
+            Issue Passkey & Save for Follow-Up
+          </button>
+        </form>
+
+        <div id="followUpResultCard" style="display: none; margin-top: 16px; background: #eef7f4; border: 1px solid var(--brand-eucalyptus-border); border-radius: 8px; padding: 16px;">
+          <strong style="display: block; font-size: 12px; color: var(--brand-eucalyptus-dark); text-transform: uppercase;">Passkey Generated Successfully</strong>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin: 10px 0;">
+            <span id="followUpPasskeyDisplay" style="font-family: monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--brand-eucalyptus-dark);">TMN-0000</span>
+            <button type="button" id="btnCopyFollowUpPasskey" class="btn-secondary" style="padding: 6px 14px; font-size: 12px;">Copy Passkey</button>
+          </div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
+            This passkey and take-home safety plan have been automatically sent to the seeker in the chat.
+          </p>
+        </div>
       </div>
     </div>
   </div>

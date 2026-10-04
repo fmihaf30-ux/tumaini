@@ -502,8 +502,10 @@ class TumainiSupabaseService {
   }
 
   // --- 2. Intakes & Crisis Triage ---
+  // Returns null (not []) when the request FAILS, so callers can tell the
+  // difference between "no open cases" and "could not reach the server".
   async fetchActiveIntakes() {
-    if (!this.isConfigured || !this.client) return [];
+    if (!this.isConfigured || !this.client) return null;
     try {
       const { data, error } = await this.client
         .from('intakes')
@@ -512,59 +514,133 @@ class TumainiSupabaseService {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching intakes:', error);
-        return [];
+        console.error('[Tumaini] Error fetching intakes:', error);
+        return null;
       }
       return data || [];
     } catch (e) {
-      return [];
+      console.error('[Tumaini] Network error fetching intakes:', e);
+      return null;
+    }
+  }
+
+  // Looks up specific cases by id (any status). Used to reconcile local cases
+  // that are missing from the open-cases list.
+  async fetchIntakesByIds(ids) {
+    if (!this.isConfigured || !this.client || !Array.isArray(ids) || ids.length === 0) return [];
+    try {
+      const { data, error } = await this.client
+        .from('intakes')
+        .select('*')
+        .in('id', ids);
+      if (error) {
+        console.error('[Tumaini] Error reconciling intakes:', error);
+        return null;
+      }
+      return data || [];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Resume lookup. Only the SHA-256 hash of the passkey is stored on the server.
+  async findIntakeByPasskeyHash(hash) {
+    if (!this.isConfigured || !this.client || !hash) return null;
+    try {
+      const { data, error } = await this.client
+        .from('intakes')
+        .select('*')
+        .eq('case_passkey_hash', hash)
+        .in('status', ['follow_up', 'waiting', 'active'])
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      if (error) {
+        console.error('[Tumaini] Passkey lookup failed:', error);
+        return null;
+      }
+      return data && data.length ? data[0] : null;
+    } catch (e) {
+      return null;
     }
   }
 
   async createIntake(intakeData) {
     if (!this.isConfigured || !this.client) return null;
     try {
+      const row = {
+        id: intakeData.id,
+        alias: intakeData.alias,
+        tier: intakeData.tier,
+        category: intakeData.category,
+        summary: intakeData.summary || '',
+        status: intakeData.status || 'waiting',
+        seeker_token: intakeData.seekerToken || '',
+        created_at: new Date(intakeData.createdAt || Date.now()).toISOString(),
+        updated_at: new Date(intakeData.updatedAt || Date.now()).toISOString()
+      };
+      if (intakeData.passkeyHash) row.case_passkey_hash = intakeData.passkeyHash;
+
       const { data, error } = await this.client
         .from('intakes')
-        .upsert([{
-          id: intakeData.id,
-          alias: intakeData.alias,
-          tier: intakeData.tier,
-          category: intakeData.category,
-          summary: intakeData.summary || '',
-          status: intakeData.status || 'waiting',
-          seeker_token: intakeData.seekerToken || '',
-          created_at: new Date(intakeData.createdAt || Date.now()).toISOString(),
-          updated_at: new Date(intakeData.updatedAt || Date.now()).toISOString()
-        }], { onConflict: 'id' })
+        .upsert([row], { onConflict: 'id' })
         .select();
 
-      if (error) console.error('Error creating intake:', error);
+      if (error) console.error('[Tumaini] Error creating intake:', error);
       return data?.[0] || null;
     } catch (e) {
       return null;
     }
   }
 
-  async updateIntakeStatus(intakeId, status, staffInfo = null) {
+  /**
+   * Updates a case.
+   *  - staffInfo: { staffId, name, role } sets the claiming counselor;
+   *               the string 'clear' removes the counselor (used on transfer).
+   *  - extra: any of { handoff_note, safety_plan, next_check_in }.
+   * Returns true on success. Failures are logged, never silent.
+   */
+  async updateIntakeStatus(intakeId, status, staffInfo = null, extra = null) {
     if (!this.isConfigured || !this.client) return false;
     try {
       const updatePayload = {
         status,
         updated_at: new Date().toISOString()
       };
-      if (staffInfo) {
+      if (extra) Object.assign(updatePayload, extra);
+
+      if (staffInfo === 'clear') {
+        updatePayload.claimed_by_id = null;
+        updatePayload.claimed_by_name = null;
+        updatePayload.claimed_by_role = null;
+      } else if (staffInfo) {
         updatePayload.claimed_by_id = staffInfo.staffId;
         updatePayload.claimed_by_name = staffInfo.name;
         updatePayload.claimed_by_role = staffInfo.role;
       }
-      const { error } = await this.client
+
+      let { error } = await this.client
         .from('intakes')
         .update(updatePayload)
         .eq('id', intakeId);
 
-      return !error;
+      // If the counselor id is not a valid foreign key, still save the status
+      // and the counselor's name so the case never silently loses its claim.
+      if (error && error.code === '23503' && updatePayload.claimed_by_id) {
+        console.warn('[Tumaini] Counselor FK rejected, saving claim without id:', error.message);
+        delete updatePayload.claimed_by_id;
+        ({ error } = await this.client
+          .from('intakes')
+          .update(updatePayload)
+          .eq('id', intakeId));
+      }
+
+      if (error) {
+        console.error('[Tumaini] Failed to update intake', intakeId, error);
+        return false;
+      }
+      return true;
     } catch (e) {
+      console.error('[Tumaini] Network error updating intake', intakeId, e);
       return false;
     }
   }
@@ -766,7 +842,124 @@ class TumainiSupabaseService {
     } catch (e) {}
   }
 
-  // --- 5. Supabase Realtime Subscriptions ---
+  // --- 5. Community Reviews ---
+  async fetchApprovedReviews() {
+    if (!this.isConfigured || !this.client) return [];
+    try {
+      const { data, error } = await this.client
+        .from('reviews')
+        .select('*')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+
+      if (error) return [];
+      return (data || []).map(r => ({
+        id: r.id,
+        alias: r.alias || 'Anonymous',
+        rating: r.rating,
+        text: r.text,
+        status: r.status,
+        createdAt: new Date(r.created_at).getTime()
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async fetchPendingReviews(staffId) {
+    if (!this.isConfigured || !this.client || !staffId) return [];
+    try {
+      // 1. Try secure RPC
+      const { data: rpcData, error: rpcErr } = await this.client.rpc('get_pending_reviews', {
+        p_staff_id: staffId.trim()
+      });
+      if (!rpcErr && Array.isArray(rpcData)) {
+        return rpcData.map(r => ({
+          id: r.id,
+          alias: r.alias || 'Anonymous',
+          rating: r.rating,
+          text: r.text,
+          status: 'pending',
+          createdAt: new Date(r.created_at).getTime()
+        }));
+      }
+
+      // 2. Direct query fallback
+      const { data, error } = await this.client
+        .from('reviews')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) return [];
+      return (data || []).map(r => ({
+        id: r.id,
+        alias: r.alias || 'Anonymous',
+        rating: r.rating,
+        text: r.text,
+        status: r.status,
+        createdAt: new Date(r.created_at).getTime()
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async submitReview({ alias, rating, text }) {
+    if (!this.isConfigured || !this.client || !text || !rating) return null;
+    try {
+      const cleanAlias = (alias || 'Anonymous').trim().slice(0, 40) || 'Anonymous';
+      const cleanRating = Math.max(1, Math.min(5, parseInt(rating, 10) || 5));
+      const cleanText = text.trim().slice(0, 600);
+
+      const { data, error } = await this.client
+        .from('reviews')
+        .insert([{
+          alias: cleanAlias,
+          rating: cleanRating,
+          text: cleanText,
+          status: 'pending'
+        }])
+        .select();
+
+      if (error) {
+        console.error('[Tumaini] Error submitting review:', error);
+        return null;
+      }
+      return data?.[0] || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async moderateReview({ staffId, reviewId, status }) {
+    if (!this.isConfigured || !this.client || !reviewId || !status) return false;
+    try {
+      if (staffId) {
+        const { data, error } = await this.client.rpc('moderate_review', {
+          p_staff_id: staffId.trim(),
+          p_review_id: reviewId,
+          p_status: status
+        });
+        if (!error && data) return true;
+      }
+
+      const { error: updErr } = await this.client
+        .from('reviews')
+        .update({
+          status,
+          moderated_by: staffId ? staffId.toUpperCase() : 'STAFF',
+          moderated_at: new Date().toISOString()
+        })
+        .eq('id', reviewId);
+
+      return !updErr;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- 6. Supabase Realtime Subscriptions ---
   subscribeToIntakes(onInsert, onUpdate) {
     if (!this.isConfigured || !this.client) return () => {};
 
@@ -882,6 +1075,42 @@ class TumainiSupabaseService {
           text: payload.new.text,
           status: payload.new.status,
           empathyCount: payload.new.empathy_count,
+          createdAt: new Date(payload.new.created_at).getTime()
+        })
+      )
+      .subscribe();
+
+    return () => {
+      this.client.removeChannel(channel);
+    };
+  }
+
+  subscribeToReviews(onInsert, onUpdate) {
+    if (!this.isConfigured || !this.client) return () => {};
+
+    const channel = this.client
+      .channel('public:reviews')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'reviews' },
+        payload => onInsert && onInsert({
+          id: payload.new.id,
+          alias: payload.new.alias,
+          rating: payload.new.rating,
+          text: payload.new.text,
+          status: payload.new.status,
+          createdAt: new Date(payload.new.created_at).getTime()
+        })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'reviews' },
+        payload => onUpdate && onUpdate({
+          id: payload.new.id,
+          alias: payload.new.alias,
+          rating: payload.new.rating,
+          text: payload.new.text,
+          status: payload.new.status,
           createdAt: new Date(payload.new.created_at).getTime()
         })
       )

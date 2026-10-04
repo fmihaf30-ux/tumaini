@@ -1677,12 +1677,12 @@ button:disabled, .btn:disabled {
 
     <!-- Mobile Header Actions (Hidden on Desktop) -->
     <div class="mobile-header-actions">
-      <a href="tel:0800212121" class="nav-btn btn-helplines mobile-phone-btn" title="Call Free Crisis Helpline 0800 21 21 21">
+      <button type="button" class="nav-btn btn-helplines mobile-phone-btn" id="btnMobileHelplines" title="View Certified Ugandan Crisis Helplines">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
         </svg>
-        <span>0800 Help</span>
-      </a>
+        <span>Helplines (116 / 0800)</span>
+      </button>
 
       <button class="nav-btn mobile-menu-btn" id="btnOpenDrawer" type="button" aria-label="Open Navigation Menu">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1717,6 +1717,10 @@ button:disabled, .btn:disabled {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           Confession / Community Hearth
         </button>
+        <button type="button" class="drawer-nav-link" id="drawerLinkReviews">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Community Reviews & Voices
+        </button>
       </div>
 
       <!-- Information & Trust -->
@@ -1738,43 +1742,9 @@ button:disabled, .btn:disabled {
 
       <!-- Emergency Helplines (Direct Tap to Call) -->
       <div class="drawer-nav-group">
-        <span class="drawer-group-title">Emergency Toll-Free Dialers</span>
-        <div class="drawer-helplines-list">
-          <a href="tel:0800212121" class="drawer-helpline-card">
-            <div class="drawer-helpline-info">
-              <strong>Mental Health Uganda</strong>
-              <span>0800 21 21 21 (24/7 Toll-Free)</span>
-            </div>
-            <span class="drawer-dial-tag">Tap to Call</span>
-          </a>
-          <a href="tel:0800211306" class="drawer-helpline-card">
-            <div class="drawer-helpline-info">
-              <strong>Butabika Referral Hospital</strong>
-              <span>0800 211 306 (Clinical Help)</span>
-            </div>
-            <span class="drawer-dial-tag">Tap to Call</span>
-          </a>
-          <a href="tel:0800200600" class="drawer-helpline-card">
-            <div class="drawer-helpline-info">
-              <strong>StrongMinds Uganda</strong>
-              <span>0800 200 600 (Psychosocial)</span>
-            </div>
-            <span class="drawer-dial-tag">Tap to Call</span>
-          </a>
-          <a href="tel:116" class="drawer-helpline-card">
-            <div class="drawer-helpline-info">
-              <strong>Sauti Child & GBV Line</strong>
-              <span>116 (24/7 Toll-Free)</span>
-            </div>
-            <span class="drawer-dial-tag">Tap to Call</span>
-          </a>
-          <a href="tel:999" class="drawer-helpline-card">
-            <div class="drawer-helpline-info">
-              <strong>Police & Emergency Dispatch</strong>
-              <span>999 / 112 (National Police)</span>
-            </div>
-            <span class="drawer-dial-tag">Tap to Call</span>
-          </a>
+        <span class="drawer-group-title">Verified Emergency Hotlines</span>
+        <div class="drawer-helplines-list" id="drawerHelplinesContainer">
+          <!-- Rendered dynamically by helplines.js -->
         </div>
       </div>
 
@@ -1826,7 +1796,7 @@ button:disabled, .btn:disabled {
       </div>
     </section>
 
-    <!-- Sanctuary Dual Navigation Tabs -->
+    <!-- Sanctuary Multi Navigation Tabs -->
     <nav class="sanctuary-nav-strip">
       <button class="sanctuary-tab-btn active" id="tabIntake" type="button">
         1-on-1 Counselor Chat
@@ -1834,11 +1804,28 @@ button:disabled, .btn:disabled {
       <button class="sanctuary-tab-btn" id="tabConfessions" type="button">
         Confession / Community Hearth
       </button>
+      <button class="sanctuary-tab-btn" id="tabReviews" type="button">
+        Community Reviews
+      </button>
     </nav>
 
     <!-- 1. Conversational Intake Screen -->
     <section class="intake-view" id="intakeSection">
       <div class="intake-card-container">
+        <!-- Case Continuity / Returning Seeker Resume Banner -->
+        <div class="resume-case-banner" style="background: rgba(92, 151, 132, 0.08); border: 1px solid rgba(92, 151, 132, 0.25); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px;">🔑</span>
+            <div>
+              <strong style="display: block; font-size: 13.5px; color: var(--brand-eucalyptus-dark);">Returning Seeker with a Case Passkey?</strong>
+              <span style="font-size: 12px; color: var(--text-secondary);">Resume an ongoing crisis case or view your counselor safety plan.</span>
+            </div>
+          </div>
+          <button type="button" class="btn-primary" id="btnOpenResumeCase" style="padding: 7px 14px; font-size: 12.5px; white-space: nowrap;">
+            Resume Case
+          </button>
+        </div>
+
         <div class="intake-header-block">
           <h2 class="intake-card-title">Connect with an On-Duty Counselor</h2>
           <p class="intake-card-desc">
@@ -2010,6 +1997,17 @@ button:disabled, .btn:disabled {
         </div>
       </div>
 
+      <!-- Take-Home Safety Plan / Continuity Banner (for follow-up cases) -->
+      <div id="safetyPlanBanner" style="display: none; background: #fbf5eb; border-bottom: 1px solid #edd8be; padding: 10px 16px; font-size: 13px; color: #7c4a15;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+          <div>
+            <strong>Take-Home Safety Plan (Co-Authored with Counselor):</strong>
+            <p id="safetyPlanBannerText" style="margin: 4px 0 0; color: #4b5d55; line-height: 1.4; white-space: pre-wrap;"></p>
+          </div>
+          <button type="button" id="btnCloseSafetyPlanBanner" style="background: none; border: none; font-size: 16px; color: #9e6522; cursor: pointer;">&times;</button>
+        </div>
+      </div>
+
       <!-- Messages Stream -->
       <div class="consultation-messages-stream" id="consultationMessagesStream">
         <!-- Messages rendered dynamically -->
@@ -2079,6 +2077,72 @@ button:disabled, .btn:disabled {
       </div>
     </section>
 
+    <!-- 4. Community Reviews & Seeker Experiences -->
+    <section class="confessions-view" id="reviewsSection" style="display: none;">
+      <div class="confessions-hero">
+        <h2>Community Reviews & Voices</h2>
+        <p>
+          Real, anonymous reflections from young people who reached out to Tumaini when carrying heavy burdens. Read peer stories or share how your session went.
+        </p>
+      </div>
+
+      <!-- Submit a Review Card -->
+      <div class="submit-confession-card" style="margin-bottom: 24px;">
+        <h3>Share Your Anonymous Experience</h3>
+        <span class="confession-notice-pill">Did a counselor help lighten your burden? Your words help other young Ugandans find the courage to reach out.</span>
+
+        <form id="submitReviewForm" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+            <div>
+              <label class="form-label" for="reviewAlias" style="font-size: 12px; margin-bottom: 4px; display: block;">Your Anonymous Alias</label>
+              <input 
+                type="text" 
+                id="reviewAlias" 
+                class="form-input" 
+                placeholder="e.g. Quiet River or Kyambogo Student" 
+                maxlength="32" 
+                required
+              >
+            </div>
+            <div>
+              <label class="form-label" for="reviewRating" style="font-size: 12px; margin-bottom: 4px; display: block;">How Supported Did You Feel?</label>
+              <select id="reviewRating" class="form-input" required>
+                <option value="5">⭐⭐⭐⭐⭐ (5/5 - Deeply Supported & Safe)</option>
+                <option value="4">⭐⭐⭐⭐ (4/5 - Helpful & Compassionate)</option>
+                <option value="3">⭐⭐⭐ (3/5 - Okay / Neutral)</option>
+                <option value="2">⭐⭐ (2/5 - Needed More Time)</option>
+                <option value="1">⭐ (1/5 - Struggled to Connect)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label" for="reviewFeedback" style="font-size: 12px; margin-bottom: 4px; display: block;">Your Honest Feedback or Reflection</label>
+            <textarea 
+              id="reviewFeedback" 
+              class="confession-textarea" 
+              placeholder="What made a difference for you? (Do not include personal identifiers like phone numbers, NIN, or school IDs)..." 
+              rows="3"
+              required
+            ></textarea>
+          </div>
+
+          <button class="btn-submit-intake" type="submit" style="align-self: flex-start; padding: 11px 22px; font-size: 13.5px;">
+            Submit Anonymous Review
+          </button>
+        </form>
+
+        <div id="reviewSubmittedNotice" style="display: none; background: #eef7f4; border: 1px solid #c3e2d7; padding: 14px 18px; border-radius: 8px; font-size: 13px; color: var(--brand-eucalyptus-dark); margin-top: 14px;">
+          Thank you for sharing your experience. To protect confidentiality and mutual safety, reviews appear on this wall once approved by our counselor team.
+        </div>
+      </div>
+
+      <!-- Reviews Feed List -->
+      <div class="confessions-feed-list" id="reviewsFeed">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
   </main>
 
   <!-- About Tumaini / Our Story Modal -->
@@ -2127,51 +2191,16 @@ button:disabled, .btn:disabled {
         <button class="modal-close-btn" id="btnCloseHelplines" type="button">×</button>
       </div>
       <div class="modal-body">
-        <p>If you or someone you know is in acute danger or distress, certified professional help in Uganda is free and confidential:</p>
+        <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">
+          If you or someone you know is in acute danger or distress, certified professional help in Uganda is free and confidential. All verified active hotlines are listed below:
+        </p>
 
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Butabika National Referral Mental Hospital</strong>
-          <a href="tel:0800211306" class="helpline-phone helpline-dial-link" title="Tap to call Butabika National Referral">
-            0800 211 306 <span style="font-size: 11px; font-weight: normal; margin-left: 6px; color: #15803d; text-decoration: none;">(Tap to Call)</span>
-          </a>
-          <span style="font-size: 11px; color: var(--text-muted);">National Toll-Free line for clinical mental health intervention</span>
+        <div id="helplinesModalContainer">
+          <!-- Rendered dynamically by helplines.js with verified status, tap-to-call, and copy -->
         </div>
 
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Mental Health Uganda (MHU)</strong>
-          <a href="tel:0800212121" class="helpline-phone helpline-dial-link" title="Tap to call Mental Health Uganda">
-            0800 21 21 21 <span style="font-size: 11px; font-weight: normal; margin-left: 6px; color: #15803d; text-decoration: none;">(Tap to Call)</span>
-          </a>
-          <span style="font-size: 11px; color: var(--text-muted);">24/7 National Toll-Free counseling line, specialized for youth</span>
-        </div>
-
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">StrongMinds Uganda</strong>
-          <a href="tel:0800200600" class="helpline-phone helpline-dial-link" title="Tap to call StrongMinds Uganda">
-            0800 200 600 <span style="font-size: 11px; font-weight: normal; margin-left: 6px; color: #15803d; text-decoration: none;">(Tap to Call)</span>
-          </a>
-          <span style="font-size: 11px; color: var(--text-muted);">Toll-Free psychosocial support line (Mon - Fri, 9 AM - 5 PM)</span>
-        </div>
-
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Sauti 116 (Child & GBV Helpline)</strong>
-          <a href="tel:116" class="helpline-phone helpline-dial-link" title="Tap to call Sauti 116">
-            116 <span style="font-size: 11px; font-weight: normal; margin-left: 6px; color: #15803d; text-decoration: none;">(Tap to Call)</span>
-          </a>
-          <span style="font-size: 11px; color: var(--text-muted);">24/7 Toll-Free protection line for youth and domestic safety</span>
-        </div>
-
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 14px;">Police & Medical Emergency Dispatch</strong>
-          <span class="helpline-phone">
-            <a href="tel:999" class="helpline-dial-link" style="color: inherit;" title="Call 999">999</a> / <a href="tel:112" class="helpline-dial-link" style="color: inherit;" title="Call 112">112</a>
-            <span style="font-size: 11px; font-weight: normal; margin-left: 6px; color: #15803d; text-decoration: none;">(Tap to Call)</span>
-          </span>
-          <span style="font-size: 11px; color: var(--text-muted);">Immediate emergency intervention</span>
-        </div>
-
-        <p style="font-size: 11px; color: var(--text-muted);">
-          All lines listed above are verified Uganda numbers and free of charge from any local mobile network.
+        <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
+          All lines listed above are verified Uganda numbers and free of charge from local mobile networks.
         </p>
       </div>
     </div>
@@ -2336,6 +2365,40 @@ button:disabled, .btn:disabled {
         <button type="button" class="btn-submit-intake" id="btnDismissPrivacyModal" style="padding: 8px 18px; font-size: 13px;">
           I Understand & Agree
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resume Ongoing Case Modal (Case Continuity) -->
+  <div class="modal-overlay" id="resumeCaseModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Resume Ongoing Case</h3>
+        <button class="modal-close-btn" id="btnCloseResumeCase" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">
+          Enter the confidential Case Passkey provided by your counselor (e.g. <code style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--brand-eucalyptus-dark); background: rgba(92,151,132,0.1); padding: 2px 6px; border-radius: 4px;">TMN-8291</code>) to reconnect to your existing session or view your Take-Home Safety Plan.
+        </p>
+        <form id="formResumeCase" style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label class="form-label" for="inputResumePasskey">Case Passkey</label>
+            <input 
+              type="text" 
+              id="inputResumePasskey" 
+              class="form-input" 
+              placeholder="TMN-XXXX" 
+              autocomplete="off" 
+              spellcheck="false" 
+              style="text-transform: uppercase; font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: 1.5px; font-weight: 700; text-align: center;"
+              required
+            >
+          </div>
+          <div id="resumeCaseError" style="display: none; background: #fdf2f2; border: 1px solid #f8b4b4; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; color: #9b1c1c;"></div>
+          <button type="submit" class="btn-submit-intake" style="width: 100%; justify-content: center; padding: 12px;">
+            Verify & Reconnect
+          </button>
+        </form>
       </div>
     </div>
   </div>
