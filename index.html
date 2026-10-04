@@ -164,9 +164,7 @@ button:disabled, .btn:disabled {
    ========================================================================== */
 .site-header {
   height: 72px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #ffffff;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -276,164 +274,120 @@ button:disabled, .btn:disabled {
   z-index: 1;
 }
 
-/* Warm Hero Section */
-.hero-sanctuary {
-  margin-bottom: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+/* ==========================================================================
+   SANCTUARY HEADER BANNER (Professional, Dignified, Trauma-Informed)
+   ========================================================================== */
+.sanctuary-header-banner {
+  margin-bottom: 32px;
+  padding: 24px 28px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--brand-eucalyptus);
 }
 
-.trust-badge-pill {
+.sanctuary-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.sanctuary-badge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brand-eucalyptus-dark);
+}
+
+.sanctuary-duty-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--brand-eucalyptus-soft);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--brand-eucalyptus-border);
+}
+
+.duty-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-eucalyptus);
+}
+
+.sanctuary-headline {
+  font-family: 'Newsreader', 'Georgia', serif;
+  font-size: clamp(24px, 3.2vw, 34px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--brand-eucalyptus-dark);
+  margin-bottom: 10px;
+}
+
+.sanctuary-lead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 820px;
+  margin-bottom: 20px;
+}
+
+.sanctuary-trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.sanctuary-trust-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 14px;
-  border-radius: var(--radius-pill);
-  background: var(--brand-eucalyptus-soft);
-  border: 1px solid var(--brand-eucalyptus-border);
-  color: var(--brand-eucalyptus-dark);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-bottom: 18px;
-}
-
-.trust-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--brand-eucalyptus);
-  box-shadow: 0 0 0 3px rgba(92, 151, 132, 0.2);
-}
-
-.hero-headline {
-  font-family: 'Newsreader', 'Georgia', serif;
-  font-size: clamp(32px, 4.5vw, 48px);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: var(--brand-eucalyptus-dark);
-  max-width: 820px;
-  margin-bottom: 18px;
-}
-
-.hero-headline em {
-  font-style: italic;
-  color: var(--brand-ochre-dark);
-}
-
-.hero-subtext {
-  font-size: 16.5px;
-  line-height: 1.65;
-  color: var(--text-secondary);
-  max-width: 760px;
-  margin-bottom: 24px;
-}
-
-/* Three Reassurance Badges */
-.reassurance-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  width: 100%;
-}
-
-.reassurance-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-subtle);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.reassurance-card strong {
-  font-size: 14px;
-  color: var(--brand-eucalyptus-dark);
-}
-
-.reassurance-card p {
   font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* Platform Guide Grid: What Tumaini Is About & How It Helps */
-.platform-guide-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-  width: 100%;
-  margin-top: 10px;
-}
-
-.platform-guide-card {
-  background: #ffffff;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: 24px 28px;
-  box-shadow: var(--shadow-subtle);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.guide-tag {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--brand-ochre-dark);
-  background: var(--brand-ochre-soft);
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  align-self: flex-start;
-  border: 1px solid var(--brand-ochre-border);
-}
-
-.platform-guide-card h3 {
-  font-family: 'Newsreader', 'Georgia', serif;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--brand-eucalyptus-dark);
-  margin-top: 4px;
-}
-
-.platform-guide-card p {
-  font-size: 13.5px;
   color: var(--text-secondary);
-  line-height: 1.6;
 }
 
-.guide-steps-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.guide-steps-list li {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.55;
-  padding-left: 14px;
-  position: relative;
-}
-
-.guide-steps-list li::before {
-  content: "•";
-  position: absolute;
-  left: 0;
+.sanctuary-trust-item svg {
   color: var(--brand-eucalyptus);
-  font-weight: bold;
+  flex-shrink: 0;
 }
 
-.guide-steps-list li strong {
+.sanctuary-trust-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sanctuary-story-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 0;
   color: var(--brand-eucalyptus-dark);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+}
+
+.sanctuary-story-btn:hover {
+  color: var(--brand-ochre-dark);
 }
 
 /* ==========================================================================
@@ -843,12 +797,7 @@ button:disabled, .btn:disabled {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background-color: #efeae2 !important;
-  background-image: 
-    radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    radial-gradient(rgba(0, 0, 0, 0.04) 1px, #efeae2 1px) !important;
-  background-size: 24px 24px !important;
-  background-position: 0 0, 12px 12px !important;
+  background: #efeae2 !important;
 }
 
 .whatsapp-date-pill {
@@ -1171,9 +1120,7 @@ button:disabled, .btn:disabled {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(25, 40, 35, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(15, 23, 20, 0.72);
   z-index: 100;
   align-items: center;
   justify-content: center;
@@ -1322,14 +1269,33 @@ button:disabled, .btn:disabled {
     line-height: 1.55 !important;
   }
 
-  /* Grid Layouts Stack Cleanly */
-  .reassurance-row {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+  /* Sanctuary Header Banner Mobile */
+  .sanctuary-header-banner {
+    padding: 18px 16px !important;
+    margin-bottom: 24px !important;
   }
-  .platform-guide-grid {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
+  .sanctuary-meta-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .sanctuary-headline {
+    font-size: 21px !important;
+  }
+  .sanctuary-lead {
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+    margin-bottom: 16px !important;
+  }
+  .sanctuary-trust-strip {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding-top: 14px !important;
+  }
+  .sanctuary-story-btn {
+    margin-left: 0 !important;
+    margin-top: 4px !important;
   }
   .category-chips-wrap {
     grid-template-columns: 1fr !important;
@@ -1469,8 +1435,7 @@ button:disabled, .btn:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(25, 40, 35, 0.45);
-  backdrop-filter: blur(2px);
+  background: rgba(15, 23, 20, 0.60);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
@@ -1760,39 +1725,30 @@ button:disabled, .btn:disabled {
   <!-- Main Sanctuary View -->
   <main class="app-container">
 
-    <!-- Reassuring Sanctuary Hero -->
-    <section class="hero-sanctuary">
-      <div class="trust-badge-pill">
-        <span class="trust-dot"></span>
-        Free · 100% Anonymous · Built for Uganda
+    <!-- Dignified, Trauma-Informed Sanctuary Header Banner -->
+    <section class="sanctuary-header-banner">
+      <div class="sanctuary-meta-row">
+        <span class="sanctuary-badge-label">Tumaini Sanctuary · Uganda</span>
+        <span class="sanctuary-duty-status"><span class="duty-pip"></span> On-Duty Volunteer Counselors Active</span>
       </div>
-      <h1 class="hero-headline">
-        Put your weight down, <em>even for a few minutes.</em>
-      </h1>
-      <p class="hero-subtext">
-        Tumaini means hope in Swahili. It is a quiet, free, and anonymous peer-support sanctuary built for young people in Uganda who need somewhere to rest and speak without being seen, judged, or asked to explain themselves.
-        <br><button type="button" id="heroBtnStory" style="background: none; border: none; padding: 6px 0 0; color: var(--brand-eucalyptus-dark); font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Learn more about our story &rarr;</button>
+      <h1 class="sanctuary-headline">Confidential Crisis Support & Anonymous Peer Listening</h1>
+      <p class="sanctuary-lead">
+        A quiet, secure space for young people in Uganda navigating heavy emotions, distress, family friction, or isolation. Free of charge, with no accounts, phone numbers, or real names required.
       </p>
-
-      <!-- What Tumaini Is About & How It Helps -->
-      <div class="platform-guide-grid">
-        <div class="platform-guide-card">
-          <span class="guide-tag">What Tumaini Is About</span>
-          <h3>A Safe Space to Speak Freely</h3>
-          <p>
-            A dedicated, zero-barrier emotional sanctuary for young Ugandans carrying tuition deadlines, family friction, grief, heartbreak, or late-night anxiety. No accounts, no phone numbers, and no real names required.
-          </p>
+      <div class="sanctuary-trust-strip">
+        <div class="sanctuary-trust-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span><strong>100% Anonymous:</strong> Ephemeral aliases only</span>
         </div>
-
-        <div class="platform-guide-card">
-          <span class="guide-tag">How It Helps You</span>
-          <h3>Real Human Support in 3 Ways</h3>
-          <ul class="guide-steps-list">
-            <li><strong>1. Confidential 1-on-1 Chat:</strong> Connect with an on-duty volunteer counselor who listens with care and zero judgment.</li>
-            <li><strong>2. Curated Group Circles:</strong> Join counselor-guided peer circles with others walking through the same burdens.</li>
-            <li><strong>3. The Confession Hearth:</strong> Release what you cannot say out loud and read anonymous words from peers across Uganda.</li>
-          </ul>
+        <div class="sanctuary-trust-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span><strong>Browser-Encrypted:</strong> Zero permanent server logs</span>
         </div>
+        <div class="sanctuary-trust-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span><strong>Low-Bandwidth:</strong> Built for Ugandan mobile networks</span>
+        </div>
+        <button type="button" id="heroBtnStory" class="sanctuary-story-btn">Our Story & Mission &rarr;</button>
       </div>
     </section>
 

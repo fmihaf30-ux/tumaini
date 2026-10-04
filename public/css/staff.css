@@ -882,12 +882,7 @@
    ========================================================================== */
 .counselor-messages-container,
 .consultation-messages-stream {
-  background-color: #efeae2 !important;
-  background-image: 
-    radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    radial-gradient(rgba(0, 0, 0, 0.04) 1px, #efeae2 1px) !important;
-  background-size: 24px 24px !important;
-  background-position: 0 0, 12px 12px !important;
+  background: #efeae2 !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
