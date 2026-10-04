@@ -364,8 +364,18 @@ class TumainiStaff {
 
     // Follow-Up & Passkey Modal Events
     if (this.btnOpenFollowUpModal) {
-      this.btnOpenFollowUpModal.addEventListener('click', () => this.openFollowUpModal());
+      this.btnOpenFollowUpModal.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openFollowUpModal();
+      });
     }
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#btnOpenFollowUpModal');
+      if (btn) {
+        e.preventDefault();
+        this.openFollowUpModal();
+      }
+    });
     if (this.btnCloseFollowUpModal) {
       this.btnCloseFollowUpModal.addEventListener('click', () => this.closeFollowUpModal());
     }
@@ -1698,37 +1708,59 @@ class TumainiStaff {
   // --- Follow-Up & Passkey Case Continuity ---
   openFollowUpModal() {
     if (!this.activeIntake) {
-      alert('Please select an active consultation first.');
-      return;
+      const active = store.getActiveStaffIntake();
+      if (active) {
+        this.activeIntake = active;
+      } else {
+        alert('Please select or accept an active consultation first.');
+        return;
+      }
     }
-    if (this.followUpModal) {
-      if (this.followUpReturnTime) this.followUpReturnTime.value = this.activeIntake.nextCheckIn || '';
-      if (this.followUpSafetyPlan) this.followUpSafetyPlan.value = this.activeIntake.safetyPlan || '';
-      if (this.followUpHandoffNote) this.followUpHandoffNote.value = this.activeIntake.handoffNote || '';
-      if (this.followUpResultCard) this.followUpResultCard.style.display = 'none';
-      this.followUpModal.classList.add('open');
-      this.followUpModal.style.display = 'flex';
+    const modal = this.followUpModal || document.getElementById('followUpModal');
+    if (modal) {
+      const returnTimeInput = this.followUpReturnTime || document.getElementById('followUpReturnTime');
+      const safetyPlanInput = this.followUpSafetyPlan || document.getElementById('followUpSafetyPlan');
+      const handoffNoteInput = this.followUpHandoffNote || document.getElementById('followUpHandoffNote');
+      const resultCard = this.followUpResultCard || document.getElementById('followUpResultCard');
+
+      if (returnTimeInput) returnTimeInput.value = this.activeIntake.nextCheckIn || '';
+      if (safetyPlanInput) safetyPlanInput.value = this.activeIntake.safetyPlan || '';
+      if (handoffNoteInput) handoffNoteInput.value = this.activeIntake.handoffNote || '';
+      if (resultCard) resultCard.style.display = 'none';
+
+      modal.classList.add('open');
+      modal.classList.add('active');
+      modal.style.display = 'flex';
     }
   }
 
   closeFollowUpModal() {
-    if (this.followUpModal) {
-      this.followUpModal.classList.remove('open');
-      this.followUpModal.style.display = 'none';
+    const modal = this.followUpModal || document.getElementById('followUpModal');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.classList.remove('active');
+      modal.style.display = 'none';
     }
   }
 
   async handleScheduleFollowUp() {
-    if (!this.activeIntake) return;
+    if (!this.activeIntake) {
+      const active = store.getActiveStaffIntake();
+      if (active) this.activeIntake = active;
+      else {
+        alert('Please select an active consultation first.');
+        return;
+      }
+    }
     const session = auth.getSession();
     if (!session || !session.isOnDuty) {
-      alert('You must be Clocked In on shift to schedule follow-up.');
+      alert('You must Clock In on shift (top bar) before scheduling follow-up.');
       return;
     }
 
-    const returnTime = this.followUpReturnTime ? this.followUpReturnTime.value.trim() : '';
-    const safetyPlan = this.followUpSafetyPlan ? this.followUpSafetyPlan.value.trim() : '';
-    const handoffNote = this.followUpHandoffNote ? this.followUpHandoffNote.value.trim() : '';
+    const returnTime = (this.followUpReturnTime || document.getElementById('followUpReturnTime'))?.value?.trim() || '';
+    const safetyPlan = (this.followUpSafetyPlan || document.getElementById('followUpSafetyPlan'))?.value?.trim() || '';
+    const handoffNote = (this.followUpHandoffNote || document.getElementById('followUpHandoffNote'))?.value?.trim() || '';
 
     // Generate memorable passkey: TMN- + 4 uppercase alphanumeric characters
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1773,11 +1805,13 @@ class TumainiStaff {
     bus.broadcast('INTAKE_STATUS', { intakeId: this.activeIntake.id, status: 'follow_up' });
 
     // Show result card
-    if (this.followUpPasskeyDisplay) {
-      this.followUpPasskeyDisplay.textContent = passkey;
+    const passkeyDisplay = this.followUpPasskeyDisplay || document.getElementById('followUpPasskeyDisplay');
+    const resultCard = this.followUpResultCard || document.getElementById('followUpResultCard');
+    if (passkeyDisplay) {
+      passkeyDisplay.textContent = passkey;
     }
-    if (this.followUpResultCard) {
-      this.followUpResultCard.style.display = 'block';
+    if (resultCard) {
+      resultCard.style.display = 'block';
     }
 
     this.renderMessages();
