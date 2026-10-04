@@ -31,6 +31,7 @@ class TumainiUser {
     this.bindEvents();
     this.initHelplines();
     this.checkExistingSession();
+    this.checkDisclaimerOnLoad();
     this.renderConfessions();
     this.renderReviews();
     this.initSubscriptions();
@@ -372,6 +373,7 @@ class TumainiUser {
         if (this.panelPrivacy) this.panelPrivacy.classList.add('active');
       }
     };
+    this.switchPolicyTab = switchPolicyTab;
 
     if (this.tabBtnDisclaimer) {
       this.tabBtnDisclaimer.addEventListener('click', () => switchPolicyTab('disclaimer'));
@@ -380,12 +382,17 @@ class TumainiUser {
       this.tabBtnPrivacy.addEventListener('click', () => switchPolicyTab('privacy'));
     }
     if (this.btnDismissPrivacyModal && this.privacyModal) {
-      this.btnDismissPrivacyModal.addEventListener('click', () => closeModal(this.privacyModal));
+      this.btnDismissPrivacyModal.addEventListener('click', () => {
+        localStorage.setItem('tumaini_disclaimer_accepted', 'true');
+        if (this.btnClosePrivacy) this.btnClosePrivacy.style.display = '';
+        closeModal(this.privacyModal);
+      });
     }
 
     if (this.btnOpenPrivacy && this.privacyModal) {
       this.btnOpenPrivacy.addEventListener('click', () => {
         switchPolicyTab('disclaimer');
+        if (this.btnClosePrivacy) this.btnClosePrivacy.style.display = '';
         openModal(this.privacyModal);
       });
     }
@@ -393,15 +400,24 @@ class TumainiUser {
       this.linkOpenPrivacy.addEventListener('click', (e) => {
         e.preventDefault();
         switchPolicyTab('privacy');
+        if (this.btnClosePrivacy) this.btnClosePrivacy.style.display = '';
         openModal(this.privacyModal);
       });
     }
     if (this.btnClosePrivacy && this.privacyModal) {
-      this.btnClosePrivacy.addEventListener('click', () => closeModal(this.privacyModal));
+      this.btnClosePrivacy.addEventListener('click', () => {
+        if (localStorage.getItem('tumaini_disclaimer_accepted') === 'true') {
+          closeModal(this.privacyModal);
+        }
+      });
     }
     if (this.privacyModal) {
       this.privacyModal.addEventListener('click', (e) => {
-        if (e.target === this.privacyModal) closeModal(this.privacyModal);
+        if (e.target === this.privacyModal) {
+          if (localStorage.getItem('tumaini_disclaimer_accepted') === 'true') {
+            closeModal(this.privacyModal);
+          }
+        }
       });
     }
 
@@ -473,7 +489,11 @@ class TumainiUser {
         if (this.aboutModal && (this.aboutModal.classList.contains('open') || this.aboutModal.classList.contains('active'))) {
           closeModal(this.aboutModal);
         } else if (this.privacyModal && (this.privacyModal.classList.contains('open') || this.privacyModal.classList.contains('active'))) {
-          closeModal(this.privacyModal);
+          if (localStorage.getItem('tumaini_disclaimer_accepted') === 'true') {
+            closeModal(this.privacyModal);
+          } else {
+            this.quickExit();
+          }
         } else if (this.helplinesModal && (this.helplinesModal.classList.contains('open') || this.helplinesModal.classList.contains('active'))) {
           closeModal(this.helplinesModal);
         } else if (this.resumeCaseModal && (this.resumeCaseModal.classList.contains('open') || this.resumeCaseModal.classList.contains('active'))) {
@@ -933,6 +953,19 @@ class TumainiUser {
     });
   }
 
+  checkDisclaimerOnLoad() {
+    const accepted = localStorage.getItem('tumaini_disclaimer_accepted') === 'true';
+    if (!accepted && this.privacyModal) {
+      if (typeof this.switchPolicyTab === 'function') {
+        this.switchPolicyTab('disclaimer');
+      }
+      if (this.btnClosePrivacy) {
+        this.btnClosePrivacy.style.display = 'none';
+      }
+      openModal(this.privacyModal);
+    }
+  }
+
   // --- Case Continuity & Passkey Reconnection ---
   async hashPasskey(key) {
     const enc = new TextEncoder().encode(key.trim().toUpperCase());
@@ -960,7 +993,7 @@ class TumainiUser {
       const hash = await this.hashPasskey(rawPasskey);
 
       // 1. Search local store
-      let intake = store.findIntakeByPasskeyHash(hash);
+      let intake = store.findIntakeByPasskeyHash(hash, rawPasskey);
 
       // 2. Fall back to remote Supabase lookup
       if (!intake && supabase && supabase.isConfigured) {
@@ -972,7 +1005,7 @@ class TumainiUser {
           this.resumeCaseError.style.background = '#eef7f4';
         }
 
-        const row = await supabase.findIntakeByPasskeyHash(hash);
+        const row = await supabase.findIntakeByPasskeyHash(hash, rawPasskey);
         if (row) {
           const remoteMsgs = await supabase.fetchIntakeMessages(row.id);
           intake = {
@@ -986,6 +1019,7 @@ class TumainiUser {
             counselorId: row.claimed_by_id || row.claimed_by_staff_id || null,
             counselorName: row.claimed_by_name || null,
             counselorRole: row.claimed_by_role || null,
+            passkey: rawPasskey,
             passkeyHash: row.case_passkey_hash || row.casePasskeyHash || hash,
             safetyPlan: row.safety_plan || row.safetyPlan || null,
             handoffNote: row.handoff_note || row.handoffNote || null,
@@ -1040,7 +1074,6 @@ class TumainiUser {
 
   formatSystemMessageHtml(text) {
     let safe = this.escapeHtml(text || '');
-    safe = safe.replace(/\b0800\s*21\s*21\s*21\b/g, '<a href="tel:0800212121" class="chat-tel-link">0800 21 21 21</a>');
     safe = safe.replace(/\b0800\s*211\s*306\b/g, '<a href="tel:0800211306" class="chat-tel-link">0800 211 306</a>');
     safe = safe.replace(/\b0800\s*200\s*600\b/g, '<a href="tel:0800200600" class="chat-tel-link">0800 200 600</a>');
     safe = safe.replace(/\b(Sauti\s*)?116\b/gi, (match) => {

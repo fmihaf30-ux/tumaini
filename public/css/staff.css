@@ -1450,5 +1450,33 @@
   }
 }
 
+/* Supervisor Operations Desk (Responsive Layout) */
+.supervisor-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.supervisor-card {
+  padding: 22px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .supervisor-grid-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  .supervisor-card {
+    padding: 16px !important;
+  }
+}
+
 
 

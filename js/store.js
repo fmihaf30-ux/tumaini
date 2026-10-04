@@ -418,8 +418,12 @@ class TumainiStore {
   }
 
   claimIntake(intakeId, staffSession) {
+    let alreadyClaimedBySelf = false;
     this.intakes = this.intakes.map(i => {
       if (i.id === intakeId) {
+        if (i.status === 'in_session' && i.counselorId === staffSession.staffId) {
+          alreadyClaimedBySelf = true;
+        }
         return {
           ...i,
           status: 'in_session',
@@ -440,20 +444,22 @@ class TumainiStore {
       });
     }
 
-    this.addIntakeMessage({
-      intakeId,
-      sender: 'system',
-      senderName: 'Counselor Connected',
-      text: `${staffSession.name} (${staffSession.role}) has joined this confidential consultation.`
-    });
+    if (!alreadyClaimedBySelf) {
+      this.addIntakeMessage({
+        intakeId,
+        sender: 'system',
+        senderName: 'Counselor Connected',
+        text: `${staffSession.name} (${staffSession.role}) has joined this confidential consultation.`
+      });
 
-    // Trauma-informed welcoming greeting from counselor
-    this.addIntakeMessage({
-      intakeId,
-      sender: 'counselor',
-      senderName: staffSession.name,
-      text: `Hello, I am here with you now in this private and safe space. You are not alone. Please take a deep breath and take all the time you need to describe what you are going through or what feels heaviest right now. Whenever you are ready, I am here to listen without judgment.`
-    });
+      // Trauma-informed welcoming greeting from counselor
+      this.addIntakeMessage({
+        intakeId,
+        sender: 'counselor',
+        senderName: staffSession.name,
+        text: `Hello, I am here with you now in this private and safe space. You are not alone. Please take a deep breath and take all the time you need to describe what you are going through or what feels heaviest right now. Whenever you are ready, I am here to listen without judgment.`
+      });
+    }
 
     this.notify();
   }
@@ -801,13 +807,14 @@ class TumainiStore {
   }
 
   // --- 7. Follow-Up & Case Continuity (Passkey & Safety Plan) ---
-  setCaseFollowUp({ intakeId, passkeyHash, safetyPlan, handoffNote, nextCheckIn }) {
+  setCaseFollowUp({ intakeId, passkey, passkeyHash, safetyPlan, handoffNote, nextCheckIn }) {
     if (!intakeId) return false;
     this.intakes = this.intakes.map(i => {
       if (i.id === intakeId) {
         return {
           ...i,
           status: 'follow_up',
+          passkey: passkey || i.passkey,
           passkeyHash: passkeyHash || i.passkeyHash,
           safetyPlan: safetyPlan || i.safetyPlan,
           handoffNote: handoffNote || i.handoffNote,
@@ -820,7 +827,8 @@ class TumainiStore {
     this.save(STORAGE_KEYS.INTAKES, this.intakes);
 
     if (supabase && supabase.isConfigured) {
-      supabase.updateIntakeStatus(intakeId, 'follow_up', null, {
+      supabase.updateIntakeStatus(intakeId, 'active', null, {
+        raw_passkey: passkey,
         case_passkey_hash: passkeyHash,
         safety_plan: safetyPlan,
         handoff_note: handoffNote,
@@ -832,9 +840,14 @@ class TumainiStore {
     return true;
   }
 
-  findIntakeByPasskeyHash(hash) {
-    if (!hash) return null;
-    return this.intakes.find(i => (i.passkeyHash === hash || i.case_passkey_hash === hash || i.casePasskeyHash === hash) && i.status !== 'resolved') || null;
+  findIntakeByPasskeyHash(hash, rawPasskey = null) {
+    if (!hash && !rawPasskey) return null;
+    const cleanPass = (rawPasskey || '').trim().toUpperCase();
+    return this.intakes.find(i => {
+      const matchHash = hash && (i.passkeyHash === hash || i.case_passkey_hash === hash || i.casePasskeyHash === hash);
+      const matchRaw = cleanPass && (i.passkey === cleanPass || (i.summary && i.summary.includes(cleanPass)) || (i.notes && i.notes.includes(cleanPass)));
+      return matchHash || matchRaw;
+    }) || null;
   }
 
   // --- 8. Remote Multi-Device Cloud Synchronization Handlers ---

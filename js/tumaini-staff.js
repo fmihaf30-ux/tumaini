@@ -448,7 +448,11 @@ class TumainiStaff {
         const target = store.intakes.find(i => i.id === intakeId);
         if (target) {
           if (e.target.closest('.btn-claim-case')) {
-            this.claimCase(target);
+            if (target.status === 'in_session' || target.status === 'active' || target.status === 'follow_up') {
+              this.selectCase(target);
+            } else {
+              this.claimCase(target);
+            }
           } else {
             this.selectCase(target);
           }
@@ -603,7 +607,17 @@ class TumainiStaff {
       if (active && active.status !== 'resolved') {
         this.selectCase(active);
       } else {
-        this.renderWorkspace();
+        const session = auth.getSession();
+        const myOpenCase = store.intakes.find(i =>
+          i.status !== 'resolved' &&
+          session &&
+          ((i.counselorId && i.counselorId === session.staffId) || (i.counselorName && i.counselorName === session.name))
+        );
+        if (myOpenCase) {
+          this.selectCase(myOpenCase);
+        } else {
+          this.renderWorkspace();
+        }
       }
     } else {
       this.showAuth();
@@ -1427,6 +1441,9 @@ class TumainiStaff {
     store.setActiveStaffIntake(this.activeIntake.id);
     this.renderWorkspace();
     this.renderQueue();
+    if (window.innerWidth <= 900 && this.workspaceActivePane) {
+      this.workspaceActivePane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   // --- Workspace Rendering ---
@@ -1864,6 +1881,7 @@ class TumainiStaff {
     // Save to store & Supabase
     store.setCaseFollowUp({
       intakeId: this.activeIntake.id,
+      passkey,
       passkeyHash,
       safetyPlan,
       handoffNote,
