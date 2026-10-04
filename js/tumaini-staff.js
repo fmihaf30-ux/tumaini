@@ -79,6 +79,17 @@ class TumainiStaff {
     this.resetResultPre = document.getElementById('resetResultPre');
     this.btnCopyResetCredentials = document.getElementById('btnCopyResetCredentials');
 
+    // Sanctuary Charter & Privacy Modal
+    this.privacyModal = document.getElementById('privacyModal');
+    this.btnStaffOpenPrivacy = document.getElementById('btnStaffOpenPrivacy');
+    this.linkStaffLoginPrivacy = document.getElementById('linkStaffLoginPrivacy');
+    this.btnClosePrivacy = document.getElementById('btnClosePrivacy');
+    this.btnDismissPrivacyModal = document.getElementById('btnDismissPrivacyModal');
+    this.tabBtnDisclaimer = document.getElementById('tabBtnDisclaimer');
+    this.tabBtnPrivacy = document.getElementById('tabBtnPrivacy');
+    this.panelDisclaimer = document.getElementById('panelDisclaimer');
+    this.panelPrivacy = document.getElementById('panelPrivacy');
+
     // Duty Strip
     this.staffOperatorTag = document.getElementById('staffOperatorTag');
     this.staffNameDisplay = document.getElementById('staffNameDisplay');
@@ -196,6 +207,76 @@ class TumainiStaff {
     }
     if (this.btnCopyCredentials) {
       this.btnCopyCredentials.addEventListener('click', () => this.handleCopyCredentials());
+    }
+
+    // Sanctuary Charter & Clinical Disclaimer Modal
+    const switchStaffPolicyTab = (target) => {
+      if (target === 'disclaimer') {
+        if (this.tabBtnDisclaimer) {
+          this.tabBtnDisclaimer.classList.add('active');
+          this.tabBtnDisclaimer.setAttribute('aria-selected', 'true');
+        }
+        if (this.tabBtnPrivacy) {
+          this.tabBtnPrivacy.classList.remove('active');
+          this.tabBtnPrivacy.setAttribute('aria-selected', 'false');
+        }
+        if (this.panelDisclaimer) this.panelDisclaimer.classList.add('active');
+        if (this.panelPrivacy) this.panelPrivacy.classList.remove('active');
+      } else {
+        if (this.tabBtnDisclaimer) {
+          this.tabBtnDisclaimer.classList.remove('active');
+          this.tabBtnDisclaimer.setAttribute('aria-selected', 'false');
+        }
+        if (this.tabBtnPrivacy) {
+          this.tabBtnPrivacy.classList.add('active');
+          this.tabBtnPrivacy.setAttribute('aria-selected', 'true');
+        }
+        if (this.panelDisclaimer) this.panelDisclaimer.classList.remove('active');
+        if (this.panelPrivacy) this.panelPrivacy.classList.add('active');
+      }
+    };
+
+    if (this.tabBtnDisclaimer) {
+      this.tabBtnDisclaimer.addEventListener('click', () => switchStaffPolicyTab('disclaimer'));
+    }
+    if (this.tabBtnPrivacy) {
+      this.tabBtnPrivacy.addEventListener('click', () => switchStaffPolicyTab('privacy'));
+    }
+
+    const openPrivacyModal = (tab = 'disclaimer') => {
+      switchStaffPolicyTab(tab);
+      if (this.privacyModal) {
+        this.privacyModal.style.display = 'flex';
+        this.privacyModal.classList.add('open');
+      }
+    };
+
+    const closePrivacyModal = () => {
+      if (this.privacyModal) {
+        this.privacyModal.style.display = 'none';
+        this.privacyModal.classList.remove('open');
+      }
+    };
+
+    if (this.btnStaffOpenPrivacy) {
+      this.btnStaffOpenPrivacy.addEventListener('click', () => openPrivacyModal('disclaimer'));
+    }
+    if (this.linkStaffLoginPrivacy) {
+      this.linkStaffLoginPrivacy.addEventListener('click', (e) => {
+        e.preventDefault();
+        openPrivacyModal('disclaimer');
+      });
+    }
+    if (this.btnClosePrivacy) {
+      this.btnClosePrivacy.addEventListener('click', () => closePrivacyModal());
+    }
+    if (this.btnDismissPrivacyModal) {
+      this.btnDismissPrivacyModal.addEventListener('click', () => closePrivacyModal());
+    }
+    if (this.privacyModal) {
+      this.privacyModal.addEventListener('click', (e) => {
+        if (e.target === this.privacyModal) closePrivacyModal();
+      });
     }
 
     // Instant Staff Revocation Event Listener (Real-Time Kickout)

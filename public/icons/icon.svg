@@ -1,0 +1,11 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="tumainiFrame"><rect x="0" y="0" width="512" height="512" rx="96"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="96" fill="#EFF2ED"/>
+  <g clip-path="url(#tumainiFrame)">
+    <circle cx="325" cy="196" r="85" fill="#C98A3B"/>
+    <path d="M -20 337 Q 117 218 273 316 Q 367 375 532 320 L 532 532 L -20 532 Z" fill="#5C9784"/>
+    <path d="M -20 431 Q 145 303 299 405 Q 410 469 532 410 L 532 532 L -20 532 Z" fill="#2C4E43"/>
+  </g>
+</svg>

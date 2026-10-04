@@ -1,0 +1,41 @@
+{
+  "name": "Tumaini: Anonymous Crisis Sanctuary",
+  "short_name": "Tumaini",
+  "description": "Anonymous peer support and crisis sanctuary for young people in Uganda. Speak freely without judgment.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f9f6",
+  "theme_color": "#2c4e43",
+  "categories": [
+    "health",
+    "lifestyle",
+    "social"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

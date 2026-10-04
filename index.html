@@ -4,6 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tumaini: Anonymous Peer Support & Crisis Sanctuary · Uganda</title>
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Tumaini: Anonymous Peer Support & Crisis Sanctuary · Uganda">
+  <meta name="description" content="Anonymous peer support, community confession sanctuary, and confidential crisis triage for youth in Uganda. Zero judgment, zero tracking, client-side encryption.">
+  <meta name="keywords" content="Tumaini, mental health Uganda, anonymous counseling Kampala, crisis line Uganda, Butabika, peer support, confidential therapy, youth mental health, confession sanctuary">
+  <meta name="author" content="Tumaini Care Initiative">
+  <meta name="theme-color" content="#2c4e43">
+
+  <!-- Mobile & PWA Capabilities -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tumaini">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="alternate icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tumaini-zeta.vercel.app/">
+  <meta property="og:title" content="Tumaini: Anonymous Peer Support & Crisis Sanctuary · Uganda">
+  <meta property="og:description" content="A warm, anonymous peer support and confession sanctuary for youth in Uganda. Speak freely without judgment - client-side encrypted and completely private.">
+  <meta property="og:image" content="https://tumaini-zeta.vercel.app/icons/og-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Tumaini Sanctuary Banner - Confidential Peer Support in Uganda">
+  <meta property="og:site_name" content="Tumaini Uganda">
+  <meta property="og:locale" content="en_UG">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://tumaini-zeta.vercel.app/">
+  <meta name="twitter:title" content="Tumaini: Anonymous Peer Support & Crisis Sanctuary · Uganda">
+  <meta name="twitter:description" content="A warm, anonymous peer support and confession sanctuary for youth in Uganda. Speak freely without judgment - client-side encrypted and completely private.">
+  <meta name="twitter:image" content="https://tumaini-zeta.vercel.app/icons/og-preview.png">
+  <meta name="twitter:image:alt" content="Tumaini Sanctuary Banner">
+
   <link rel="stylesheet" href="css/tumaini.css">
   <style>
 /* ==========================================================================
@@ -1603,7 +1641,6 @@ button:disabled, .btn:disabled {
 }
 
   </style>
-  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 </head>
 <body>
 
@@ -1688,6 +1725,10 @@ button:disabled, .btn:disabled {
         <button type="button" class="drawer-nav-link" id="drawerLinkAbout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
           Our Story & Mission
+        </button>
+        <button type="button" class="drawer-nav-link" id="drawerLinkDisclaimer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Clinical & Crisis Disclaimer
         </button>
         <button type="button" class="drawer-nav-link" id="drawerLinkPrivacy">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -2136,56 +2177,165 @@ button:disabled, .btn:disabled {
     </div>
   </div>
 
-  <!-- Privacy Charter & Data Protection Modal -->
+  <!-- Sanctuary Charter Modal: Clinical Disclaimer & Uganda DPPA 2019 Privacy Policy -->
   <div class="modal-overlay" id="privacyModal">
-    <div class="modal-card" style="max-width: 620px;">
+    <div class="modal-card" style="max-width: 660px; width: 95%;">
       <div class="modal-header">
-        <h3>Privacy Charter & Safe Sanctuary Terms</h3>
-        <button class="modal-close-btn" id="btnClosePrivacy" type="button">×</button>
+        <div>
+          <h3 style="margin: 0; font-size: 20px;">Tumaini Sanctuary Charter</h3>
+          <p style="margin: 3px 0 0; font-size: 12px; color: var(--text-muted);">Clinical safety protocols & Uganda data privacy standards</p>
+        </div>
+        <button class="modal-close-btn" id="btnClosePrivacy" type="button" aria-label="Close modal">×</button>
       </div>
-      <div class="modal-body" style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
-        <p>
-          Tumaini is designed from the ground up as a zero-barrier safe sanctuary. We adhere to the core principles of the <strong>Uganda Data Protection and Privacy Act, 2019</strong>, safeguarding your fundamental right to privacy, dignity, and confidential support.
-        </p>
 
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">1. Zero Personal Identifiers (No Accounts)</strong>
-          <p style="margin-top: 4px;">
-            You are never asked for your real name, phone number, national ID (NIN), email address, or social accounts. Sessions exist solely under ephemeral nature pseudonyms or anonymous handles you choose.
-          </p>
+      <!-- Tab Switcher -->
+      <div class="policy-tab-strip" role="tablist">
+        <button type="button" class="policy-tab-btn active" id="tabBtnDisclaimer" role="tab" aria-selected="true" aria-controls="panelDisclaimer">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Clinical Disclaimer & Crisis Protocol
+        </button>
+        <button type="button" class="policy-tab-btn" id="tabBtnPrivacy" role="tab" aria-selected="false" aria-controls="panelPrivacy">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Privacy Charter (Uganda DPPA 2019)
+        </button>
+      </div>
+
+      <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); max-height: 58vh; overflow-y: auto; padding-right: 4px;">
+        
+        <!-- Panel 1: Clinical Disclaimer & Crisis Protocols -->
+        <div class="policy-tab-panel active" id="panelDisclaimer" role="tabpanel">
+          <div style="background: #fbf5eb; border: 1px solid #edd8be; border-radius: 8px; padding: 12px 14px;">
+            <strong style="color: #9e6522; font-size: 13.5px; display: block; margin-bottom: 4px;">
+              Important Notice: Peer Support & Crisis Stepping Stone
+            </strong>
+            <p style="margin: 0; font-size: 12.5px; color: #4b5d55;">
+              Tumaini is a non-clinical anonymous peer support platform and psychological first-aid sanctuary. We are not a medical hospital, an inpatient psychiatric clinic, or an armed emergency dispatch unit.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">1. Scope of Practice & Non-Medical Status</strong>
+            <p style="margin-top: 4px;">
+              Our trained peer counselors and supervised volunteers provide active listening, emotional de-escalation, safety planning, and referral navigation. We do NOT diagnose psychiatric disorders, prescribe pharmaceuticals, or order involuntary psychiatric holds.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">2. Immediate Life-Threatening Emergencies (Uganda Hotlines)</strong>
+            <p style="margin-top: 4px;">
+              If you or someone around you is in immediate physical danger, experiencing an active suicide attempt, acute poisoning, severe domestic violence, or physical trauma, please reach out to certified 24/7 national hotlines immediately:
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; margin-top: 8px;">
+              <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: #c93b3b; text-transform: uppercase;">Police & Rescue Dispatch</span>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text-primary);">999 / 112</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Toll-Free from all Ugandan networks</span>
+              </div>
+              <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--brand-eucalyptus-dark); text-transform: uppercase;">Butabika Referral Hospital</span>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text-primary);">0800 200 055</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--text-muted);">Alt: 0800 211 306</div>
+                <span style="font-size: 11px; color: var(--text-muted);">24/7 National Psychiatric Crisis Triage</span>
+              </div>
+              <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--brand-ochre-dark); text-transform: uppercase;">Mental Health Uganda (MHU)</span>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text-primary);">0800 21 21 21</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Toll-Free Peer & Professional Counseling</span>
+              </div>
+              <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: #8c8230; text-transform: uppercase;">Sauti Child Helpline (MGLSD)</span>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text-primary);">116</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Toll-Free Child Protection & Youth Safety</span>
+              </div>
+              <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: #9e6522; text-transform: uppercase;">GBV Prevention Helpline</span>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text-primary);">0800 200 600</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Domestic Violence & Gender Trauma Support</span>
+              </div>
+              <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--brand-eucalyptus-dark); text-transform: uppercase;">Red Cross Ambulance</span>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text-primary);">0800 211 088</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Emergency Medical Transport Dispatch</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">3. Duty of Care & Escalation Boundaries</strong>
+            <p style="margin-top: 4px;">
+              Because Tumaini operates on strict zero-identifier privacy (no GPS geolocation, no IP logging, no phone numbers), our counselors cannot unilaterally send emergency units to your physical address. During critical incidents, counselors prioritize de-escalation and direct connection with regional responders.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">4. Voluntary Participation & Quick Exit</strong>
+            <p style="margin-top: 4px;">
+              Your interaction with Tumaini is entirely voluntary. You may pause or end any conversation at any time. Tapping "Quick Exit" (or pressing the Esc key) instantly clears your active screen, purges browser keys, and navigates to an educational search engine.
+            </p>
+          </div>
         </div>
 
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">2. Client-Side End-to-End Encryption (E2EE)</strong>
-          <p style="margin-top: 4px;">
-            Every crisis message exchanged between you and on-duty counselors is encrypted directly inside your device's browser using AES-GCM (256-bit encryption keys via Web Crypto). Neither intermediate network carriers, cloud relays, nor unauthorized observers can read your conversation in transit.
-          </p>
+        <!-- Panel 2: Privacy Charter (Uganda DPPA 2019) -->
+        <div class="policy-tab-panel" id="panelPrivacy" role="tabpanel">
+          <div style="background: #eef7f4; border: 1px solid #bcd5cb; border-radius: 8px; padding: 12px 14px;">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">
+              Compliant with the Uganda Data Protection and Privacy Act, 2019
+            </strong>
+            <p style="margin: 6px 0 0; font-size: 12.5px; color: var(--text-secondary);">
+              Tumaini adheres strictly to the statutory principles of data minimization, lawful processing, storage limitation, and cryptographic security under Ugandan law.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">1. Zero Personal Identifiers (No Mandatory Accounts)</strong>
+            <p style="margin-top: 4px;">
+              You will never be asked for your real name, National Identification Number (NIN), phone number, physical address, school/workplace affiliation, or social accounts. Interactions operate under ephemeral nature pseudonyms (e.g. Cedar Hill, River Breeze) or anonymous handles.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">2. Client-Side End-to-End Encryption (E2EE)</strong>
+            <p style="margin-top: 4px;">
+              Every intake ticket message is encrypted directly inside your device browser using AES-GCM (256-bit keys via the standard Web Crypto API). Neither intermediate network carriers, cloud relays, nor unauthorized database observers can inspect your messages in plaintext.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">3. Ephemeral Storage & Automated Purging</strong>
+            <p style="margin-top: 4px;">
+              We do not maintain permanent archival databases of your crisis consultations. Active sessions reside solely in temporary browser memory and operational database queues. Closed cases are systematically scrubbed and purged within 24 hours of session conclusion.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">4. Zero Commercialization & Zero Advertising</strong>
+            <p style="margin-top: 4px;">
+              Tumaini does not host commercial advertisements, affiliate trackers, or third-party marketing pixels. We will never sell, lease, or monetize your emotional reflections, confessions, or platform interactions.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">5. Vetted Counselor Access & Operational Auditability</strong>
+            <p style="margin-top: 4px;">
+              Counselor console access is restricted to verified clinical volunteers provisioned with cryptographic supervisor authorizations. All staff actions undergo internal audit verification to ensure ethical conduct and prevent unauthorized case tampering.
+            </p>
+          </div>
+
+          <div class="helpline-box">
+            <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">6. Governance & Compliance Contact</strong>
+            <p style="margin-top: 4px;">
+              Tumaini Care Initiative operates in Kampala, Uganda. For data protection compliance inquiries or legal notices, contact our compliance desk at <em>compliance@tumaini.care</em>.
+            </p>
+          </div>
         </div>
 
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">3. Ephemeral Storage and Automatic Purging</strong>
-          <p style="margin-top: 4px;">
-            Tumaini does not maintain permanent databases of user crisis conversations. Active sessions are stored only in volatile browser storage and automatically purged once resolved or after 24 hours. You can clear your session at any second using the "Quick Exit" (Esc) or "End Session" buttons.
-          </p>
-        </div>
+      </div>
 
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">4. Vetted Clinical Access Control</strong>
-          <p style="margin-top: 4px;">
-            The counselor intake console is strictly restricted to vetted peer counselors and supervised clinical volunteers who authenticate with institutional supervisor keys. Unverified public access to crisis queues is barred.
-          </p>
-        </div>
-
-        <div class="helpline-box">
-          <strong style="color: var(--brand-eucalyptus-dark); font-size: 13.5px;">5. Clinical Safety Boundaries and Duty of Care</strong>
-          <p style="margin-top: 4px;">
-            Tumaini is an anonymous peer-support sanctuary and triage stepping stone, not a substitute for inpatient clinical psychiatry. If immediate life-threatening harm is detected, counselors will provide certified Ugandan toll-free crisis lines (e.g. Butabika Referral Hospital 0800 211 306 or Mental Health Uganda 0800 21 21 21) to connect you with emergency medical response.
-          </p>
-        </div>
-
-        <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;">
-          Questions or clinical partnerships: Tumaini Care Initiative, Kampala, Uganda.
-        </p>
+      <div class="modal-footer" style="border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: var(--text-muted);">Uganda DPPA 2019 · Trauma-Informed Protocol</span>
+        <button type="button" class="btn-submit-intake" id="btnDismissPrivacyModal" style="padding: 8px 18px; font-size: 13px;">
+          I Understand & Agree
+        </button>
       </div>
     </div>
   </div>

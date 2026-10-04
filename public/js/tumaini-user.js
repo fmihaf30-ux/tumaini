@@ -102,6 +102,12 @@ class TumainiUser {
     this.btnOpenPrivacy = document.getElementById('btnOpenPrivacy');
     this.btnClosePrivacy = document.getElementById('btnClosePrivacy');
     this.linkOpenPrivacy = document.getElementById('linkOpenPrivacy');
+    this.tabBtnDisclaimer = document.getElementById('tabBtnDisclaimer');
+    this.tabBtnPrivacy = document.getElementById('tabBtnPrivacy');
+    this.panelDisclaimer = document.getElementById('panelDisclaimer');
+    this.panelPrivacy = document.getElementById('panelPrivacy');
+    this.btnDismissPrivacyModal = document.getElementById('btnDismissPrivacyModal');
+    this.drawerLinkDisclaimer = document.getElementById('drawerLinkDisclaimer');
   }
 
   bindEvents() {
@@ -246,12 +252,52 @@ class TumainiUser {
       });
     }
 
+    const switchPolicyTab = (target) => {
+      if (target === 'disclaimer') {
+        if (this.tabBtnDisclaimer) {
+          this.tabBtnDisclaimer.classList.add('active');
+          this.tabBtnDisclaimer.setAttribute('aria-selected', 'true');
+        }
+        if (this.tabBtnPrivacy) {
+          this.tabBtnPrivacy.classList.remove('active');
+          this.tabBtnPrivacy.setAttribute('aria-selected', 'false');
+        }
+        if (this.panelDisclaimer) this.panelDisclaimer.classList.add('active');
+        if (this.panelPrivacy) this.panelPrivacy.classList.remove('active');
+      } else {
+        if (this.tabBtnDisclaimer) {
+          this.tabBtnDisclaimer.classList.remove('active');
+          this.tabBtnDisclaimer.setAttribute('aria-selected', 'false');
+        }
+        if (this.tabBtnPrivacy) {
+          this.tabBtnPrivacy.classList.add('active');
+          this.tabBtnPrivacy.setAttribute('aria-selected', 'true');
+        }
+        if (this.panelDisclaimer) this.panelDisclaimer.classList.remove('active');
+        if (this.panelPrivacy) this.panelPrivacy.classList.add('active');
+      }
+    };
+
+    if (this.tabBtnDisclaimer) {
+      this.tabBtnDisclaimer.addEventListener('click', () => switchPolicyTab('disclaimer'));
+    }
+    if (this.tabBtnPrivacy) {
+      this.tabBtnPrivacy.addEventListener('click', () => switchPolicyTab('privacy'));
+    }
+    if (this.btnDismissPrivacyModal && this.privacyModal) {
+      this.btnDismissPrivacyModal.addEventListener('click', () => closeModal(this.privacyModal));
+    }
+
     if (this.btnOpenPrivacy && this.privacyModal) {
-      this.btnOpenPrivacy.addEventListener('click', () => openModal(this.privacyModal));
+      this.btnOpenPrivacy.addEventListener('click', () => {
+        switchPolicyTab('disclaimer');
+        openModal(this.privacyModal);
+      });
     }
     if (this.linkOpenPrivacy && this.privacyModal) {
       this.linkOpenPrivacy.addEventListener('click', (e) => {
         e.preventDefault();
+        switchPolicyTab('privacy');
         openModal(this.privacyModal);
       });
     }
@@ -296,9 +342,17 @@ class TumainiUser {
         openModal(this.aboutModal);
       });
     }
+    if (this.drawerLinkDisclaimer) {
+      this.drawerLinkDisclaimer.addEventListener('click', () => {
+        closeDrawer();
+        switchPolicyTab('disclaimer');
+        openModal(this.privacyModal);
+      });
+    }
     if (this.drawerLinkPrivacy) {
       this.drawerLinkPrivacy.addEventListener('click', () => {
         closeDrawer();
+        switchPolicyTab('privacy');
         openModal(this.privacyModal);
       });
     }
