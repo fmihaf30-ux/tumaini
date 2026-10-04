@@ -243,36 +243,6 @@ button:disabled, .btn:disabled {
   border-color: #f87171;
 }
 
-#btnStaffProfile {
-  background: var(--brand-eucalyptus-soft);
-  color: var(--brand-eucalyptus-dark);
-  border: 1px solid var(--brand-eucalyptus-border);
-  font-weight: 700;
-}
-
-#btnStaffProfile:hover {
-  background: #dbeef7;
-  border-color: var(--brand-eucalyptus);
-}
-
-.profile-edit-box {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.shift-history-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: #ffffff;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xs);
-  font-size: 12.5px;
-}
-
 /* ==========================================================================
    APP CONTAINER & REASSURING HERO
    ========================================================================== */
@@ -354,40 +324,12 @@ button:disabled, .btn:disabled {
   margin-bottom: 20px;
 }
 
-.sanctuary-trust-strip {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
-}
-
-.sanctuary-trust-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
-
-.sanctuary-trust-item svg {
-  color: var(--brand-eucalyptus);
-  flex-shrink: 0;
-}
-
-.sanctuary-trust-item strong {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 .sanctuary-story-btn {
-  margin-left: auto;
   background: none;
   border: none;
   padding: 0;
   color: var(--brand-eucalyptus-dark);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -733,8 +675,9 @@ button:disabled, .btn:disabled {
 
 .consultation-meta {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .consultation-title {
@@ -744,12 +687,12 @@ button:disabled, .btn:disabled {
 }
 
 .consultation-category-text {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  background: var(--bg-surface);
-  padding: 3px 10px;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
 }
 
 /* Group Circle Invitation Card */
@@ -1212,8 +1155,53 @@ button:disabled, .btn:disabled {
   letter-spacing: 0.04em;
 }
 
-/* ==========================================================================
-   RESPONSIVENESS (MOBILE TO DESKTOP)
+/* Policy & Disclaimer Modal Tabs */
+.policy-tab-strip {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.policy-tab-btn {
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--dur-fast) ease;
+}
+
+.policy-tab-btn:hover {
+  background: var(--bg-canvas-warm);
+  color: var(--text-primary);
+}
+
+.policy-tab-btn.active {
+  background: var(--brand-eucalyptus-dark);
+  color: #ffffff;
+  border-color: var(--brand-eucalyptus-dark);
+}
+
+.policy-tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.policy-tab-panel.active {
+  display: flex;
+}
+
 /* ==========================================================================
    RESPONSIVENESS (MOBILE & SMALL SCREEN ENHANCEMENTS)
    ========================================================================== */
@@ -1241,13 +1229,7 @@ button:disabled, .btn:disabled {
     display: none !important;
   }
   .header-nav {
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-  }
-  #btnStaffProfile {
-    padding: 6px 12px !important;
-    font-size: 12px !important;
+    gap: 4px !important;
   }
   #btnOpenAbout {
     display: inline-flex !important;
@@ -1412,6 +1394,614 @@ button:disabled, .btn:disabled {
     font-size: 11px !important;
   }
 }
+
+/* Mobile Sidebar Drawer & Responsive Header */
+.mobile-header-actions {
+  display: none;
+}
+
+.mobile-phone-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--brand-ochre-soft);
+  color: var(--brand-ochre-dark) !important;
+  border: 1px solid var(--brand-ochre-border);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 400px) {
+  .mobile-phone-btn {
+    padding: 5px 7px;
+    font-size: 11px;
+    gap: 3px;
+  }
+}
+
+.mobile-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  padding: 6px 9px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.mobile-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 20, 0.60);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.mobile-drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 84%;
+  max-width: 330px;
+  height: 100%;
+  background: var(--bg-surface);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+}
+
+.mobile-drawer-close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.mobile-drawer-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.drawer-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.drawer-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.drawer-nav-link:hover, .drawer-nav-link:active {
+  background: var(--brand-eucalyptus-soft);
+  border-color: var(--brand-eucalyptus-border);
+  color: var(--brand-eucalyptus-dark);
+}
+
+.drawer-helplines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-helpline-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 9px 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.drawer-helpline-card:active {
+  background: #fdf2f2;
+}
+
+.drawer-helpline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-helpline-info strong {
+  font-size: 12px;
+  color: var(--brand-eucalyptus-dark);
+}
+
+.drawer-helpline-info span {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.drawer-dial-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 3px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.helpline-dial-link {
+  text-decoration: underline;
+  color: var(--brand-eucalyptus-dark) !important;
+  cursor: pointer;
+}
+
+.chat-tel-link {
+  color: var(--brand-eucalyptus-dark);
+  text-decoration: underline;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   CERTIFIED CRISIS HELPLINES DIRECTORY DESIGN SYSTEM
+   - Calming, high-contrast, structured card layout
+   - Clear distinction between 24/7 toll-free and daytime OPD numbers
+   - Accessible touch targets (minimum 40px height) for mobile dialers
+   - Prominent copy button with tactile visual feedback
+   ========================================================================== */
+
+.helplines-directory-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.hl-card {
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 12px);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(25, 40, 35, 0.04);
+  transition: border-color var(--dur-fast, 120ms) ease, box-shadow var(--dur-fast, 120ms) ease;
+}
+
+.hl-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 3px 8px rgba(25, 40, 35, 0.08);
+}
+
+.hl-card-critical {
+  border: 1px solid #fecaca;
+  background: #fffafa;
+}
+
+.hl-card-critical:hover {
+  border-color: #f87171;
+}
+
+.hl-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.hl-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hl-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hl-badge-critical {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.hl-badge-success, .hl-badge-eucalyptus {
+  background: #e8f2ee;
+  color: #2c4e43;
+}
+
+.hl-badge-forest {
+  background: #eef7f4;
+  color: #1e5647;
+}
+
+.hl-badge-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.hl-card-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.hl-card-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.hl-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill, 999px);
+  white-space: nowrap;
+}
+
+.hl-tag-critical {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.hl-tag-success {
+  background: #e8f2ee;
+  color: #1e5647;
+  border: 1px solid #c3e2d7;
+}
+
+.hl-tag-forest {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.hl-tag-blue {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.hl-card-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.hl-channels-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hl-number-channel {
+  background: var(--bg-surface-elevated, #fafbf9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.hl-channel-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.hl-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hl-dial-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none !important;
+  transition: all var(--dur-fast, 120ms) ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.hl-dial-critical {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.hl-dial-critical:hover {
+  background: #b91c1c !important;
+  transform: translateY(-1px);
+}
+
+.hl-dial-primary {
+  background: var(--brand-eucalyptus-dark) !important;
+  color: #ffffff !important;
+}
+
+.hl-dial-primary:hover {
+  background: #1e3a32 !important;
+  transform: translateY(-1px);
+}
+
+.hl-dial-outline {
+  background: #ffffff !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-default);
+}
+
+.hl-dial-outline:hover {
+  background: var(--bg-surface-elevated) !important;
+  border-color: var(--border-strong);
+}
+
+.hl-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast, 120ms) ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.hl-copy-btn:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.hl-copy-btn.is-copied {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+}
+
+.hl-btn-icon {
+  flex-shrink: 0;
+}
+
+.hl-warning-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.hl-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #92400e;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.hl-warning-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #78350f;
+  margin: 0;
+}
+
+.hl-verified-footer {
+  background: #f4f6f3;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hl-footer-icon {
+  color: var(--brand-eucalyptus-dark);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.hl-footer-content strong {
+  display: block;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.hl-footer-content p {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+@media (max-width: 500px) {
+  .hl-action-group {
+    flex-direction: row;
+    width: 100%;
+  }
+  .hl-dial-btn {
+    flex: 1 1 auto;
+    font-size: 12.5px;
+    padding: 8px 10px;
+  }
+  .hl-copy-btn {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+}
+
+
+
+@media (max-width: 768px) {
+  body:not(.staff-root) .header-nav {
+    display: none !important;
+  }
+  .staff-root .header-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .mobile-header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+/* ==========================================================================
+   Case Continuity & Safety Plan Layouts (Responsive Small Screens)
+   ========================================================================== */
+.resume-case-banner {
+  background: #f4fbf9;
+  border: 1px solid var(--brand-eucalyptus-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.safety-plan-banner {
+  background: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+  padding: 12px 16px;
+  transition: all var(--transition-normal);
+}
+
+.safety-plan-banner strong {
+  font-size: 13px;
+  color: #14532d;
+}
+
+.safety-plan-banner p {
+  color: #166534;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 600px) {
+  .resume-case-banner {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .resume-case-banner > div {
+    width: 100%;
+  }
+  .resume-case-banner .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+  .safety-plan-banner {
+    padding: 10px 12px;
+  }
+  #resumeCaseModal .modal-card {
+    width: 94vw !important;
+    max-width: 94vw !important;
+    padding: 16px !important;
+    margin: 12px auto !important;
+  }
+  #resumeCaseModal .form-input {
+    font-size: 16px !important;
+    padding: 10px !important;
+  }
+}
+
 
 /* ==========================================================================
    TUMAINI - STAFF COMMAND & CLINICAL TRIAGE TERMINAL
@@ -2518,6 +3108,382 @@ button:disabled, .btn:disabled {
   border-radius: var(--radius-sm);
   font-size: 13px;
 }
+
+/* ==========================================================================
+   CERTIFIED CRISIS HELPLINES DIRECTORY DESIGN SYSTEM (STAFF MIRROR)
+   ========================================================================== */
+
+.helplines-directory-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.hl-card {
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 12px);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(25, 40, 35, 0.04);
+  transition: border-color var(--dur-fast, 120ms) ease, box-shadow var(--dur-fast, 120ms) ease;
+}
+
+.hl-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 3px 8px rgba(25, 40, 35, 0.08);
+}
+
+.hl-card-critical {
+  border: 1px solid #fecaca;
+  background: #fffafa;
+}
+
+.hl-card-critical:hover {
+  border-color: #f87171;
+}
+
+.hl-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.hl-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hl-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hl-badge-critical {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.hl-badge-success, .hl-badge-eucalyptus {
+  background: #e8f2ee;
+  color: #2c4e43;
+}
+
+.hl-badge-forest {
+  background: #eef7f4;
+  color: #1e5647;
+}
+
+.hl-badge-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.hl-card-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.hl-card-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.hl-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill, 999px);
+  white-space: nowrap;
+}
+
+.hl-tag-critical {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.hl-tag-success {
+  background: #e8f2ee;
+  color: #1e5647;
+  border: 1px solid #c3e2d7;
+}
+
+.hl-tag-forest {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.hl-tag-blue {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.hl-card-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.hl-channels-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hl-number-channel {
+  background: var(--bg-surface-elevated, #fafbf9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.hl-channel-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.hl-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hl-dial-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none !important;
+  transition: all var(--dur-fast, 120ms) ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.hl-dial-critical {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.hl-dial-critical:hover {
+  background: #b91c1c !important;
+  transform: translateY(-1px);
+}
+
+.hl-dial-primary {
+  background: var(--brand-eucalyptus-dark) !important;
+  color: #ffffff !important;
+}
+
+.hl-dial-primary:hover {
+  background: #1e3a32 !important;
+  transform: translateY(-1px);
+}
+
+.hl-dial-outline {
+  background: #ffffff !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-default);
+}
+
+.hl-dial-outline:hover {
+  background: var(--bg-surface-elevated) !important;
+  border-color: var(--border-strong);
+}
+
+.hl-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast, 120ms) ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.hl-copy-btn:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.hl-copy-btn.is-copied {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+}
+
+.hl-btn-icon {
+  flex-shrink: 0;
+}
+
+.hl-warning-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.hl-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #92400e;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.hl-warning-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #78350f;
+  margin: 0;
+}
+
+.hl-verified-footer {
+  background: #f4f6f3;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hl-footer-icon {
+  color: var(--brand-eucalyptus-dark);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.hl-footer-content strong {
+  display: block;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.hl-footer-content p {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+@media (max-width: 500px) {
+  .hl-action-group {
+    flex-direction: row;
+    width: 100%;
+  }
+  .hl-dial-btn {
+    flex: 1 1 auto;
+    font-size: 12.5px;
+    padding: 8px 10px;
+  }
+  .hl-copy-btn {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+}
+
+/* ==========================================================================
+   Clinical Continuity & Follow-Up Modal (Responsive Small Screens)
+   ========================================================================== */
+#cardCaseContinuityHandoff {
+  transition: all var(--transition-normal);
+}
+
+#cardCaseContinuityHandoff h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-eucalyptus-dark);
+}
+
+@media (max-width: 600px) {
+  #followUpModal .modal-card {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+    margin: 10px auto !important;
+  }
+  #followUpModal .form-input {
+    font-size: 14px !important;
+  }
+  #followUpPasskeyDisplay {
+    font-size: 20px !important;
+  }
+}
+
+/* Supervisor Operations Desk (Responsive Layout) */
+.supervisor-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.supervisor-card {
+  padding: 22px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .supervisor-grid-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  .supervisor-card {
+    padding: 16px !important;
+  }
+}
+
+
 
 
   </style>

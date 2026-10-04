@@ -344,40 +344,12 @@ button:disabled, .btn:disabled {
   margin-bottom: 20px;
 }
 
-.sanctuary-trust-strip {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
-}
-
-.sanctuary-trust-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
-
-.sanctuary-trust-item svg {
-  color: var(--brand-eucalyptus);
-  flex-shrink: 0;
-}
-
-.sanctuary-trust-item strong {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 .sanctuary-story-btn {
-  margin-left: auto;
   background: none;
   border: none;
   padding: 0;
   color: var(--brand-eucalyptus-dark);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -1203,8 +1175,53 @@ button:disabled, .btn:disabled {
   letter-spacing: 0.04em;
 }
 
-/* ==========================================================================
-   RESPONSIVENESS (MOBILE TO DESKTOP)
+/* Policy & Disclaimer Modal Tabs */
+.policy-tab-strip {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.policy-tab-btn {
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--dur-fast) ease;
+}
+
+.policy-tab-btn:hover {
+  background: var(--bg-canvas-warm);
+  color: var(--text-primary);
+}
+
+.policy-tab-btn.active {
+  background: var(--brand-eucalyptus-dark);
+  color: #ffffff;
+  border-color: var(--brand-eucalyptus-dark);
+}
+
+.policy-tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.policy-tab-panel.active {
+  display: flex;
+}
+
 /* ==========================================================================
    RESPONSIVENESS (MOBILE & SMALL SCREEN ENHANCEMENTS)
    ========================================================================== */
@@ -1415,6 +1432,16 @@ button:disabled, .btn:disabled {
   font-weight: 700;
   text-decoration: none;
   border-radius: var(--radius-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 400px) {
+  .mobile-phone-btn {
+    padding: 5px 7px;
+    font-size: 11px;
+    gap: 3px;
+  }
 }
 
 .mobile-menu-btn {
@@ -1594,9 +1621,336 @@ button:disabled, .btn:disabled {
   cursor: pointer;
 }
 
+/* ==========================================================================
+   CERTIFIED CRISIS HELPLINES DIRECTORY DESIGN SYSTEM
+   - Calming, high-contrast, structured card layout
+   - Clear distinction between 24/7 toll-free and daytime OPD numbers
+   - Accessible touch targets (minimum 40px height) for mobile dialers
+   - Prominent copy button with tactile visual feedback
+   ========================================================================== */
+
+.helplines-directory-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.hl-card {
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 12px);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(25, 40, 35, 0.04);
+  transition: border-color var(--dur-fast, 120ms) ease, box-shadow var(--dur-fast, 120ms) ease;
+}
+
+.hl-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 3px 8px rgba(25, 40, 35, 0.08);
+}
+
+.hl-card-critical {
+  border: 1px solid #fecaca;
+  background: #fffafa;
+}
+
+.hl-card-critical:hover {
+  border-color: #f87171;
+}
+
+.hl-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.hl-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hl-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hl-badge-critical {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.hl-badge-success, .hl-badge-eucalyptus {
+  background: #e8f2ee;
+  color: #2c4e43;
+}
+
+.hl-badge-forest {
+  background: #eef7f4;
+  color: #1e5647;
+}
+
+.hl-badge-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.hl-card-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.hl-card-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.hl-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill, 999px);
+  white-space: nowrap;
+}
+
+.hl-tag-critical {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.hl-tag-success {
+  background: #e8f2ee;
+  color: #1e5647;
+  border: 1px solid #c3e2d7;
+}
+
+.hl-tag-forest {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.hl-tag-blue {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.hl-card-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.hl-channels-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hl-number-channel {
+  background: var(--bg-surface-elevated, #fafbf9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.hl-channel-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.hl-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hl-dial-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none !important;
+  transition: all var(--dur-fast, 120ms) ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.hl-dial-critical {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.hl-dial-critical:hover {
+  background: #b91c1c !important;
+  transform: translateY(-1px);
+}
+
+.hl-dial-primary {
+  background: var(--brand-eucalyptus-dark) !important;
+  color: #ffffff !important;
+}
+
+.hl-dial-primary:hover {
+  background: #1e3a32 !important;
+  transform: translateY(-1px);
+}
+
+.hl-dial-outline {
+  background: #ffffff !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-default);
+}
+
+.hl-dial-outline:hover {
+  background: var(--bg-surface-elevated) !important;
+  border-color: var(--border-strong);
+}
+
+.hl-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast, 120ms) ease;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.hl-copy-btn:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.hl-copy-btn.is-copied {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+}
+
+.hl-btn-icon {
+  flex-shrink: 0;
+}
+
+.hl-warning-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.hl-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #92400e;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.hl-warning-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #78350f;
+  margin: 0;
+}
+
+.hl-verified-footer {
+  background: #f4f6f3;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hl-footer-icon {
+  color: var(--brand-eucalyptus-dark);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.hl-footer-content strong {
+  display: block;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.hl-footer-content p {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+@media (max-width: 500px) {
+  .hl-action-group {
+    flex-direction: row;
+    width: 100%;
+  }
+  .hl-dial-btn {
+    flex: 1 1 auto;
+    font-size: 12.5px;
+    padding: 8px 10px;
+  }
+  .hl-copy-btn {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+}
+
+
+
 @media (max-width: 768px) {
-  .header-nav {
+  body:not(.staff-root) .header-nav {
     display: none !important;
+  }
+  .staff-root .header-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
   .mobile-header-actions {
     display: flex !important;
@@ -1604,6 +1958,70 @@ button:disabled, .btn:disabled {
     gap: 8px;
   }
 }
+
+/* ==========================================================================
+   Case Continuity & Safety Plan Layouts (Responsive Small Screens)
+   ========================================================================== */
+.resume-case-banner {
+  background: #f4fbf9;
+  border: 1px solid var(--brand-eucalyptus-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.safety-plan-banner {
+  background: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+  padding: 12px 16px;
+  transition: all var(--transition-normal);
+}
+
+.safety-plan-banner strong {
+  font-size: 13px;
+  color: #14532d;
+}
+
+.safety-plan-banner p {
+  color: #166534;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 600px) {
+  .resume-case-banner {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .resume-case-banner > div {
+    width: 100%;
+  }
+  .resume-case-banner .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+  .safety-plan-banner {
+    padding: 10px 12px;
+  }
+  #resumeCaseModal .modal-card {
+    width: 94vw !important;
+    max-width: 94vw !important;
+    padding: 16px !important;
+    margin: 12px auto !important;
+  }
+  #resumeCaseModal .form-input {
+    font-size: 16px !important;
+    padding: 10px !important;
+  }
+}
+
 
   </style>
 </head>
