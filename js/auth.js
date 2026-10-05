@@ -500,6 +500,19 @@ class StaffAuthManager {
     this.session.shiftStartedAt = Date.now();
     this.saveSession();
 
+    // Close any prior open shifts for this operator to prevent duplicate active logs
+    const now = Date.now();
+    this.shifts.forEach(s => {
+      if ((s.staffId || '').toUpperCase() === this.session.staffId.toUpperCase() && !s.clockOutTime) {
+        s.clockOutTime = now;
+        const ms = Math.max(0, now - (s.clockInTime || now));
+        s.durationMinutes = Math.max(1, Math.round(ms / 60000));
+        if (supabase && supabase.isConfigured && typeof supabase.logShiftEnd === 'function') {
+          supabase.logShiftEnd(s);
+        }
+      }
+    });
+
     // Record new active shift entry
     const shiftId = 'SHF-' + Date.now().toString(36) + '-' + Math.floor(100 + Math.random() * 900);
     const shiftRecord = {
@@ -537,22 +550,24 @@ class StaffAuthManager {
     const now = Date.now();
     this.session.isOnDuty = false;
 
-    // Find and update the open shift
-    const openShift = this.shifts.find(s => (s.staffId || '').toUpperCase() === this.session.staffId.toUpperCase() && !s.clockOutTime);
-    if (openShift) {
-      openShift.clockOutTime = now;
-      const ms = Math.max(0, now - (openShift.clockInTime || now));
-      openShift.durationMinutes = Math.max(1, Math.round(ms / 60000));
-    }
+    // Find and update ALL open shifts for this operator
+    this.shifts.forEach(s => {
+      if ((s.staffId || '').toUpperCase() === this.session.staffId.toUpperCase() && !s.clockOutTime) {
+        s.clockOutTime = now;
+        const ms = Math.max(0, now - (s.clockInTime || now));
+        s.durationMinutes = Math.max(1, Math.round(ms / 60000));
+        if (supabase && supabase.isConfigured && typeof supabase.logShiftEnd === 'function') {
+          supabase.logShiftEnd(s);
+        }
+      }
+    });
+
     this.session.shiftStartedAt = null;
     this.saveSession();
     this.saveShiftHistory();
 
     if (supabase && supabase.isConfigured) {
       supabase.setDutyStatus(this.session.staffId, false, null);
-      if (openShift && typeof supabase.logShiftEnd === 'function') {
-        supabase.logShiftEnd(openShift);
-      }
     }
     try {
       bus.broadcast('STAFF_SHIFT_CHANGE', {
@@ -563,6 +578,43 @@ class StaffAuthManager {
     } catch (e) {}
 
     return true;
+  }
+
+  // Synchronize shifts from Supabase across all active counselors and clean stale open entries
+  async syncRemoteShifts() {
+    if (supabase && supabase.isConfigured && typeof supabase.fetchStaffShifts === 'function') {
+      const remoteShifts = await supabase.fetchStaffShifts();
+      if (Array.isArray(remoteShifts) && remoteShifts.length > 0) {
+        const localMap = new Map(this.shifts.map(s => [s.id, s]));
+        const merged = [...remoteShifts];
+        this.shifts.forEach(loc => {
+          if (!remoteShifts.some(r => r.id === loc.id)) {
+            merged.push(loc);
+          }
+        });
+        this.shifts = merged.sort((a, b) => (b.clockInTime || 0) - (a.clockInTime || 0));
+        this.saveShiftHistory();
+      }
+    }
+
+    // Auto-resolve any abandoned shifts (> 8 hours old without clock out)
+    const now = Date.now();
+    const EIGHT_HOURS = 8 * 60 * 60 * 1000;
+    let modified = false;
+    this.shifts.forEach(s => {
+      if (!s.clockOutTime && s.clockInTime && (now - s.clockInTime > EIGHT_HOURS)) {
+        s.clockOutTime = s.clockInTime + (60 * 60 * 1000); // mark as 1 hour session
+        s.durationMinutes = 60;
+        modified = true;
+        if (supabase && supabase.isConfigured && typeof supabase.logShiftEnd === 'function') {
+          supabase.logShiftEnd(s);
+        }
+      }
+    });
+    if (modified) {
+      this.saveShiftHistory();
+    }
+    return this.shifts;
   }
 
   getStaffShiftHistory(staffId) {

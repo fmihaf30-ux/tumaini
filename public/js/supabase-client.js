@@ -503,6 +503,35 @@ class TumainiSupabaseService {
     }
   }
 
+  async fetchStaffShifts() {
+    if (!this.isConfigured || !this.client || this.shiftsTableDisabled) return [];
+    try {
+      const { data, error } = await this.client
+        .from('staff_shifts')
+        .select('*')
+        .order('clock_in_time', { ascending: false })
+        .limit(40);
+      if (error) {
+        if (error.code === '42P01' || error.status === 404) {
+          this.shiftsTableDisabled = true;
+        }
+        return [];
+      }
+      return (data || []).map(s => ({
+        id: s.id,
+        staffId: s.staff_id,
+        name: s.staff_name || s.staff_id,
+        role: s.staff_role || 'Crisis Counselor',
+        clockInTime: s.clock_in_time ? new Date(s.clock_in_time).getTime() : null,
+        clockOutTime: s.clock_out_time ? new Date(s.clock_out_time).getTime() : null,
+        durationMinutes: s.duration_minutes,
+        dateStr: s.date_str
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
   // --- 2. Intakes & Crisis Triage ---
   // Returns null (not []) when the request FAILS, so callers can tell the
   // difference between "no open cases" and "could not reach the server".

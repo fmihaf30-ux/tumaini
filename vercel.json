@@ -3,5 +3,13 @@
   "rewrites": [
     { "source": "/staff", "destination": "/staff.html" },
     { "source": "/brag", "destination": "/brag-output/preview.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
   ]
 }

@@ -489,6 +489,36 @@ class TumainiStore {
     return this.intakeMessages[intakeId] || [];
   }
 
+  async syncIntakeMessagesFromRemote(intakeId) {
+    if (!intakeId || !supabase || !supabase.isConfigured || typeof supabase.fetchMessages !== 'function') return false;
+    try {
+      const remoteMsgs = await supabase.fetchMessages(intakeId);
+      if (Array.isArray(remoteMsgs) && remoteMsgs.length > 0) {
+        const local = this.intakeMessages[intakeId] || [];
+        const localIds = new Set(local.map(m => m.id));
+        let added = false;
+        const merged = [...local];
+        remoteMsgs.forEach(rm => {
+          if (!localIds.has(rm.id)) {
+            merged.push(rm);
+            localIds.add(rm.id);
+            added = true;
+          }
+        });
+        if (added) {
+          merged.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+          this.intakeMessages = { ...this.intakeMessages, [intakeId]: merged };
+          this.save(STORAGE_KEYS.INTAKE_MESSAGES, this.intakeMessages);
+          this.notify();
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   addIntakeMessage({ intakeId, sender, senderName, text, skipRemoteSync = false }) {
     if (!intakeId || !text.trim()) return null;
 

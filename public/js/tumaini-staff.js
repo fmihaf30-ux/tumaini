@@ -486,6 +486,7 @@ class TumainiStaff {
       this.btnReleaseCase.addEventListener('click', () => {
         if (this.activeIntake) {
           const intakeId = this.activeIntake.id;
+          this.stopActiveCasePolling();
           this.activeIntake = null;
           store.setActiveStaffIntake(null);
           store.updateIntakeStatus(intakeId, 'resolved');
@@ -587,6 +588,14 @@ class TumainiStaff {
         () => this.renderReviewsDesk()
       );
     }
+
+    // Automatic live sync of incoming requests and resumed follow-up cases
+    this.queueSyncInterval = setInterval(async () => {
+      try {
+        await store.initSupabaseSync();
+        this.renderQueue();
+      } catch (e) {}
+    }, 3500);
   }
 
   checkSession() {
@@ -956,8 +965,15 @@ class TumainiStaff {
     });
   }
 
-  renderAllStaffShifts() {
+  async renderAllStaffShifts() {
     if (!this.allStaffShiftsList) return;
+    if (typeof auth.syncRemoteShifts === 'function') {
+      try {
+        await auth.syncRemoteShifts();
+      } catch (e) {
+        console.warn('Shift sync fallback:', e);
+      }
+    }
     const allShifts = auth.getAllShiftHistory();
     this.allStaffShiftsList.innerHTML = '';
 
@@ -1437,12 +1453,59 @@ class TumainiStaff {
   }
 
   selectCase(item) {
+    this.stopActiveCasePolling();
     this.activeIntake = store.intakes.find(i => i.id === item.id) || item;
     store.setActiveStaffIntake(this.activeIntake.id);
     this.renderWorkspace();
     this.renderQueue();
+    this.startActiveCasePolling(this.activeIntake.id);
     if (window.innerWidth <= 900 && this.workspaceActivePane) {
       this.workspaceActivePane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  startActiveCasePolling(intakeId) {
+    this.stopActiveCasePolling();
+    if (!intakeId) return;
+
+    // Immediate initial sync
+    store.syncIntakeMessagesFromRemote(intakeId).then(hasNew => {
+      if (hasNew) this.renderMessages();
+    });
+
+    // High-frequency polling heartbeat (2s) for live seeker messages
+    this.activeCasePollInterval = setInterval(async () => {
+      if (!this.activeIntake || this.activeIntake.id !== intakeId) {
+        this.stopActiveCasePolling();
+        return;
+      }
+      const hasNew = await store.syncIntakeMessagesFromRemote(intakeId);
+      if (hasNew) {
+        this.renderMessages();
+      }
+    }, 2000);
+
+    // Instant WebSocket push via Supabase Realtime
+    if (supabase && supabase.isConfigured && typeof supabase.subscribeToMessages === 'function') {
+      try {
+        this.unsubscribeActiveCaseMessages = supabase.subscribeToMessages(intakeId, async () => {
+          await store.syncIntakeMessagesFromRemote(intakeId);
+          this.renderMessages();
+        });
+      } catch (e) {
+        console.warn('Realtime message subscription fallback:', e);
+      }
+    }
+  }
+
+  stopActiveCasePolling() {
+    if (this.activeCasePollInterval) {
+      clearInterval(this.activeCasePollInterval);
+      this.activeCasePollInterval = null;
+    }
+    if (this.unsubscribeActiveCaseMessages) {
+      try { this.unsubscribeActiveCaseMessages(); } catch (e) {}
+      this.unsubscribeActiveCaseMessages = null;
     }
   }
 

@@ -270,11 +270,16 @@ class TumainiUser {
       if (!m) return;
       m.classList.add('open');
       m.classList.add('active');
+      document.body.style.overflow = 'hidden';
     };
     const closeModal = (m) => {
       if (!m) return;
       m.classList.remove('open');
       m.classList.remove('active');
+      const anyOpen = document.querySelector('.modal-overlay.open, .modal-overlay.active, .mobile-drawer.open');
+      if (!anyOpen) {
+        document.body.style.overflow = '';
+      }
     };
 
     if (this.btnOpenAbout && this.aboutModal) {
@@ -425,10 +430,15 @@ class TumainiUser {
     const openDrawer = () => {
       if (this.mobileDrawer) this.mobileDrawer.classList.add('open');
       if (this.mobileDrawerOverlay) this.mobileDrawerOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
     };
     const closeDrawer = () => {
       if (this.mobileDrawer) this.mobileDrawer.classList.remove('open');
       if (this.mobileDrawerOverlay) this.mobileDrawerOverlay.classList.remove('open');
+      const anyOpen = document.querySelector('.modal-overlay.open, .modal-overlay.active');
+      if (!anyOpen) {
+        document.body.style.overflow = '';
+      }
     };
 
     if (this.btnOpenDrawer) this.btnOpenDrawer.addEventListener('click', openDrawer);
@@ -529,11 +539,82 @@ class TumainiUser {
     });
   }
 
+  startMessagePolling() {
+    this.stopMessagePolling();
+    if (!this.currentIntake) return;
+    const intakeId = this.currentIntake.id;
+
+    // 1. Initial sync
+    store.syncIntakeMessagesFromRemote(intakeId).then(hasNew => {
+      if (hasNew) this.renderMessages();
+    });
+
+    // 2. High-frequency polling heartbeat (2.5s) for rock-solid live message delivery without refresh
+    this.messagePollInterval = setInterval(async () => {
+      if (!this.currentIntake || this.currentIntake.id !== intakeId) {
+        this.stopMessagePolling();
+        return;
+      }
+      const hasNew = await store.syncIntakeMessagesFromRemote(intakeId);
+      if (hasNew) {
+        this.renderMessages();
+      }
+
+      // Check counselor assignment and intake status updates in Supabase
+      if (supabase && supabase.isConfigured && typeof supabase.fetchIntakesByIds === 'function') {
+        const rows = await supabase.fetchIntakesByIds([intakeId]);
+        if (rows && rows.length > 0) {
+          const remote = rows[0];
+          const hasNewCounselor = remote.claimed_by_name && (!this.currentIntake.counselorName || this.currentIntake.counselorName !== remote.claimed_by_name);
+          if (hasNewCounselor) {
+            this.currentIntake.counselorId = remote.claimed_by_id;
+            this.currentIntake.counselorName = remote.claimed_by_name;
+            this.currentIntake.counselorRole = remote.claimed_by_role;
+            this.currentIntake.status = 'in_session';
+            const local = store.intakes.find(i => i.id === intakeId);
+            if (local) {
+              local.counselorId = remote.claimed_by_id;
+              local.counselorName = remote.claimed_by_name;
+              local.counselorRole = remote.claimed_by_role;
+              local.status = 'in_session';
+              store.save(STORAGE_KEYS.INTAKES, store.intakes);
+            }
+            this.syncConsultationView();
+          }
+        }
+      }
+    }, 2500);
+
+    // 3. Instant WebSocket subscription via Supabase Realtime
+    if (supabase && supabase.isConfigured && typeof supabase.subscribeToMessages === 'function') {
+      try {
+        this.unsubscribeRealtimeMessages = supabase.subscribeToMessages(intakeId, async () => {
+          await store.syncIntakeMessagesFromRemote(intakeId);
+          this.renderMessages();
+        });
+      } catch (e) {
+        console.warn('Realtime message subscription fallback:', e);
+      }
+    }
+  }
+
+  stopMessagePolling() {
+    if (this.messagePollInterval) {
+      clearInterval(this.messagePollInterval);
+      this.messagePollInterval = null;
+    }
+    if (this.unsubscribeRealtimeMessages) {
+      try { this.unsubscribeRealtimeMessages(); } catch (e) {}
+      this.unsubscribeRealtimeMessages = null;
+    }
+  }
+
   checkExistingSession() {
     const active = store.getActiveUserIntake();
     if (active && active.status !== 'resolved') {
       this.currentIntake = active;
       this.showConsultationView();
+      this.startMessagePolling();
     } else {
       this.showIntakeView();
       if (this.usernameInput && !this.usernameInput.value) {
@@ -632,6 +713,7 @@ class TumainiUser {
     const initialMessages = store.getIntakeMessages(newIntake.id);
     bus.broadcast('NEW_INTAKE', { intake: newIntake, initialMessages });
     this.showConsultationView();
+    this.startMessagePolling();
   }
 
   syncConsultationView() {
@@ -809,6 +891,7 @@ class TumainiUser {
   }
 
   endConsultation() {
+    this.stopMessagePolling();
     if (this.currentIntake) {
       const intakeId = this.currentIntake.id;
       this.currentIntake = null;
@@ -1030,11 +1113,22 @@ class TumainiUser {
       }
 
       if (intake) {
+        // Reactivate case on remote server so counselor triage queue receives it immediately
+        const remoteStatus = intake.counselorId ? 'active' : 'waiting';
+        intake.status = intake.counselorId ? 'in_session' : 'waiting';
+        if (supabase && supabase.isConfigured) {
+          try {
+            await supabase.updateIntakeStatus(intake.id, remoteStatus);
+          } catch (e) {
+            console.warn('Update status on resume error:', e);
+          }
+        }
+        store.save(STORAGE_KEYS.INTAKES, store.intakes);
         store.setActiveUserIntake(intake.id);
         this.currentIntake = intake;
+
         if (this.resumeCaseModal) {
-          this.resumeCaseModal.classList.remove('open');
-          this.resumeCaseModal.classList.remove('active');
+          closeModal(this.resumeCaseModal);
         }
         if (this.inputResumePasskey) this.inputResumePasskey.value = '';
         if (this.resumeCaseError) this.resumeCaseError.style.display = 'none';
@@ -1048,8 +1142,15 @@ class TumainiUser {
           intakeId: intake.id,
           sender: 'system',
           senderName: 'Session Resumed',
-          text: 'You have safely reconnected to your confidential session using your Case Passkey.'
+          text: `Seeker has safely reconnected using Case Passkey (${rawPasskey}) for scheduled follow-up.`
         });
+
+        // Sync all messages from remote and start live polling heartbeat
+        await store.syncIntakeMessagesFromRemote(intake.id);
+        this.renderMessages();
+        this.startMessagePolling();
+
+        bus.broadcast('INTAKE_STATUS', { intakeId: intake.id, status: intake.status });
       } else {
         if (this.resumeCaseError) {
           this.resumeCaseError.textContent = 'No active or follow-up session found matching this Case Passkey. Please verify your code or start a fresh session.';
