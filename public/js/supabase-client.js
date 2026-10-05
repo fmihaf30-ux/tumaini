@@ -825,6 +825,10 @@ class TumainiSupabaseService {
     }
   }
 
+  async fetchIntakeMessages(intakeId) {
+    return this.fetchMessages(intakeId);
+  }
+
   async sendMessage(intakeId, { id, sender, authorName, text }) {
     if (!this.isConfigured || !this.client) return null;
     try {

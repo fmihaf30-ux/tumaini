@@ -7,7 +7,7 @@
    - Instant Safety Quick Exit (Esc)
    ========================================================================== */
 
-import { store, EMERGENCY_TIERS, PRESET_CATEGORIES } from './store.js';
+import { store, STORAGE_KEYS, EMERGENCY_TIERS, PRESET_CATEGORIES } from './store.js';
 import { bus } from './bus.js';
 import { supabase } from './supabase-client.js';
 import { renderHelplineCards, renderHelplineDrawer } from './helplines.js';
@@ -152,6 +152,23 @@ class TumainiUser {
     this.drawerLinkDisclaimer = document.getElementById('drawerLinkDisclaimer');
   }
 
+  openModal(m) {
+    if (!m) return;
+    m.classList.add('open');
+    m.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeModal(m) {
+    if (!m) return;
+    m.classList.remove('open');
+    m.classList.remove('active');
+    const anyOpen = document.querySelector('.modal-overlay.open, .modal-overlay.active, .mobile-drawer.open');
+    if (!anyOpen) {
+      document.body.style.overflow = '';
+    }
+  }
+
   bindEvents() {
     // Tab switching between Intake, Confessions, and Reviews
     if (this.tabIntake) {
@@ -266,21 +283,8 @@ class TumainiUser {
     }
 
     // Modals
-    const openModal = (m) => {
-      if (!m) return;
-      m.classList.add('open');
-      m.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    };
-    const closeModal = (m) => {
-      if (!m) return;
-      m.classList.remove('open');
-      m.classList.remove('active');
-      const anyOpen = document.querySelector('.modal-overlay.open, .modal-overlay.active, .mobile-drawer.open');
-      if (!anyOpen) {
-        document.body.style.overflow = '';
-      }
-    };
+    const openModal = (m) => this.openModal(m);
+    const closeModal = (m) => this.closeModal(m);
 
     if (this.btnOpenAbout && this.aboutModal) {
       this.btnOpenAbout.addEventListener('click', () => openModal(this.aboutModal));
@@ -577,7 +581,11 @@ class TumainiUser {
               local.counselorName = remote.claimed_by_name;
               local.counselorRole = remote.claimed_by_role;
               local.status = 'in_session';
-              store.save(STORAGE_KEYS.INTAKES, store.intakes);
+              if (typeof store.saveIntakes === 'function') {
+                store.saveIntakes();
+              } else {
+                store.save(STORAGE_KEYS.INTAKES, store.intakes);
+              }
             }
             this.syncConsultationView();
           }
@@ -1045,7 +1053,7 @@ class TumainiUser {
       if (this.btnClosePrivacy) {
         this.btnClosePrivacy.style.display = 'none';
       }
-      openModal(this.privacyModal);
+      this.openModal(this.privacyModal);
     }
   }
 
@@ -1090,7 +1098,9 @@ class TumainiUser {
 
         const row = await supabase.findIntakeByPasskeyHash(hash, rawPasskey);
         if (row) {
-          const remoteMsgs = await supabase.fetchIntakeMessages(row.id);
+          const remoteMsgs = typeof supabase.fetchMessages === 'function'
+            ? await supabase.fetchMessages(row.id)
+            : (typeof supabase.fetchIntakeMessages === 'function' ? await supabase.fetchIntakeMessages(row.id) : []);
           intake = {
             id: row.id,
             username: row.alias || 'Seeker',
@@ -1123,12 +1133,16 @@ class TumainiUser {
             console.warn('Update status on resume error:', e);
           }
         }
-        store.save(STORAGE_KEYS.INTAKES, store.intakes);
+        if (typeof store.saveIntakes === 'function') {
+          store.saveIntakes();
+        } else {
+          store.save(STORAGE_KEYS.INTAKES, store.intakes);
+        }
         store.setActiveUserIntake(intake.id);
         this.currentIntake = intake;
 
         if (this.resumeCaseModal) {
-          closeModal(this.resumeCaseModal);
+          this.closeModal(this.resumeCaseModal);
         }
         if (this.inputResumePasskey) this.inputResumePasskey.value = '';
         if (this.resumeCaseError) this.resumeCaseError.style.display = 'none';

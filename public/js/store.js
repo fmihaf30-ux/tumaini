@@ -177,6 +177,10 @@ class TumainiStore {
     }
   }
 
+  saveIntakes() {
+    this.save(STORAGE_KEYS.INTAKES, this.intakes);
+  }
+
   subscribe(callback) {
     this.subscribers.add(callback);
     return () => this.subscribers.delete(callback);
