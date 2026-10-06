@@ -321,19 +321,19 @@
 }
 
 .queue-ticket-card.tier-1 {
-  border-left: 4px solid var(--tier-1-color);
+  box-shadow: inset 4px 0 0 0 var(--tier-1-color);
 }
 
 .queue-ticket-card.tier-2 {
-  border-left: 4px solid var(--tier-2-color);
+  box-shadow: inset 4px 0 0 0 var(--tier-2-color);
 }
 
 .queue-ticket-card.tier-3 {
-  border-left: 4px solid var(--tier-3-color);
+  box-shadow: inset 4px 0 0 0 var(--tier-3-color);
 }
 
 .queue-ticket-card.tier-4 {
-  border-left: 4px solid var(--tier-4-color);
+  box-shadow: inset 4px 0 0 0 var(--tier-4-color);
 }
 
 .ticket-header-line {
@@ -1435,12 +1435,14 @@
 
 @media (max-width: 600px) {
   #followUpModal .modal-card {
-    width: 95vw !important;
-    max-width: 95vw !important;
-    max-height: 90vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100vh - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
     overflow-y: auto !important;
-    padding: 16px !important;
-    margin: 10px auto !important;
+    padding: 18px 14px !important;
+    margin: auto !important;
+    box-sizing: border-box !important;
   }
   #followUpModal .form-input {
     font-size: 14px !important;
@@ -1453,7 +1455,7 @@
 /* Supervisor Operations Desk (Responsive Layout) */
 .supervisor-grid-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 20px;
   align-items: start;
   width: 100%;
